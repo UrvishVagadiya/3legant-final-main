@@ -29,10 +29,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
         { label: "Kitchen", href: "/shop?category=Kitchen" },
       ],
     },
-    {
-      label: "Product",
-      children: [{ label: "Product Page", href: "/product" }],
-    },
+    {label: "Blogs", href: "/blogs" },
     { label: "Contact Us", href: "/contact" },
   ];
 
