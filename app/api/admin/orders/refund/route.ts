@@ -6,12 +6,10 @@ import { cookies } from "next/headers";
 
 export async function POST(req: NextRequest) {
     try {
-        // Auth check (admin only)
         const supabase = createClient(cookies());
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-        // Check if user is admin
         const { data: profile } = await supabase
             .from("user_profiles")
             .select("role")
@@ -22,7 +20,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
-        const { orderId, action } = await req.json(); // action: 'approve' | 'reject'
+        const { orderId, action } = await req.json(); 
 
         if (!orderId || !action) {
             return NextResponse.json({ error: "Order ID and action are required" }, { status: 400 });
@@ -30,10 +28,9 @@ export async function POST(req: NextRequest) {
 
         const admin = createAdminClient();
 
-        // Get order and its payment
         const { data: order, error: orderError } = await admin
             .from("orders")
-            .select("*, payments(id, transaction_id, status, amount)")
+            .select("*")
             .eq("id", orderId)
             .single();
 
@@ -55,8 +52,21 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true, message: "Refund request rejected" });
         }
 
-        // Action is 'approve' - Process Stripe refund
-        const payment = order.payments?.[0];
+        const { data: payment, error: paymentError } = await admin
+            .from("payments")
+            .select("id, transaction_id, status, amount")
+            .eq("order_id", orderId)
+            .not("transaction_id", "is", null)
+            .order("updated_at", { ascending: false })
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (paymentError) {
+            console.error("Failed to fetch payment for refund:", paymentError);
+            return NextResponse.json({ error: "Failed to load payment for this order" }, { status: 500 });
+        }
+
         if (!payment || !payment.transaction_id) {
             return NextResponse.json({ error: "Payment transaction not found for this order" }, { status: 400 });
         }
@@ -65,7 +75,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Payment already refunded" }, { status: 400 });
         }
 
-        // 1. Trigger Stripe Refund
         try {
             const refund = await stripe.refunds.create({
                 payment_intent: payment.transaction_id,
@@ -81,9 +90,6 @@ export async function POST(req: NextRequest) {
             console.error("Stripe refund failed:", stripeError);
             return NextResponse.json({ error: `Stripe refund failed: ${stripeError.message}` }, { status: 500 });
         }
-
-        // 2. Update Order and Payment records
-        // Webhook will also handle this, but we update immediately for UI consistency
         const now = new Date().toISOString();
 
         const { error: finalUpdateError } = await admin.rpc('process_order_refund', {
@@ -91,20 +97,18 @@ export async function POST(req: NextRequest) {
             p_payment_id: payment.id,
             p_refund_reason: order.refund_request_reason || "Admin Approved Refund"
         });
-        
-        // If RPC doesn't exist yet, we do it via transactions/multi-updates
+
         if (finalUpdateError) {
             console.warn("RPC 'process_order_refund' failed or missing, falling back to manual updates");
-            
+
             await admin.from("orders").update({
                 status: "cancelled",
                 refund_status: "approved",
                 updated_at: now
             }).eq("id", orderId);
 
-            // Also update the payment status to 'failed'
             await admin.from("payments").update({
-                status: "failed", // Changed from "cancle" to "failed" as per user request
+                status: "refunded",
                 refund_amount: payment.amount,
                 refund_date: now,
                 refund_reason: order.refund_request_reason || "Admin Approved Refund",

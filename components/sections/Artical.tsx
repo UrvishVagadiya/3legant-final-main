@@ -36,9 +36,11 @@ const Artical = () => {
   }, []);
 
   return (
-    <div className="px-5 md:px-10 lg:px-40 my-10 flex flex-col gap-6 w-full">
-      <div className="flex justify-between items-end mb-4">
-        <h2 className="text-3xl md:text-4xl font-medium">Articles</h2>
+    <div className="px-3 sm:px-5 md:px-10 lg:px-40 my-10 flex flex-col gap-6 w-full">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-4">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-medium">
+          Articles
+        </h2>
         <ButtonText text="More Articles" linkTo={"blogs"} />
       </div>
       <div className="flex flex-col md:flex-row gap-8 md:gap-4 justify-between w-full">
@@ -59,7 +61,9 @@ const Artical = () => {
                   src={article.img}
                   alt={article.title}
                 />
-                <h3 className="my-3 text-base font-medium line-clamp-2">{article.title}</h3>
+                <h3 className="my-3 text-base font-medium line-clamp-2">
+                  {article.title}
+                </h3>
                 <div>
                   <ButtonText text="Read More" />
                 </div>
@@ -68,7 +72,6 @@ const Artical = () => {
           ))
         )}
       </div>
-
     </div>
   );
 };

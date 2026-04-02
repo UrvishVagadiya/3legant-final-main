@@ -29,7 +29,7 @@ export async function GET() {
 
     const ordersData = (orders.data || []) as { id: string; total: any; status: string; subtotal: any; shipping_cost: any; discount: any }[];
     const totalRevenue = ordersData.reduce((sum, o) => {
-        if (o.status === "cancelled" || o.status === "refunded") return sum;   
+        if (o.status === "cancelled" || o.status === "refunded") return sum;
         const total = parseFloat(String(o.total || 0));
         const subtotal = parseFloat(String(o.subtotal || 0));
         const shipping = parseFloat(String(o.shipping_cost || 0));
@@ -56,7 +56,7 @@ export async function GET() {
 
         return {
             ...order,
-            payment_status: successfulPayment?.status || payments[0]?.status || (order.status === 'cancelled' ? 'failed' : "pending")
+            payment_status: successfulPayment?.status || payments[0]?.status || (order.status === 'cancelled' ? 'cancelled' : "pending")
         };
     });
 

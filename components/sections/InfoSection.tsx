@@ -1,15 +1,15 @@
 const InfoSection = () => {
   return (
-    <div className="px-4 sm:px-5 md:px-10 lg:px-40 flex flex-col md:flex-row md:items-center justify-between mt-12 md:mt-20 lg:mt-24 gap-6 md:gap-10 mb-8 md:mb-16">
+    <div className="px-3 sm:px-5 md:px-10 lg:px-40 flex flex-col md:flex-row md:items-center justify-between mt-10 sm:mt-12 md:mt-20 lg:mt-24 gap-5 md:gap-10 mb-8 md:mb-16">
       <div className="w-full md:w-auto">
-        <h1 className="text-[32px] sm:text-[40px] md:text-[54px] lg:text-[72px] leading-[1.1] sm:leading-[1.05] font-medium text-[#141718] tracking-tight">
+        <h1 className="text-[26px] sm:text-[32px] md:text-[54px] lg:text-[72px] leading-[1.08] sm:leading-[1.05] font-medium text-[#141718] tracking-tight break-words">
           Simply Unique<span className="text-[#6C7275]">/</span>
           <br />
           Simply Better<span className="text-[#6C7275]">.</span>
         </h1>
       </div>
       <div className="w-full md:w-auto max-w-[440px]">
-        <p className="text-[14px] md:text-[16px] leading-[24px] md:leading-[26px] text-[#6C7275]">
+        <p className="text-[13px] sm:text-[14px] md:text-[16px] leading-[22px] sm:leading-[24px] md:leading-[26px] text-[#6C7275]">
           <span className="font-semibold text-[#141718]">3legant</span> is a
           gift & decorations store based in HCMC,
           <br className="hidden md:block" /> Vietnam. Est since 2019.

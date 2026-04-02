@@ -36,6 +36,14 @@ export const orderApi = apiService.injectEndpoints({
     getOrders: builder.query<Order[], string>({
       queryFn: async (userId) => {
         const supabase = createClient();
+
+        // Keep order/payment status in sync even if webhook delivery is delayed.
+        try {
+          await supabase.rpc("cancel_expired_orders");
+        } catch (cleanupError) {
+          console.error("Failed to auto-cleanup expired orders:", cleanupError);
+        }
+
         const { data, error } = await supabase
           .from("orders")
           .select(
@@ -51,10 +59,10 @@ export const orderApi = apiService.injectEndpoints({
           // But usually o.payments should be an array. Let's find any completed payment first.
           const payments = Array.isArray(o.payments) ? o.payments : (o.payments ? [o.payments] : []);
           const successfulPayment = payments.find((p: any) => p.status === 'completed' || p.status === 'succeeded');
-          
+
           return {
             ...o,
-            payment_status: successfulPayment?.status || payments[0]?.status || "pending",
+            payment_status: successfulPayment?.status || payments[0]?.status || (o.status === "cancelled" ? "cancelled" : "pending"),
             items: o.order_items || []
           };
         });

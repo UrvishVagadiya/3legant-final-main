@@ -14,13 +14,11 @@ export async function GET() {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const admin = createAdminClient();
-    
-    // Trigger background cleanup of expired pending orders
+
     try {
         await admin.rpc("cancel_expired_orders");
     } catch (e) {
         console.error("Failed to auto-cleanup expired orders:", e);
-        // Continue anyway as the primary fetch is what matters most
     }
 
     const { data, error } = await admin
@@ -33,10 +31,10 @@ export async function GET() {
     const ordersWithPaymentStatus = (data || []).map((order: any) => {
         const payments = Array.isArray(order.payments) ? order.payments : (order.payments ? [order.payments] : []);
         const successfulPayment = payments.find((p: any) => p.status === 'completed' || p.status === 'succeeded');
-        
+
         return {
             ...order,
-            payment_status: successfulPayment?.status || payments[0]?.status || (order.status === 'cancelled' ? 'failed' : "pending"),
+            payment_status: successfulPayment?.status || payments[0]?.status || (order.status === 'cancelled' ? 'cancelled' : "pending"),
             refund_status: order.refund_status || 'none'
         };
     });
@@ -51,7 +49,7 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { id, ...payload } = body;
     const admin = createAdminClient();
-    
+
     // Check current state before update to see if stock reduction is needed
     const { data: currentOrder } = await admin
         .from("orders")
@@ -74,14 +72,14 @@ export async function PUT(req: NextRequest) {
         .eq("id", id)
         .select("*, payments(status)")
         .single();
-    
+
     if (!error && data && shouldReduceStock) {
         // Fetch order items to reduce stock
         const { data: items } = await admin
             .from("order_items")
             .select("product_id, quantity")
             .eq("order_id", id);
-        
+
         if (items && items.length > 0) {
             const { error: stockError } = await admin.rpc("reduce_product_stock", {
                 items: items.map(i => ({
@@ -89,7 +87,7 @@ export async function PUT(req: NextRequest) {
                     quantity: i.quantity
                 }))
             });
-            
+
             if (!stockError) {
                 await admin.from("orders").update({ stock_reduced: true }).eq("id", id);
                 // Refresh data with updated stock_reduced flag
@@ -104,7 +102,7 @@ export async function PUT(req: NextRequest) {
 
                     return NextResponse.json({
                         ...updatedData,
-                        payment_status: successfulPayment?.status || payments[0]?.status || (updatedData.status === 'cancelled' ? 'failed' : "pending"),
+                        payment_status: successfulPayment?.status || payments[0]?.status || (updatedData.status === 'cancelled' ? 'cancelled' : "pending"),
                         refund_status: updatedData.refund_status || 'none'
                     });
                 }
@@ -121,7 +119,7 @@ export async function PUT(req: NextRequest) {
 
     const orderWithPaymentStatus = {
         ...data,
-        payment_status: successfulPayment?.status || payments[0]?.status || (data.status === 'cancelled' ? 'failed' : "pending"),
+        payment_status: successfulPayment?.status || payments[0]?.status || (data.status === 'cancelled' ? 'cancelled' : "pending"),
         refund_status: data.refund_status || 'none'
     };
 

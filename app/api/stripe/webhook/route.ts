@@ -140,35 +140,57 @@ export async function POST(req: NextRequest) {
         }
         case "checkout.session.expired": {
             const session = event.data.object as Stripe.Checkout.Session;
-            const orderId = session.metadata?.order_id;
+            let orderId = session.metadata?.order_id || null;
+            let order: { id: string; status: string; stock_reduced: boolean | null } | null = null;
+
+            // Fallback: derive order by Stripe session id when metadata is missing.
+            if (!orderId && session.id) {
+                const { data: orderBySession, error: orderBySessionError } = await admin
+                    .from("orders")
+                    .select("id, status, stock_reduced")
+                    .eq("stripe_session_id", session.id)
+                    .maybeSingle();
+
+                if (orderBySessionError) {
+                    console.error("Failed to resolve order by stripe_session_id:", orderBySessionError);
+                }
+
+                if (orderBySession) {
+                    orderId = orderBySession.id;
+                    order = orderBySession;
+                }
+            }
 
             if (!orderId) {
-                console.error("No orderId in expired session metadata");
+                console.error("No orderId found for expired session", { sessionId: session.id });
                 break;
             }
 
-            // 1. Double check order status before cancelling
-            const { data: order, error: fetchError } = await admin
-                .from("orders")
-                .select("status, stock_reduced")
-                .eq("id", orderId)
-                .maybeSingle();
+            if (!order) {
+                const { data: fetchedOrder, error: fetchError } = await admin
+                    .from("orders")
+                    .select("id, status, stock_reduced")
+                    .eq("id", orderId)
+                    .maybeSingle();
 
-            if (fetchError || !order) {
-                console.error(`Failed to fetch order ${orderId} for cancellation:`, fetchError);
-                break;
+                if (fetchError || !fetchedOrder) {
+                    console.error(`Failed to fetch order ${orderId} for cancellation:`, fetchError);
+                    break;
+                }
+
+                order = fetchedOrder;
             }
 
-            // Only cancel if it's still pending
-            if (order.status !== "pending") {
-                console.log(`Order ${orderId} is in status '${order.status}', skipping automatic cancellation.`);
-                break;
+            // Only cancel order if it's still unpaid workflow state.
+            const canAutoCancelOrder = order.status === "pending" || order.status === "failed";
+            if (canAutoCancelOrder) {
+                console.log(`Session expired -> Cancelling order ${orderId} in status '${order.status}'.`);
+            } else {
+                console.log(`Order ${orderId} is in status '${order.status}', skipping order status change.`);
             }
-
-            console.log(`Session expired → Cancelling pending order: ${orderId}`);
 
             // 2. Restore stock if it was previously reduced
-            if (order.stock_reduced) {
+            if (canAutoCancelOrder && order.stock_reduced) {
                 const { data: items, error: itemsError } = await admin
                     .from("order_items")
                     .select("product_id, quantity")
@@ -190,30 +212,36 @@ export async function POST(req: NextRequest) {
                 }
             }
 
-            // 3. Mark both order and payment as cancelled
-            const { error: orderUpdateError } = await admin
-                .from("orders")
-                .update({
-                    status: "cancelled",
-                    updated_at: new Date().toISOString(),
-                })
-                .eq("id", orderId);
+            // 3. Mark order as cancelled when eligible
+            let orderUpdateError: { message?: string } | null = null;
+            if (canAutoCancelOrder) {
+                const orderUpdate = await admin
+                    .from("orders")
+                    .update({
+                        status: "cancelled",
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq("id", orderId);
+                orderUpdateError = orderUpdate.error;
+            }
 
+            // 4. Always sync pending-like payment rows on expired session.
             const { error: paymentUpdateError } = await admin
                 .from("payments")
                 .update({
                     status: "cancelled",
                     updated_at: new Date().toISOString(),
                 })
-                .eq("order_id", orderId);
+                .eq("order_id", orderId)
+                .in("status", ["pending", "processing", "failed"]);
 
             if (orderUpdateError || paymentUpdateError) {
-                console.error(`Update failed for expired order ${orderId}:`, { 
-                    order: orderUpdateError?.message, 
-                    payment: paymentUpdateError?.message 
+                console.error(`Update failed for expired order ${orderId}:`, {
+                    order: orderUpdateError?.message,
+                    payment: paymentUpdateError?.message
                 });
             } else {
-                console.log(`✅ Successfully marked order ${orderId} as cancelled in Supabase.`);
+                console.log(`Successfully synchronized expired order/payment state for order ${orderId}.`);
             }
             break;
         }

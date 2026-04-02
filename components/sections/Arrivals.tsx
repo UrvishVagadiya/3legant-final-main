@@ -5,33 +5,57 @@ import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { useGetProductsQuery } from "@/store/api/productApi";
 import { addToCart } from "@/store/slices/cartSlice";
-import { addToWishlist, removeFromWishlist } from "@/store/slices/wishlistSlice";
-import { useGetRatingsByProductsQuery, useToggleLikeReviewMutation } from "@/store/api/reviewApi";
+import {
+  addToWishlist,
+  removeFromWishlist,
+} from "@/store/slices/wishlistSlice";
+import {
+  useGetRatingsByProductsQuery,
+  useToggleLikeReviewMutation,
+} from "@/store/api/reviewApi";
 import { useToggleWishlistMutation } from "@/store/api/wishlistApi";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import ArrivalCard from "./ArrivalCard";
+import { isProductNew } from "@/utils/isProductNew";
 
 const Arrivals = () => {
   const dispatch = useAppDispatch();
   const { data: allProducts = [], isLoading } = useGetProductsQuery();
-  const products = useMemo(() => allProducts.slice(0, 10), [allProducts]);
+  const products = useMemo(
+    () =>
+      allProducts
+        .filter((p: any) => isProductNew(p.created_at))
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        )
+        .slice(0, 10),
+    [allProducts],
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
   const { user } = useAppSelector((state: RootState) => state.auth);
-  const wishlistItems = useAppSelector((state: RootState) => state.wishlist.items);
+  const wishlistItems = useAppSelector(
+    (state: RootState) => state.wishlist.items,
+  );
   const { requireAuth } = useAuthGuard();
   const isMounted = useIsMounted();
   const [toggleWishlistMutation] = useToggleWishlistMutation();
 
   const productIds = useMemo(() => products.map((p: any) => p.id), [products]);
-  const { data: ratingsByProduct = {} } = useGetRatingsByProductsQuery(productIds, { skip: productIds.length === 0 });
+  const { data: ratingsByProduct = {} } = useGetRatingsByProductsQuery(
+    productIds,
+    { skip: productIds.length === 0 },
+  );
 
-
-  const isInWishlist = (id: string | number) => wishlistItems.some((i) => i.id == id);
+  const isInWishlist = (id: string | number) =>
+    wishlistItems.some((i) => i.id == id);
 
   const getRating = (productId: string | number) => {
-    return ratingsByProduct[String(productId)] || { avgRating: 0, reviewCount: 0 };
+    return (
+      ratingsByProduct[String(productId)] || { avgRating: 0, reviewCount: 0 }
+    );
   };
 
   const handleWishlistToggle = (e: React.MouseEvent, product: any) => {
@@ -40,32 +64,47 @@ const Arrivals = () => {
     requireAuth(async () => {
       const isAdding = !isInWishlist(product.id);
       if (isAdding) {
-        const productColors = Array.isArray(product.color) ? product.color : product.color ? [product.color] : [];
+        const productColors = Array.isArray(product.color)
+          ? product.color
+          : product.color
+            ? [product.color]
+            : [];
         const preferredColor = productColors[0];
-        dispatch(addToWishlist({
-          item: {
-            id: product.id,
-            name: product.title || product.name || "",
-            price: product.price,
-            MRP: product.mrp || product.MRP || product.old_price || product.oldprice || 0,
-            image: product.img || product.image_url || "/image-1.png",
-            color: preferredColor,
-            stock: Number(product.stock) || 0,
-          }
-        }));
+        dispatch(
+          addToWishlist({
+            item: {
+              id: product.id,
+              name: product.title || product.name || "",
+              price: product.price,
+              MRP:
+                product.mrp ||
+                product.MRP ||
+                product.old_price ||
+                product.oldprice ||
+                0,
+              image: product.img || product.image_url || "/image-1.png",
+              color: preferredColor,
+              stock: Number(product.stock) || 0,
+            },
+          }),
+        );
       } else {
         dispatch(removeFromWishlist({ id: product.id }));
       }
 
       if (user) {
         try {
-          const productColors = Array.isArray(product.color) ? product.color : product.color ? [product.color] : [];
+          const productColors = Array.isArray(product.color)
+            ? product.color
+            : product.color
+              ? [product.color]
+              : [];
           const preferredColor = productColors[0];
-          await toggleWishlistMutation({ 
-            userId: user.id, 
-            productId: String(product.id), 
+          await toggleWishlistMutation({
+            userId: user.id,
+            productId: String(product.id),
             color: preferredColor,
-            adding: isAdding 
+            adding: isAdding,
           }).unwrap();
         } catch (error) {
           console.error("Failed to sync wishlist:", error);
@@ -78,18 +117,24 @@ const Arrivals = () => {
     e.preventDefault();
     e.stopPropagation();
     requireAuth(() => {
-      const productColors = Array.isArray(product.color) ? product.color : product.color ? [product.color] : [];
+      const productColors = Array.isArray(product.color)
+        ? product.color
+        : product.color
+          ? [product.color]
+          : [];
       const preferredColor = productColors[0];
-      dispatch(addToCart({
-        item: {
-          id: String(product.id),
-          name: product.title || product.name || "",
-          price: product.price,
-          image: product.img || product.image_url || "/image-1.png",
-          color: preferredColor,
-          stock: Number(product.stock) || 0,
-        }
-      }));
+      dispatch(
+        addToCart({
+          item: {
+            id: String(product.id),
+            name: product.title || product.name || "",
+            price: product.price,
+            image: product.img || product.image_url || "/image-1.png",
+            color: preferredColor,
+            stock: Number(product.stock) || 0,
+          },
+        }),
+      );
     });
   };
 
@@ -102,9 +147,9 @@ const Arrivals = () => {
 
   return (
     <div className="w-full">
-      <div className="px-5 md:px-10 lg:px-40 pt-5 md:pt-14">
+      <div className="px-3 sm:px-5 md:px-10 lg:px-40 pt-5 md:pt-14">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-0">
-          <h1 className="text-4xl sm:text-5xl lg:text-5xl font-medium leading-[1.1]">
+          <h1 className="text-[28px] sm:text-4xl lg:text-5xl font-medium leading-[1.08] sm:leading-[1.1] wrap-break-word">
             New <br className="block sm:hidden" /> Arrivals
           </h1>
           <div className="hidden md:block self-end">
@@ -114,9 +159,12 @@ const Arrivals = () => {
       </div>
 
       {isLoading ? (
-        <div className="pl-5 md:pl-10 lg:pl-40 mt-6 md:mt-10 flex gap-4 md:gap-6">
+        <div className="pl-3 sm:pl-5 md:pl-10 lg:pl-40 mt-6 md:mt-10 flex gap-4 md:gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="w-55 md:w-65.5 shrink-0 animate-pulse">
+            <div
+              key={i}
+              className="w-55 sm:w-60 md:w-60 shrink-0 animate-pulse"
+            >
               <div className="w-full aspect-4/5 bg-gray-200 rounded" />
               <div className="mt-3 h-4 bg-gray-200 rounded w-3/4" />
               <div className="mt-2 h-4 bg-gray-200 rounded w-1/2" />
@@ -124,7 +172,7 @@ const Arrivals = () => {
           ))}
         </div>
       ) : (
-        <div className="pl-5 md:pl-10 lg:pl-40 mt-6 md:mt-10">
+        <div className="pl-3 sm:pl-5 md:pl-10 lg:pl-40 mt-6 md:mt-10">
           <div
             ref={scrollRef}
             onScroll={handleScroll}
@@ -159,7 +207,7 @@ const Arrivals = () => {
         </div>
       )}
 
-      <div className="md:hidden px-5 mt-6 pb-8">
+      <div className="md:hidden px-3 sm:px-5 mt-6 pb-8">
         <ButtonText text="More Products" linkTo="shop" />
       </div>
     </div>
