@@ -1,0 +1,159 @@
+"use client";
+
+import React, { useState } from "react";
+import { ChevronDown, ChevronUp, RefreshCcw } from "lucide-react";
+import OrderExpandedDetails from "./OrderExpandedDetails";
+import { useAppSelector, RootState } from "@/store";
+
+
+
+const badgeStyles: Record<string, { bg: string; text: string; dot: string; border: string }> = {
+  delivered: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", border: "border-emerald-100" },
+  shipped: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500", border: "border-blue-100" },
+  confirmed: { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500", border: "border-indigo-100" },
+  processing: { bg: "bg-sky-50", text: "text-sky-700", dot: "bg-sky-500", border: "border-sky-100" },
+  pending: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", border: "border-amber-100" },
+  cancelled: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500", border: "border-rose-100" },
+  cancle: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500", border: "border-rose-100" },
+  refunded: { bg: "bg-purple-50", text: "text-purple-700", dot: "bg-purple-500", border: "border-purple-100" },
+
+  completed: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", border: "border-emerald-100" },
+  succeeded: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", border: "border-emerald-100" },
+  failed: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500", border: "border-rose-100" },
+  unknown: { bg: "bg-slate-50", text: "text-slate-600", dot: "bg-slate-400", border: "border-slate-100" },
+};
+
+const StatusBadge = ({ type, status }: { type: "order" | "payment"; status: string }) => {
+  const style = badgeStyles[status.toLowerCase()] || badgeStyles.unknown;
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[9px] text-[#6C7275] uppercase font-bold tracking-widest leading-none opacity-50 mb-0.5 ml-1">
+        {type}
+      </span>
+      <div className={`flex items-center gap-2 px-2.5 py-1 rounded-lg border ${style.bg} ${style.text} ${style.border} shadow-sm transition-all hover:shadow-md`}>
+        <div className={`w-1.5 h-1.5 rounded-full ${style.dot} animate-pulse`} />
+        <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+          {status}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const formatDate = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+
+import { useGetOrdersQuery, useGetRefundPeriodQuery } from "@/store/api/orderApi";
+
+const OrdersHistory = () => {
+  const { user } = useAppSelector((state: RootState) => state.auth);
+  const { data: orders = [], isLoading: loading, refetch, isFetching } = useGetOrdersQuery(user?.id ?? '', { 
+    skip: !user?.id, 
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true 
+  });
+  const { data: refundSettings } = useGetRefundPeriodQuery();
+  const refundPeriod = refundSettings?.days || 7;
+
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+ 
+  const toggleOrderDetails = (orderId: string) => {
+    setExpandedOrder(expandedOrder === orderId ? null : orderId);
+  };
+
+  if (loading && orders.length === 0) {  
+    return (
+      <div>
+        <h1 className="font-semibold text-[20px] mb-6 md:mb-8">
+          Orders History
+        </h1>
+        <p className="text-[#6C7275]">Loading orders...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6 md:mb-8">
+        <h1 className="font-semibold text-[20px]">Orders History</h1>
+        <button 
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className={`text-sm flex items-center gap-2 text-[#6C7275] hover:text-[#141718] transition-colors ${isFetching ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <RefreshCcw size={14} className={isFetching ? 'animate-spin' : ''} />
+          {isFetching ? 'Updating...' : 'Refresh'}
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {orders.length === 0 ? (
+          <p className="text-[#6C7275]">No orders yet.</p>
+        ) : (
+          orders.map((order) => (
+            <div
+              key={order.id}
+              className="border border-gray-200 rounded-xl overflow-hidden transition-all hover:border-gray-300 bg-white"
+            >
+              <button
+                onClick={() => toggleOrderDetails(order.id)}
+                className="w-full flex items-center justify-between p-4 md:p-6 hover:bg-gray-50/50 transition-colors text-left"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-12 flex-1">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] text-[#6C7275] uppercase font-bold tracking-widest leading-none opacity-60">
+                      Order ID
+                    </span>
+                    <span className="font-bold text-sm text-[#141718]">
+                      {order.order_code}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] text-[#6C7275] uppercase font-bold tracking-widest leading-none opacity-60">
+                      Date
+                    </span>
+                    <span className="text-sm text-[#141718] font-medium">
+                      {formatDate(order.created_at)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3 mt-2 sm:mt-0">
+                    <StatusBadge type="order" status={order.status} />
+                    <StatusBadge type="payment" status={order.payment_status} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="font-semibold text-[#141718]">
+                    ${(Number(order.total) || (Number(order.subtotal) + Number(order.shipping_cost) - Number(order.discount))).toFixed(2)}
+                  </span>
+                  {expandedOrder === order.id ? (
+                    <ChevronUp size={18} className="text-[#6C7275]" />
+                  ) : (
+                    <ChevronDown size={18} className="text-[#6C7275]" />
+                  )}
+                </div>
+              </button>
+
+              {expandedOrder === order.id && (
+                <OrderExpandedDetails
+                  order={order}
+                  items={order.items || []}
+                  loadingItems={false}
+                  refundPeriod={refundPeriod}
+                />
+              )}
+            </div>
+          )))
+        }
+      </div>
+    </div>
+  );
+};
+
+export default OrdersHistory;

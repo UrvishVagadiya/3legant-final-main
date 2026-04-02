@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+@theme {
+  --font-poppins: var(--font-poppins), sans-serif;
+  --font-inter: var(--font-inter), sans-serif;
+  --font-sans: var(--font-poppins), var(--font-inter), sans-serif;
+}
+
+body {
+  max-width: 1600px;
+  margin: 0 auto;
+  overflow-x: hidden;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 16px;
+  line-height: 26px;
+  font-weight: 400;
+}
+
+.typo-hero {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 96px;
+  line-height: 96px;
+  letter-spacing: -0.02em;
+  font-weight: 500;
+}
+
+.typo-h1 {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 80px;
+  line-height: 84px;
+  letter-spacing: -3px;
+  font-weight: 500;
+}
+
+.typo-h2 {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 72px;
+  line-height: 76px;
+  letter-spacing: -2px;
+  font-weight: 500;
+}
+
+.typo-h3 {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 54px;
+  line-height: 58px;
+  letter-spacing: -1px;
+  font-weight: 500;
+}
+
+.typo-h4 {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 40px;
+  line-height: 44px;
+  letter-spacing: -0.4px;
+  font-weight: 500;
+}
+
+.typo-h5 {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 34px;
+  line-height: 38px;
+  letter-spacing: -0.6px;
+  font-weight: 500;
+}
+
+.typo-h6 {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: -0.6px;
+  font-weight: 500;
+}
+
+.typo-h7 {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 20px;
+  line-height: 28px;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.container {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+@media (min-width: 768px) {
+  .container {
+    margin-left: 50px;
+    margin-right: 50px;
+  }
+}
+
+/* .slick-prev:before,
+    .slick-next:before {
+    color: black !important;
+    font-size: 30px;
+    }
+
+    .slick-dots li button:before {
+    color: black !important;
+    font-size: 12px;
+    } */
+
+body::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.swiper-pagination-bullet {
+  width: 20px;
+  height: 20px;
+  background-color: white !important;
+}
+
+.swiper-pagination-bullet-active {
+  background-color: black !important;
+  color: black !important;
+}

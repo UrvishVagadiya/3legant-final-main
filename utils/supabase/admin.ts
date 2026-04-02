@@ -1,0 +1,14 @@
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+
+export const createAdminClient = () => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !serviceRoleKey) {
+        throw new Error(
+            "Missing NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY env variable. Add it to .env.local.",
+        );
+    }
+
+    return createSupabaseClient(supabaseUrl, serviceRoleKey);
+};
