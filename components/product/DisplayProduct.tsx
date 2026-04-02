@@ -25,6 +25,18 @@ import ReviewsSection from "./ReviewsSection";
 import TintedProductImage from "./TintedProductImage";
 import { RatingStars } from "@/components/ui/ProductCard";
 import { typography } from "@/constants/typography";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Navigation,
+  Pagination,
+  Scrollbar,
+  A11y,
+  Autoplay,
+} from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
 
 const refImages = [
   "/table/tray_table_premium.png",
@@ -154,7 +166,86 @@ export const DisplayProduct = ({ p }: { p: any }) => {
 
       <div className="w-full max-w-full grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 relative overflow-hidden">
         <div className="w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:hidden mb-4 relative">
+            <button
+              className="product-swiper-prev absolute left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/90 border border-gray-200 flex items-center justify-center shadow"
+              aria-label="Previous product image"
+            >
+              <ChevronLeft size={18} className="text-[#141718]" />
+            </button>
+            <button
+              className="product-swiper-next absolute right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-white/90 border border-gray-200 flex items-center justify-center shadow"
+              aria-label="Next product image"
+            >
+              <ChevronRight size={18} className="text-[#141718]" />
+            </button>
+            <Swiper
+              modules={[Navigation, Pagination, Scrollbar, Autoplay, A11y]}
+              spaceBetween={12}
+              slidesPerView={1}
+              loop={true}
+              autoplay={{
+                delay: 3000,
+                disableOnInteraction: false,
+              }}
+              navigation={{
+                prevEl: ".product-swiper-prev",
+                nextEl: ".product-swiper-next",
+              }}
+              pagination={{ clickable: true }}
+              className="w-full"
+            >
+              {productImages.slice(0, 6).map((itemSrc: string, idx: number) => (
+                <SwiperSlide key={idx}>
+                  <div className="relative w-full aspect-3/4 bg-[#F3F5F7] group">
+                    {idx === 0 && (
+                      <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+                        {isProductNew(p.created_at || p.createdAt) && (
+                          <span className="bg-white text-black text-sm font-bold px-3 py-1 rounded w-fit">
+                            NEW
+                          </span>
+                        )}
+                        {!expired &&
+                          ((p.mrp ?? 0) > p.price ||
+                            (p.oldprice ?? 0) > p.price) && (
+                            <span className="bg-[#38CB89] text-white text-sm font-bold px-3 py-1 rounded w-fit">
+                              -
+                              {Math.round(
+                                (((p.mrp || p.oldprice) - p.price) /
+                                  (p.mrp || p.oldprice)) *
+                                  100,
+                              )}
+                              %
+                            </span>
+                          )}
+                      </div>
+                    )}
+
+                    {idx === 0 ? (
+                      <TintedProductImage
+                        src={itemSrc}
+                        alt={`Product view ${idx + 1}`}
+                        fill
+                        unoptimized
+                        className="w-full h-full max-w-full object-cover object-center transition-all duration-500"
+                        colorHex={shouldTint ? colorHex : null}
+                      />
+                    ) : (
+                      <Image
+                        src={itemSrc}
+                        alt={`Product view ${idx + 1}`}
+                        fill
+                        unoptimized
+                        className="w-full h-full max-w-full object-cover object-center transition-all duration-500"
+                      />
+                    )}
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+
+          <div className="hidden sm:grid sm:grid-cols-2 gap-4">
             <div className="relative w-full aspect-3/4 bg-[#F3F5F7] group mb-4 sm:mb-0">
               <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
                 {isProductNew(p.created_at || p.createdAt) && (

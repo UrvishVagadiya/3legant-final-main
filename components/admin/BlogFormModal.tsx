@@ -1,9 +1,7 @@
 import React, { FormEvent } from "react";
-import { X, Eye, FileEdit } from "lucide-react";
+import { X } from "lucide-react";
 import { BlogFormData } from "@/types/blog";
 import BlogFormFields from "./BlogFormFields";
-import BlogPreview from "./BlogPreview";
-
 
 interface Props {
   formData: BlogFormData;
@@ -14,9 +12,6 @@ interface Props {
   onSubmit: (e: FormEvent) => void;
   onClose: () => void;
   onImageChange: (file: File | null) => void;
-  isPreview: boolean;
-  setIsPreview: (v: boolean) => void;
-  previewUrl: string | null;
 }
 
 export default function BlogFormModal({
@@ -28,30 +23,7 @@ export default function BlogFormModal({
   onSubmit,
   onClose,
   onImageChange,
-  isPreview,
-  setIsPreview,
-  previewUrl,
 }: Props) {
-  if (isPreview) {
-    return (
-      <div className="fixed inset-0 bg-white z-[60] overflow-y-auto">
-        <BlogPreview
-          data={formData}
-          imagePreview={previewUrl}
-          onBack={() => setIsPreview(false)}
-        />
-        <div className="fixed bottom-6 right-6 flex gap-3">
-          <button
-            onClick={() => setIsPreview(false)}
-            className="flex items-center gap-2 px-6 py-3 bg-[#141718] text-white rounded-full shadow-lg hover:scale-105 transition-transform"
-          >
-            <FileEdit size={18} /> Back to Editor
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl my-8">
@@ -60,12 +32,6 @@ export default function BlogFormModal({
             {editingId ? "Edit Blog" : "Add New Blog"}
           </h2>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsPreview(true)}
-              className="px-3 py-1.5 text-xs font-bold text-[#141718] border border-gray-200 rounded-md hover:bg-gray-50 flex items-center gap-1.5"
-            >
-              <Eye size={14} /> Preview
-            </button>
             <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
               <X size={20} />
             </button>

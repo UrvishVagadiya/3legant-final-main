@@ -3,7 +3,12 @@ import React from "react";
 import { Plus, Search, FileText } from "lucide-react";
 import BlogFormModal from "@/components/admin/BlogFormModal";
 import BlogTableRow from "@/components/admin/BlogTableRow";
-import { useGetBlogsQuery, useAddBlogMutation, useUpdateBlogMutation, useDeleteBlogMutation } from "@/store/api/blogApi";
+import {
+  useGetBlogsQuery,
+  useAddBlogMutation,
+  useUpdateBlogMutation,
+  useDeleteBlogMutation,
+} from "@/store/api/blogApi";
 import { BlogFormData, emptyBlogForm, Blog } from "@/types/blog";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
@@ -13,13 +18,11 @@ export default function AdminBlogs() {
   const [addBlogMutation] = useAddBlogMutation();
   const [updateBlogMutation] = useUpdateBlogMutation();
   const [deleteBlogMutation] = useDeleteBlogMutation();
-  
+
   const [showForm, setShowForm] = React.useState(false);
-  const [isPreview, setIsPreview] = React.useState(false);
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [formData, setFormData] = React.useState<BlogFormData>(emptyBlogForm);
   const [imageFile, setImageFile] = React.useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
 
@@ -32,8 +35,6 @@ export default function AdminBlogs() {
       content: b.content || "",
     });
     setImageFile(null);
-    setPreviewUrl(b.img);
-    setIsPreview(false);
     setShowForm(true);
   };
 
@@ -41,8 +42,6 @@ export default function AdminBlogs() {
     setEditingId(null);
     setFormData(emptyBlogForm);
     setImageFile(null);
-    setPreviewUrl(null);
-    setIsPreview(false);
     setShowForm(true);
   };
 
@@ -51,19 +50,20 @@ export default function AdminBlogs() {
     setSubmitting(true);
     try {
       const supabase = createClient();
-      let imageUrl = editingId ? blogs.find(b => b.id === editingId)?.img : "";
-      
+      let imageUrl = editingId
+        ? blogs.find((b) => b.id === editingId)?.img
+        : "";
+
       if (imageFile) {
         const fileName = `blog-${Date.now()}-${imageFile.name}`;
         const { error: uploadError } = await supabase.storage
           .from("product_img")
           .upload(fileName, imageFile);
-        
+
         if (uploadError) throw uploadError;
-        
-        imageUrl = supabase.storage
-          .from("product_img")
-          .getPublicUrl(fileName).data.publicUrl;
+
+        imageUrl = supabase.storage.from("product_img").getPublicUrl(fileName)
+          .data.publicUrl;
       }
 
       if (!editingId && !imageUrl) {
@@ -102,15 +102,12 @@ export default function AdminBlogs() {
 
   const handleImageChange = (file: File | null) => {
     setImageFile(file);
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-    }
   };
 
-  const filtered = blogs.filter((b) =>
-    b.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    b.author?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filtered = blogs.filter(
+    (b) =>
+      b.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.author?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (loading) return <div className="text-[#6C7275]">Loading blogs...</div>;
@@ -144,13 +141,11 @@ export default function AdminBlogs() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-[#6C7275]">
               <tr>
-                {["Blog", "Author", "Date", "Actions"].map(
-                  (h) => (
-                    <th key={h} className="text-left px-6 py-3 font-medium">
-                      {h}
-                    </th>
-                  ),
-                )}
+                {["Blog", "Author", "Date", "Actions"].map((h) => (
+                  <th key={h} className="text-left px-6 py-3 font-medium">
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -170,8 +165,8 @@ export default function AdminBlogs() {
                     className="px-6 py-12 text-center text-[#6C7275]"
                   >
                     <div className="flex flex-col items-center gap-2">
-                        <FileText size={40} className="text-gray-200" />
-                        <p>No blogs found</p>
+                      <FileText size={40} className="text-gray-200" />
+                      <p>No blogs found</p>
                     </div>
                   </td>
                 </tr>
@@ -191,9 +186,6 @@ export default function AdminBlogs() {
           onSubmit={handleSubmit}
           onClose={() => setShowForm(false)}
           onImageChange={handleImageChange}
-          isPreview={isPreview}
-          setIsPreview={setIsPreview}
-          previewUrl={previewUrl}
         />
       )}
     </div>
