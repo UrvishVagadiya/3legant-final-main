@@ -39,6 +39,11 @@ const Shop = () => {
   const [viewGrid, setViewGrid] = useState(3);
   const [mobileViewGrid, setMobileViewGrid] = useState(2);
   const [visibleCount, setVisibleCount] = useState(9);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const handlePriceChange = (priceLabel: string) => {
     let updated: string[];
@@ -49,6 +54,19 @@ const Shop = () => {
       updated = n.includes(priceLabel)
         ? n.filter((p) => p !== priceLabel)
         : [...n, priceLabel];
+
+      const individualPriceLabels = priceRanges
+        .map((range) => range.label)
+        .filter((label) => label !== "All Price");
+
+      const allIndividualSelected = individualPriceLabels.every((label) =>
+        updated.includes(label),
+      );
+
+      if (allIndividualSelected) {
+        updated = ["All Price"];
+      }
+
       if (updated.length === 0) updated = ["All Price"];
     }
     dispatch(setFilters({ prices: updated }));
@@ -97,9 +115,11 @@ const Shop = () => {
     label: c,
     active: selectedCategory === c,
   }));
+  const isAllPricesSelected =
+    hasMounted && selectedPrices.includes("All Price");
   const priceItems = priceRanges.map((r) => ({
     label: r.label,
-    active: selectedPrices.includes(r.label),
+    active: isAllPricesSelected || selectedPrices.includes(r.label),
   }));
   const priceDisplay = selectedPrices.includes("All Price")
     ? "All Price"

@@ -1,4 +1,5 @@
 import { IoOptionsOutline } from "react-icons/io5";
+import { useEffect, useState } from "react";
 
 interface ShopSidebarProps {
   isFilterOpen: boolean;
@@ -21,6 +22,15 @@ const ShopSidebar = ({
   handlePriceChange,
   onClose,
 }: ShopSidebarProps) => {
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  const isAllPricesSelected =
+    hasMounted && selectedPrices.includes("All Price");
+
   return (
     <div className={`w-full ${isFilterOpen ? "block" : "hidden"} lg:block`}>
       <div
@@ -65,7 +75,7 @@ const ShopSidebar = ({
               <h3
                 onClick={() => handlePriceChange(price.label)}
                 className={`text-sm cursor-pointer transition-colors ${
-                  selectedPrices.includes(price.label)
+                  isAllPricesSelected || selectedPrices.includes(price.label)
                     ? "text-[#141718] font-semibold"
                     : "text-[#807E7E] group-hover:text-[#141718]"
                 }`}
@@ -74,7 +84,7 @@ const ShopSidebar = ({
               </h3>
               <input
                 type="checkbox"
-                checked={selectedPrices.includes(price.label)}
+                checked={isAllPricesSelected || selectedPrices.includes(price.label)}
                 onChange={() => handlePriceChange(price.label)}
                 className="w-5 h-5 border-gray-300 rounded text-black focus:ring-black accent-black cursor-pointer"
               />
