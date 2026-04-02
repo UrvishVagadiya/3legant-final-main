@@ -5,6 +5,21 @@ import { Product } from '../slices/productSlice';
 export const productApi = apiService.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
+    getProductsPage: builder.query<Product[], { offset: number; limit: number }>({
+      queryFn: async ({ offset, limit }) => {
+        const supabase = createClient();
+        const to = offset + limit - 1;
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .range(offset, to);
+
+        if (error) return { error };
+        return { data: data || [] };
+      },
+    }),
     getProducts: builder.query<Product[], void>({
       queryFn: async () => {
         const supabase = createClient();
@@ -119,6 +134,7 @@ export const productApi = apiService.injectEndpoints({
 });
 
 export const {
+  useLazyGetProductsPageQuery,
   useGetProductsQuery,
   useGetProductByIdQuery,
   useGetAdminProductsQuery,

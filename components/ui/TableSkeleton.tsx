@@ -19,7 +19,7 @@ export function TableSkeleton({ rows = 5, columns = 5 }: { rows?: number; column
               <tr key={rowIndex} className="border-t border-gray-100">
                 {Array.from({ length: columns }).map((_, colIndex) => (
                   <td key={colIndex} className="px-6 py-4">
-                    <Skeleton className="h-4 w-full max-w-[120px]" />
+                    <Skeleton className="h-4 w-full max-w-30" />
                   </td>
                 ))}
               </tr>

@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import { setFilters } from "@/store/slices/productSlice";
-import { useGetProductsQuery } from "@/store/api/productApi";
+import { useLazyGetProductsPageQuery } from "@/store/api/productApi";
 import { BsGrid3X3GapFill, BsGridFill } from "react-icons/bs";
 import { PiColumnsFill, PiRowsFill } from "react-icons/pi";
 import ShopHeader from "@/components/layout/ShopHeader";
@@ -28,22 +28,75 @@ const mobileIcons = [
 ];
 
 const Shop = () => {
+  const PAGE_SIZE = 9;
   const dispatch = useAppDispatch();
   const { selectedCategory, selectedPrices, sortOption } = useAppSelector(
     (state: RootState) => state.product,
   );
-  const { data: products = [], isLoading, error } = useGetProductsQuery();
+  const [fetchProductsPage] = useLazyGetProductsPageQuery();
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [viewGrid, setViewGrid] = useState(3);
   const [mobileViewGrid, setMobileViewGrid] = useState(2);
-  const [visibleCount, setVisibleCount] = useState(9);
+  const [loadedCount, setLoadedCount] = useState(0);
   const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadInitialProducts = async () => {
+      setIsLoading(true);
+      const result = await fetchProductsPage({ offset: 0, limit: PAGE_SIZE });
+      if (!isActive) return;
+
+      if ("data" in result && result.data) {
+        setProducts(result.data);
+        setLoadedCount(result.data.length);
+        setHasMore(result.data.length === PAGE_SIZE);
+      } else {
+        setProducts([]);
+        setLoadedCount(0);
+        setHasMore(false);
+      }
+      setIsLoading(false);
+    };
+
+    loadInitialProducts();
+
+    return () => {
+      isActive = false;
+    };
+  }, [fetchProductsPage]);
+
+  const handleShowMore = async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    const result = await fetchProductsPage({
+      offset: loadedCount,
+      limit: PAGE_SIZE,
+    });
+
+    if ("data" in result && result.data) {
+      const nextBatch = result.data;
+      setProducts((prev) => [...prev, ...nextBatch]);
+      setLoadedCount((prev) => prev + nextBatch.length);
+      setHasMore(nextBatch.length === PAGE_SIZE);
+    } else {
+      setHasMore(false);
+    }
+
+    setIsLoadingMore(false);
+  };
 
   const handlePriceChange = (priceLabel: string) => {
     let updated: string[];
@@ -211,8 +264,9 @@ const Shop = () => {
             isLoading={isLoading}
             viewGrid={viewGrid}
             mobileViewGrid={mobileViewGrid}
-            visibleCount={visibleCount}
-            setVisibleCount={setVisibleCount}
+            hasMore={hasMore}
+            isLoadingMore={isLoadingMore}
+            onShowMore={handleShowMore}
             isSidebarOpen={isSidebarOpen}
           />
         </div>

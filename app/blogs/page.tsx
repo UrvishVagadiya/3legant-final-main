@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { BsGrid3X3GapFill, BsGridFill } from "react-icons/bs";
 import { PiColumnsFill, PiRowsFill } from "react-icons/pi";
 import GridIconBar from "@/components/shop/GridIconBar";
 import BlogSortMenu from "@/components/sections/BlogSortMenu";
-import { useGetBlogsQuery } from "@/store/api/blogApi";
+import { useLazyGetBlogsPageQuery } from "@/store/api/blogApi";
 import { typography } from "@/constants/typography";
 
 import { Blog } from "@/types/blog";
+
+const PAGE_SIZE = 9;
 
 const desktopIcons = [
   { icon: <BsGrid3X3GapFill />, grid: 3 },
@@ -24,28 +26,67 @@ const mobileIcons = [
 ];
 
 const Blogs = () => {
-  const { data: blogs = [], isLoading: loading } = useGetBlogsQuery();
+  const [fetchBlogsPage] = useLazyGetBlogsPageQuery();
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [loadedCount, setLoadedCount] = useState<number>(0);
   const [viewGrid, setViewGrid] = useState<number>(3);
   const [mobileViewGrid, setMobileViewGrid] = useState<number>(1);
   const [sortOption, setSortOption] = useState("default");
-  const [visibleCount, setVisibleCount] = useState<number>(9);
 
-  const sortedArticles = useMemo(() => {
-    let result = [...blogs];
-    if (sortOption === "az")
-      result.sort((a, b) => a.title.localeCompare(b.title));
-    else if (sortOption === "za")
-      result.sort((a, b) => b.title.localeCompare(a.title));
-    else if (sortOption === "newest")
-      result.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      );
-    else if (sortOption === "oldest")
-      result.sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-      );
-    return result;
-  }, [sortOption, blogs]);
+  useEffect(() => {
+    const loadInitialBlogs = async () => {
+      setLoading(true);
+      setHasMore(true);
+      setLoadedCount(0);
+
+      try {
+        const data = await fetchBlogsPage(
+          { offset: 0, limit: PAGE_SIZE, sortOption },
+          true,
+        ).unwrap();
+
+        setBlogs(data);
+        setLoadedCount(data.length);
+        setHasMore(data.length === PAGE_SIZE);
+      } catch {
+        setBlogs([]);
+        setLoadedCount(0);
+        setHasMore(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadInitialBlogs();
+  }, [fetchBlogsPage, sortOption]);
+
+  const handleShowMore = async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+
+    try {
+      const nextBlogs = await fetchBlogsPage(
+        {
+          offset: loadedCount,
+          limit: PAGE_SIZE,
+          sortOption,
+        },
+        true,
+      ).unwrap();
+
+      setBlogs((prev) => [...prev, ...nextBlogs]);
+      setLoadedCount((prev) => prev + nextBlogs.length);
+      setHasMore(nextBlogs.length === PAGE_SIZE);
+    } catch {
+      setHasMore(false);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const gridClass =
     viewGrid === 1
@@ -131,7 +172,7 @@ const Blogs = () => {
             <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
-          sortedArticles.slice(0, visibleCount).map((article) => (
+          blogs.map((article) => (
             <Link
               href={`/blogs/${article.id}`}
               key={article.id}
@@ -171,13 +212,14 @@ const Blogs = () => {
         )}
       </div>
 
-      {sortedArticles.length > visibleCount && (
+      {hasMore && !loading && (
         <div className="flex justify-center items-center mt-12 md:mt-20">
           <button
-            onClick={() => setVisibleCount((prev) => prev + 3)}
+            onClick={handleShowMore}
+            disabled={isLoadingMore}
             className="border border-[#141718] text-[#141718] py-2 md:py-2.5 px-8 md:px-10 rounded-[80px] font-medium hover:bg-[#141718] hover:text-white transition-all duration-300"
           >
-            Show more
+            {isLoadingMore ? "Loading..." : "Show more"}
           </button>
         </div>
       )}

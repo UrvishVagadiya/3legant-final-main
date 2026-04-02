@@ -84,7 +84,9 @@ const ShopSidebar = ({
               </h3>
               <input
                 type="checkbox"
-                checked={isAllPricesSelected || selectedPrices.includes(price.label)}
+                checked={
+                  isAllPricesSelected || selectedPrices.includes(price.label)
+                }
                 onChange={() => handlePriceChange(price.label)}
                 className="w-5 h-5 border-gray-300 rounded text-black focus:ring-black accent-black cursor-pointer"
               />

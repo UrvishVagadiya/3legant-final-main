@@ -6,6 +6,49 @@ import { Blog } from '@/types/blog';
 export const blogApi = apiService.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
+    getBlogsPage: builder.query<
+      Blog[],
+      {
+        offset: number;
+        limit: number;
+        sortOption?: 'default' | 'az' | 'za' | 'newest' | 'oldest';
+      }
+    >({
+      queryFn: async ({ offset, limit, sortOption = 'default' }) => {
+        const supabase = createClient();
+        const to = offset + limit - 1;
+
+        let orderColumn: 'title' | 'date' = 'date';
+        let ascending = false;
+
+        if (sortOption === 'az') {
+          orderColumn = 'title';
+          ascending = true;
+        } else if (sortOption === 'za') {
+          orderColumn = 'title';
+          ascending = false;
+        } else if (sortOption === 'oldest') {
+          orderColumn = 'date';
+          ascending = true;
+        }
+
+        const { data, error } = await supabase
+          .from('blogs')
+          .select('*')
+          .order(orderColumn, { ascending })
+          .range(offset, to);
+
+        if (error) return { error };
+        return { data: data || [] };
+      },
+      providesTags: (result) =>
+        result
+          ? [
+            ...result.map(({ id }) => ({ type: 'Blog' as const, id })),
+            { type: 'Blog', id: 'LIST' },
+          ]
+          : [{ type: 'Blog', id: 'LIST' }],
+    }),
     getBlogs: builder.query<Blog[], void>({
       queryFn: async () => {
         const supabase = createClient();
@@ -17,8 +60,8 @@ export const blogApi = apiService.injectEndpoints({
         if (error) return { error };
         return { data: data || [] };
       },
-      providesTags: (result) => 
-        result 
+      providesTags: (result) =>
+        result
           ? [...result.map(({ id }) => ({ type: 'Blog' as const, id })), { type: 'Blog', id: 'LIST' }]
           : [{ type: 'Blog', id: 'LIST' }],
     }),
@@ -68,6 +111,7 @@ export const blogApi = apiService.injectEndpoints({
 });
 
 export const {
+  useLazyGetBlogsPageQuery,
   useGetBlogsQuery,
   useAddBlogMutation,
   useUpdateBlogMutation,
