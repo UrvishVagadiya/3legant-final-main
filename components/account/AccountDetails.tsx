@@ -38,12 +38,13 @@ const Field = ({
   placeholder?: string;
   disabled?: boolean;
   hint?: string;
-  validate?: any;
+  validate?: (value: string) => boolean | string;
 }) => {
-  const inputClass = `w-full border rounded-[6px] px-4 py-3 outline-none transition-colors ${errors[name]
-    ? "border-red-500"
-    : "border-gray-300 focus:border-black bg-white"
-    }`;
+  const inputClass = `w-full border rounded-[6px] px-4 py-3 outline-none transition-colors ${
+    errors[name]
+      ? "border-red-500"
+      : "border-gray-300 focus:border-black bg-white"
+  }`;
   const required = label.includes("*")
     ? `${label.replace(" *", "").replace("*", "").trim()} is required`
     : undefined;

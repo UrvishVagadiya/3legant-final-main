@@ -3,6 +3,11 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { cookies } from "next/headers";
 
+interface SettingRow {
+    id: string;
+    value: unknown;
+}
+
 async function isAdmin() {
     const supabase = createClient(cookies());
     const { data: { user } } = await supabase.auth.getUser();
@@ -13,7 +18,7 @@ async function isAdmin() {
         .select("role")
         .eq("id", user.id)
         .single();
-    
+
     return profile?.role === "admin";
 }
 
@@ -30,7 +35,7 @@ export async function GET() {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     // Convert array of settings to a more usable object if needed
-    const settings = (data || []).reduce((acc: any, curr: any) => {
+    const settings = (data || []).reduce<Record<string, unknown>>((acc, curr: SettingRow) => {
         acc[curr.id] = curr.value;
         return acc;
     }, {});

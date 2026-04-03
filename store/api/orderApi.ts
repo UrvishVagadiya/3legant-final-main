@@ -30,6 +30,15 @@ export interface OrderItem {
   total_price: number;
 }
 
+interface OrderPaymentRow {
+  status?: string;
+}
+
+interface OrderDbRow extends Order {
+  payments?: OrderPaymentRow[] | OrderPaymentRow | null;
+  order_items?: OrderItem[];
+}
+
 export interface GetOrdersParams {
   userId: string;
   page?: number;
@@ -74,11 +83,11 @@ export const orderApi = apiService.injectEndpoints({
 
         if (error) return { error };
 
-        const mappedData = (data || []).map((o: any) => {
+        const mappedData = (data || []).map((o: OrderDbRow) => {
           // If the order itself is confirmed or delivered, we should prioritize showing it even if payment JOIN fails for some reason
           // But usually o.payments should be an array. Let's find any completed payment first.
           const payments = Array.isArray(o.payments) ? o.payments : (o.payments ? [o.payments] : []);
-          const successfulPayment = payments.find((p: any) => p.status === 'completed' || p.status === 'succeeded');
+          const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'completed' || p.status === 'succeeded');
 
           return {
             ...o,

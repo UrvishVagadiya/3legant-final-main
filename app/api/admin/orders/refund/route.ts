@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
-        const { orderId, action } = await req.json(); 
+        const { orderId, action } = await req.json();
 
         if (!orderId || !action) {
             return NextResponse.json({ error: "Order ID and action are required" }, { status: 400 });
@@ -86,9 +86,10 @@ export async function POST(req: NextRequest) {
             });
 
             console.log(`Stripe refund successful: ${refund.id}`);
-        } catch (stripeError: any) {
+        } catch (stripeError: unknown) {
             console.error("Stripe refund failed:", stripeError);
-            return NextResponse.json({ error: `Stripe refund failed: ${stripeError.message}` }, { status: 500 });
+            const message = stripeError instanceof Error ? stripeError.message : "Stripe refund failed";
+            return NextResponse.json({ error: `Stripe refund failed: ${message}` }, { status: 500 });
         }
         const now = new Date().toISOString();
 
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ success: true, message: "Refund processed successfully" });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Admin refund error:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }

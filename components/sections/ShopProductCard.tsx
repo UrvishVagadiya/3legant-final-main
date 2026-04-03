@@ -6,17 +6,25 @@ import { isOfferExpired } from "@/utils/isOfferExpired";
 import { isProductNew } from "@/utils/isProductNew";
 import { colorMap } from "../product/ColorSelector";
 import TintedProductImage from "../product/TintedProductImage";
+import type { Product } from "@/store/slices/productSlice";
+
+type WishlistItem = {
+  id: string | number;
+};
 
 interface ShopProductCardProps {
-  card: any;
+  card: Product;
   viewGrid: number;
   mobileViewGrid: number;
   isMounted: boolean;
   isInWishlist: (id: number | string) => boolean;
-  wishlistItems: any[];
-  handleWishlistToggle: (e: React.MouseEvent, card: any) => void;
-  handleAddToCart: (e: React.MouseEvent, card: any) => void;
-  getRating: (id: number | string) => { avgRating: number; reviewCount: number };
+  wishlistItems: WishlistItem[];
+  handleWishlistToggle: (e: React.MouseEvent, card: Product) => void;
+  handleAddToCart: (e: React.MouseEvent, card: Product) => void;
+  getRating: (id: number | string) => {
+    avgRating: number;
+    reviewCount: number;
+  };
 }
 
 const ShopProductCard = ({
@@ -31,7 +39,7 @@ const ShopProductCard = ({
   getRating,
 }: ShopProductCardProps) => {
   const expired = isOfferExpired(card.valid_until);
-  const rawMrp = card.mrp || card.MRP || 0;
+  const rawMrp = card.mrp || card.old_price || card.oldprice || 0;
   const displayPrice = expired && rawMrp > card.price ? rawMrp : card.price;
   const displayMrp = expired ? 0 : rawMrp;
   const isHorizontal = viewGrid <= 2;
@@ -39,7 +47,11 @@ const ShopProductCard = ({
   const overlayClass = `${isMobileExtended ? "hidden" : "block"} ${isHorizontal ? "lg:!hidden" : "lg:!block"}`;
   const extendedClass = `${isMobileExtended ? "block" : "hidden"} ${isHorizontal ? "lg:!block" : "lg:!hidden"}`;
 
-  const colorOptions = Array.isArray(card.color) ? card.color : card.color ? [card.color] : [];
+  const colorOptions = Array.isArray(card.color)
+    ? card.color
+    : card.color
+      ? [card.color]
+      : [];
   const firstColor = colorOptions[0];
   const colorHex = firstColor ? colorMap[firstColor] : null;
   const shouldTint = firstColor && firstColor.toLowerCase() !== "white";
@@ -133,7 +145,9 @@ const ShopProductCard = ({
           </p>
           <div className="flex flex-col gap-3 lg:gap-4 lg:max-w-70">
             <button
-              onClick={!isOutOfStock ? (e) => handleAddToCart(e, card) : undefined}
+              onClick={
+                !isOutOfStock ? (e) => handleAddToCart(e, card) : undefined
+              }
               disabled={isOutOfStock}
               className={`w-full py-2.5 lg:py-3 ${isOutOfStock ? "bg-gray-400 cursor-not-allowed" : "bg-[#141718] hover:bg-black"} text-white rounded font-medium text-sm lg:text-[15px] transition-colors`}
             >

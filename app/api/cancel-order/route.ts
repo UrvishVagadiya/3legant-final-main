@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
                     quantity: i.quantity
                 }))
             });
-            
+
             if (rpcError) {
                 console.error("Error restoring stock via RPC:", rpcError);
             }
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
             .eq("order_id", orderId);
 
         return NextResponse.json({ success: true, message: "Order cancelled and stock restored" });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Cancellation error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }

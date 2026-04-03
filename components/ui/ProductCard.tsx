@@ -18,9 +18,9 @@ interface ProductCardProps {
     title?: string;
     name?: string;
     price: number;
-    mrp?: number;
-    MRP?: number;
-    old_price?: number;
+    mrp?: number | null;
+    MRP?: number | null;
+    old_price?: number | null;
     isNew?: boolean;
     created_at?: string;
     createdAt?: string;
@@ -71,7 +71,8 @@ const ProductCard = ({
   reviewCount = 0,
   showColors = true,
 }: ProductCardProps) => {
-  const image = product.img || product.image_url || product.image || "/image-1.png";
+  const image =
+    product.img || product.image_url || product.image || "/image-1.png";
   const title = product.title || product.name || "";
   const rawMrp = product.mrp || product.MRP || product.old_price || 0;
   const expired = isOfferExpired(product.valid_until);
@@ -161,9 +162,7 @@ const ProductCard = ({
             rating={avgRating}
             className={`text-[#141718] ${isSmall ? "text-sm md:text-base" : "text-[14px]"}`}
           />
-          <span className="text-xs text-[#6C7275] ml-1">
-            ({reviewCount})
-          </span>
+          <span className="text-xs text-[#6C7275] ml-1">({reviewCount})</span>
           {showColors && colorOptions.length > 1 && (
             <div className="flex gap-1.5 z-20 ml-auto">
               {colorOptions.slice(0, 4).map((c: string) => (
@@ -180,7 +179,9 @@ const ProductCard = ({
                 />
               ))}
               {colorOptions.length > 4 && (
-                <span className="text-[10px] text-gray-400 font-medium">+{colorOptions.length - 4}</span>
+                <span className="text-[10px] text-gray-400 font-medium">
+                  +{colorOptions.length - 4}
+                </span>
               )}
             </div>
           )}

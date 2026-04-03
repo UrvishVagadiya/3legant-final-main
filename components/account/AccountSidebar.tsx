@@ -62,10 +62,11 @@ const AccountSidebar = ({
       await updateProfile({ avatar_url: urlData.publicUrl }).unwrap();
 
       onAvatarChange(urlData.publicUrl);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error uploading image:", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
       alert(
-        `Error uploading image: ${error.message || 'Unknown error. Please ensure you have an "avatars" bucket created.'}`,
+        `Error uploading image: ${message || 'Unknown error. Please ensure you have an "avatars" bucket created.'}`,
       );
     } finally {
       setIsUploading(false);

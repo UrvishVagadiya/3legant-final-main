@@ -12,7 +12,8 @@ const DB: Record<string, string> = {
 export function applyAddress(address: SavedAddress, isBilling: boolean): Record<string, string> {
     const c = isBilling ? (s: string) => `billing${s[0].toUpperCase()}${s.slice(1)}` : (s: string) => s;
     const r: Record<string, string> = {};
-    F.forEach((f) => (r[c(f)] = (address as any)[DB[f]] || ""));
+    const safeAddress = address as SavedAddress & Record<string, string | undefined>;
+    F.forEach((f) => (r[c(f)] = safeAddress[DB[f]] || ""));
     if (!isBilling && address.email) r.email = address.email;
     return r;
 }

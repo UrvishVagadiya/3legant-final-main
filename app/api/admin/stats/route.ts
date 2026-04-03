@@ -3,6 +3,25 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { cookies } from "next/headers";
 
+interface OrderPaymentRow {
+    status?: string;
+}
+
+interface OrderStatRow {
+    id: string;
+    total: string | number | null;
+    status: string;
+    subtotal: string | number | null;
+    shipping_cost: string | number | null;
+    discount: string | number | null;
+}
+
+interface RecentOrderRow {
+    status: string;
+    payments?: OrderPaymentRow[] | OrderPaymentRow | null;
+    [key: string]: unknown;
+}
+
 export async function GET() {
     const supabase = createClient(cookies());
     const { data: { user } } = await supabase.auth.getUser();
@@ -27,7 +46,7 @@ export async function GET() {
         return NextResponse.json({ error: "Failed to fetch dashboard statistics" }, { status: 500 });
     }
 
-    const ordersData = (orders.data || []) as { id: string; total: any; status: string; subtotal: any; shipping_cost: any; discount: any }[];
+    const ordersData = (orders.data || []) as OrderStatRow[];
     const totalRevenue = ordersData.reduce((sum, o) => {
         if (o.status === "cancelled" || o.status === "refunded") return sum;
         const total = parseFloat(String(o.total || 0));
@@ -50,9 +69,9 @@ export async function GET() {
         console.error("Recent orders fetch error:", recentError);
     }
 
-    const recentOrders = (recent || []).map((order: any) => {
+    const recentOrders = (recent || []).map((order: RecentOrderRow) => {
         const payments = Array.isArray(order.payments) ? order.payments : (order.payments ? [order.payments] : []);
-        const successfulPayment = payments.find((p: any) => p.status === 'completed' || p.status === 'succeeded');
+        const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'completed' || p.status === 'succeeded');
 
         return {
             ...order,

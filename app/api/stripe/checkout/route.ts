@@ -3,6 +3,15 @@ import { stripe } from "@/utils/stripe/server";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 
+interface CheckoutItem {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    image: string;
+    color?: string;
+}
+
 export async function POST(req: NextRequest) {
     try {
         const supabase = createClient(cookies());
@@ -36,23 +45,17 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const lineItems = items.map(
-            (item: {
-                name: string;
-                price: number;
-                quantity: number;
-                image: string;
-            }) => ({
-                price_data: {
-                    currency: "usd",
-                    product_data: {
-                        name: item.name,
-                        images: item.image ? [item.image] : [],
-                    },
-                    unit_amount: Math.round(Number(item.price) * 100),
+        const lineItems = items.map((item: CheckoutItem) => ({
+            price_data: {
+                currency: "usd",
+                product_data: {
+                    name: item.name,
+                    images: item.image ? [item.image] : [],
                 },
-                quantity: item.quantity,
-            })
+                unit_amount: Math.round(Number(item.price) * 100),
+            },
+            quantity: item.quantity,
+        })
         );
 
         if (shippingCost > 0) {
@@ -85,7 +88,7 @@ export async function POST(req: NextRequest) {
         // Create order in 'pending' status
         const randomStr = Math.random().toString(36).substring(2, 7).toUpperCase();
         const orderCode = `#${Date.now().toString().slice(-6)}${randomStr}`;
-        
+
         const safeSubtotal = Number(subtotal) || 0;
         const safeShippingCost = Number(shippingCost) || 0;
         const safeDiscount = Number(discount) || 0;
@@ -131,14 +134,14 @@ export async function POST(req: NextRequest) {
 
         if (orderError) {
             console.error("Failed to create pending order:", orderError);
-            return NextResponse.json({ 
+            return NextResponse.json({
                 error: `Failed to create order: ${orderError.message}`,
-                details: orderError 
+                details: orderError
             }, { status: 500 });
         }
 
         // Create order items
-        const orderItems = items.map((item: any) => ({
+        const orderItems = items.map((item: CheckoutItem) => ({
             order_id: order.id,
             product_id: item.id,
             product_name: item.name,
@@ -157,7 +160,7 @@ export async function POST(req: NextRequest) {
             console.error("Failed to create order items:", itemsError);
         } else {
             // REDUCE STOCK (Reserve items immediately on checkout start)
-            const stockItems = items.map((item: any) => ({
+            const stockItems = items.map((item: CheckoutItem) => ({
                 product_id: item.id,
                 quantity: item.quantity
             }));
@@ -201,7 +204,7 @@ export async function POST(req: NextRequest) {
             customer_email: user.email,
             expires_at: Math.floor(Date.now() / 1000) + (30 * 60),
             metadata: {
-                order_id: order.id, 
+                order_id: order.id,
                 user_id: user.id,
                 shipping_first_name: shippingInfo.firstName,
                 shipping_last_name: shippingInfo.lastName,

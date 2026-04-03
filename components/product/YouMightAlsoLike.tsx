@@ -14,6 +14,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import ProductCard from "@/components/ui/ProductCard";
 import { typography } from "@/constants/typography";
+import type { Product } from "@/store/slices/productSlice";
 
 export default function YouMightAlsoLike() {
   const dispatch = useAppDispatch();
@@ -52,7 +53,7 @@ export default function YouMightAlsoLike() {
   const isInWishlist = (id: string | number) =>
     wishlistItems.some((i) => i.id == id);
 
-  const handleWishlistToggle = (e: React.MouseEvent, product: any) => {
+  const handleWishlistToggle = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
     requireAuth(async () => {
@@ -73,7 +74,7 @@ export default function YouMightAlsoLike() {
     });
   };
 
-  const handleAddToCart = (e: React.MouseEvent, product: any) => {
+  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
     requireAuth(() => {
@@ -112,7 +113,7 @@ export default function YouMightAlsoLike() {
       </div>
 
       <div className="flex overflow-x-auto gap-4 md:gap-6 pb-4">
-        {products.map((card: any) => (
+        {products.map((card: Product) => (
           <div key={card.id} className="w-62.5 md:w-70 shrink-0">
             <ProductCard
               product={card}

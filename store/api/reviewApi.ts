@@ -16,6 +16,26 @@ export interface ReviewReply {
   created_at: string;
 }
 
+interface ReviewProfileRow {
+  display_name?: string | null;
+  full_name?: string | null;
+  avatar_url?: string | null;
+}
+
+interface ReviewDbRow {
+  id: string;
+  product_id: string;
+  user_id: string;
+  user_name: string;
+  user_avatar?: string | null;
+  rating: number;
+  review: string;
+  created_at: string;
+  review_likes?: { user_id: string }[];
+  review_replies?: Array<ReviewReply & { user_profiles?: ReviewProfileRow | null }>;
+  user_profiles?: ReviewProfileRow | null;
+}
+
 export interface Review {
   id: string;
   product_id: string;
@@ -49,13 +69,13 @@ export const reviewApi = apiService.injectEndpoints({
 
         if (error) return { error };
 
-        const formatted = (reviews || []).map((r: any) => ({
+        const formatted = (reviews || []).map((r: ReviewDbRow) => ({
           ...r,
           user_name: r.user_profiles?.display_name || r.user_profiles?.full_name || r.user_name,
           user_avatar: r.user_profiles?.avatar_url,
           likes_count: r.review_likes?.length || 0,
-          liked: userId ? r.review_likes?.some((l: any) => l.user_id === userId) : false,
-          replies: (r.review_replies || []).map((rp: any) => ({
+          liked: userId ? r.review_likes?.some((l) => l.user_id === userId) : false,
+          replies: (r.review_replies || []).map((rp) => ({
             ...rp,
             user_name: rp.user_profiles?.display_name || rp.user_profiles?.full_name || rp.user_name,
             user_avatar: rp.user_profiles?.avatar_url
@@ -115,12 +135,12 @@ export const reviewApi = apiService.injectEndpoints({
         const supabase = createClient();
         const { data, error } = await supabase
           .from("product_reviews")
-          .insert({ 
-            product_id: payload.productId, 
-            user_id: payload.userId, 
-            user_name: payload.userName, 
-            rating: payload.rating, 
-            review: payload.review 
+          .insert({
+            product_id: payload.productId,
+            user_id: payload.userId,
+            user_name: payload.userName,
+            rating: payload.rating,
+            review: payload.review
           })
           .select()
           .single();
@@ -179,22 +199,22 @@ export const reviewApi = apiService.injectEndpoints({
       },
       invalidatesTags: (result, error, { reviewId, productId }) => [{ type: 'Review', id: reviewId }],
     }),
-    addReply: builder.mutation<any, { productId: string; reviewId: string; userId: string; userName: string; reply: string }>({
+    addReply: builder.mutation<ReviewReply, { productId: string; reviewId: string; userId: string; userName: string; reply: string }>({
       queryFn: async (payload) => {
         const supabase = createClient();
         const { data, error } = await supabase
           .from("review_replies")
-          .insert({ 
-            review_id: payload.reviewId, 
-            user_id: payload.userId, 
-            user_name: payload.userName, 
-            reply: payload.reply 
+          .insert({
+            review_id: payload.reviewId,
+            user_id: payload.userId,
+            user_name: payload.userName,
+            reply: payload.reply
           })
           .select()
           .single();
 
         if (error) return { error };
-        return { data };
+        return { data: data as ReviewReply };
       },
       invalidatesTags: (result, error, { productId, reviewId }) => [{ type: 'Review', id: reviewId }, { type: 'Review', id: `LIST_${productId}` }],
     }),

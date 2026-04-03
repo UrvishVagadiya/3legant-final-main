@@ -4,12 +4,27 @@ export interface Product {
   id: number | string;
   title: string;
   price: number;
-  mrp?: number;
+  mrp?: number | null;
   img: string;
   category: string | string[];
   status: string;
+  description?: string | null;
+  discount?: string | null;
   created_at?: string;
-  [key: string]: any;
+  name?: string;
+  sku?: string | number | null;
+  color?: string | string[];
+  stock?: number;
+  images?: string[];
+  image?: string;
+  image_url?: string;
+  measurements?: string | null;
+  weight?: string | null;
+  oldprice?: number;
+  old_price?: number;
+  valid_until?: string | null;
+  validUntil?: string | null;
+  createdAt?: string;
 }
 
 interface ProductState {

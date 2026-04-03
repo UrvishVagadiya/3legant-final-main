@@ -12,9 +12,10 @@ import {
 import { useMemo } from "react";
 import ShopProductCard from "./ShopProductCard";
 import ShopProductSkeleton from "./ShopProductSkeleton";
+import type { Product } from "@/store/slices/productSlice";
 
 interface ShopProductGridProps {
-  products: any[];
+  products: Product[];
   viewGrid: number;
   mobileViewGrid?: number;
   hasMore?: boolean;
@@ -64,7 +65,7 @@ const ShopProductGrid = ({
   const isInWishlist = (id: number | string) =>
     wishlistItems.some((i) => i.id == id);
 
-  const handleWishlistToggle = (e: React.MouseEvent, card: any) => {
+  const handleWishlistToggle = (e: React.MouseEvent, card: Product) => {
     e.preventDefault();
     e.stopPropagation();
     requireAuth(() => {
@@ -84,7 +85,7 @@ const ShopProductGrid = ({
               id: card.id,
               name: card.title || card.name || "",
               price: card.price,
-              MRP: card.mrp || card.MRP || card.old_price || card.oldprice || 0,
+              MRP: card.mrp || card.old_price || card.oldprice || 0,
               image: card.img || card.image_url || "/image-1.png",
               color: preferredColor,
               stock: Number(card.stock) || 0,
@@ -110,7 +111,7 @@ const ShopProductGrid = ({
     });
   };
 
-  const handleAddToCart = (e: React.MouseEvent, card: any) => {
+  const handleAddToCart = (e: React.MouseEvent, card: Product) => {
     e.preventDefault();
     e.stopPropagation();
     requireAuth(() => {

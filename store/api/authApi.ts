@@ -9,6 +9,13 @@ export interface UserProfile {
   avatar_url?: string;
 }
 
+interface UpdateProfileInput {
+  avatar_url?: string;
+  name?: string;
+  displayName?: string;
+  username?: string;
+}
+
 export const authApi = apiService.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
@@ -21,11 +28,11 @@ export const authApi = apiService.injectEndpoints({
       },
       providesTags: ['Profile'],
     }),
-    updateProfile: builder.mutation<any, any>({
+    updateProfile: builder.mutation<{ user?: { id: string } | null }, UpdateProfileInput>({
       queryFn: async (userData) => {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (!user) return { error: { status: 401, data: "Not authenticated" } };
 
         // 1. Update auth.user metadata
@@ -36,7 +43,7 @@ export const authApi = apiService.injectEndpoints({
 
         // 2. Update public.user_profiles
         // Handle mapping fields like avatar_url if provided
-        const profileUpdate: any = {};
+        const profileUpdate: Partial<Pick<UserProfile, "avatar_url" | "full_name">> & { display_name?: string } = {};
         if (userData.avatar_url) profileUpdate.avatar_url = userData.avatar_url;
         if (userData.name) profileUpdate.full_name = userData.name;
         if (userData.displayName) profileUpdate.display_name = userData.displayName;
@@ -47,7 +54,7 @@ export const authApi = apiService.injectEndpoints({
             .from('user_profiles')
             .update(profileUpdate)
             .eq('id', user.id);
-          
+
           if (pError) console.error("Profile table update failed:", pError);
         }
 

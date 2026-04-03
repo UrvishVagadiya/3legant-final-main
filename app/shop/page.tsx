@@ -15,6 +15,7 @@ import GridIconBar from "@/components/shop/GridIconBar";
 import MobileShopFilters from "@/components/shop/MobileShopFilters";
 import { categories, priceRanges } from "@/constants/shopFilters";
 import { typography } from "@/constants/typography";
+import type { Product } from "@/store/slices/productSlice";
 
 const desktopIcons = [
   { icon: <BsGrid3X3GapFill />, grid: 3 },
@@ -34,7 +35,7 @@ const Shop = () => {
     (state: RootState) => state.product,
   );
   const [fetchProductsPage] = useLazyGetProductsPageQuery();
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);

@@ -30,28 +30,28 @@ export type ProductColor =
   | "Natural";
 
 export interface Product {
-  id: string;
+  id: string | number;
   img: string;
   title: string;
   price: number;
-  mrp: number | null;
-  category: ProductCategory[];
+  mrp?: number | null;
+  category: ProductCategory[] | string[] | string;
   created_at?: string;
-  discount: string | null;
-  description: string | null;
-  color: ProductColor[];
-  sku: string | null;
-  stock: number;
-  status: string;
-  measurements: string | null;
-  weight: string | null;
-  valid_until: string | null;
+  discount?: string | null;
+  description?: string | null;
+  color?: ProductColor[] | string[] | string;
+  sku?: string | number | null;
+  stock?: number;
+  status?: string;
+  measurements?: string | null;
+  weight?: string | null;
+  valid_until?: string | null;
 }
 
 interface Props {
   product: Product;
   onEdit: (p: Product) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string | number) => void;
   deleting: boolean;
 }
 
@@ -61,6 +61,8 @@ export default function ProductTableRow({
   onDelete,
   deleting,
 }: Props) {
+  const stockCount = product.stock ?? 0;
+
   return (
     <tr className="border-t border-gray-100 hover:bg-gray-50">
       <td className="px-6 py-4">
@@ -99,9 +101,9 @@ export default function ProductTableRow({
       </td>
       <td className="px-6 py-4">
         <span
-          className={`font-medium ${product.stock <= 0 ? "text-red-500" : product.stock <= 5 ? "text-yellow-600" : "text-[#141718]"}`}
+          className={`font-medium ${stockCount <= 0 ? "text-red-500" : stockCount <= 5 ? "text-yellow-600" : "text-[#141718]"}`}
         >
-          {product.stock ?? 0}
+          {stockCount}
         </span>
       </td>
       <td className="px-6 py-4">

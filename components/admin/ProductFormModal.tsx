@@ -36,7 +36,7 @@ export const emptyProductForm: ProductFormData = {
 interface Props {
   formData: ProductFormData;
   setFormData: React.Dispatch<React.SetStateAction<ProductFormData>>;
-  editingId: string | null;
+  editingId: string | number | null;
   imageFiles: File[];
   submitting: boolean;
   onSubmit: (e: FormEvent) => void;

@@ -60,7 +60,7 @@ export default function CouponFormModal({
   onSave,
   onClose,
 }: Props) {
-  const upd = (key: keyof CouponForm, val: any) =>
+  const upd = (key: keyof CouponForm, val: CouponForm[keyof CouponForm]) =>
     setForm((p) => ({ ...p, [key]: val }));
   const numOrNull = (v: string) => (v ? Number(v) : null);
 

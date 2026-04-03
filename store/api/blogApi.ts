@@ -3,7 +3,13 @@ import { createClient } from '@/utils/supabase/client';
 
 import { Blog } from '@/types/blog';
 
-const toApiError = (error: any) => ({
+type SupabaseErrorLike = {
+  message?: string;
+  code?: string;
+  details?: string | null;
+};
+
+const toApiError = (error: SupabaseErrorLike) => ({
   status: 'CUSTOM_ERROR',
   data: {
     message: error?.message || 'Supabase request failed',

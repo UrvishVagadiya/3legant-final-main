@@ -3,6 +3,41 @@ import { stripe } from "@/utils/stripe/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import Stripe from "stripe";
 
+interface MetaItem {
+    id?: string;
+    product_id?: string;
+    name?: string;
+    product_name?: string;
+    image?: string | null;
+    product_image?: string | null;
+    price?: number;
+    unit_price?: number;
+    prc?: number;
+    quantity?: number;
+    qty?: number;
+    color?: string | null;
+    clr?: string | null;
+}
+
+interface OrderItemRow {
+    product_id: string;
+    product_name: string;
+    product_image: string | null;
+    color: string | null;
+    quantity: number;
+    unit_price: number;
+}
+
+interface ProductRow {
+    id: string;
+    title?: string | null;
+    img?: string | null;
+    image_url?: string | null;
+    image?: string | null;
+    images?: string[] | null;
+    price?: number | null;
+}
+
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get("session_id");
@@ -25,7 +60,7 @@ export async function GET(req: NextRequest) {
         }
 
         const meta = session.metadata || {};
-        const items = JSON.parse(meta.items_json || "[]");
+        const items = JSON.parse(meta.items_json || "[]") as MetaItem[];
         const userId = meta.user_id;
         const paymentIntentId = session.payment_intent as string;
 
@@ -42,7 +77,7 @@ export async function GET(req: NextRequest) {
         }
 
         let finalOrder = null;
-        let dbOrderItems: any[] = [];
+        let dbOrderItems: OrderItemRow[] = [];
         const orderIdFromMeta = meta.order_id;
 
         if (orderIdFromMeta) {
@@ -59,7 +94,7 @@ export async function GET(req: NextRequest) {
 
         let itemsToUse = items;
         if (itemsToUse.length === 0 && dbOrderItems.length > 0) {
-            itemsToUse = dbOrderItems.map(item => ({
+            itemsToUse = dbOrderItems.map((item) => ({
                 id: item.product_id,
                 name: item.product_name,
                 image: item.product_image,
@@ -69,22 +104,22 @@ export async function GET(req: NextRequest) {
             }));
         }
 
-        const productIds = itemsToUse.map((i: any) => i.id || i.product_id).filter(Boolean);
+        const productIds = itemsToUse.map((i) => i.id || i.product_id).filter(Boolean) as string[];
         const { data: products } = await admin
             .from("products")
             .select("id, title, img, image_url, image, images, price")
             .in("id", productIds);
-        const productMap = new Map(products?.map(p => [p.id, p]) || []);
+        const productMap = new Map<string, ProductRow>(products?.map((p: ProductRow) => [p.id, p]) || []);
 
-        const fullItems = itemsToUse.map((item: any) => {
-            const productId = item.id || item.product_id;
+        const fullItems = itemsToUse.map((item) => {
+            const productId = item.id || item.product_id || "";
             const dbProduct = productMap.get(productId);
             // Robust image fallback chain
-            const dbImage = dbProduct?.img || 
-                           dbProduct?.image_url || 
-                           dbProduct?.image || 
-                           (dbProduct?.images && Array.isArray(dbProduct.images) && dbProduct.images[0]) || 
-                           "";
+            const dbImage = dbProduct?.img ||
+                dbProduct?.image_url ||
+                dbProduct?.image ||
+                (dbProduct?.images && Array.isArray(dbProduct.images) && dbProduct.images[0]) ||
+                "";
 
             return {
                 id: productId,
@@ -107,16 +142,16 @@ export async function GET(req: NextRequest) {
         if (existingOrder) {
             const { error: updateError } = await admin
                 .from("orders")
-                .update({ 
-                    status: "confirmed", 
-                    updated_at: new Date().toISOString() 
+                .update({
+                    status: "confirmed",
+                    updated_at: new Date().toISOString()
                 })
                 .eq("id", existingOrder.id);
-            
+
             if (updateError) console.error("Failed to update order status:", updateError);
         } else if (userId) {
             if (total === 0 && fullItems.length > 0) {
-                subtotal = fullItems.reduce((acc: number, item: any) => acc + (Number(item.price) * item.quantity), 0);
+                subtotal = fullItems.reduce((acc: number, item) => acc + (Number(item.price) * item.quantity), 0);
                 total = subtotal + shippingCost - discountAmount;
             }
 
@@ -145,10 +180,10 @@ export async function GET(req: NextRequest) {
                 })
                 .select()
                 .single();
-            
+
             if (!createError) {
                 finalOrder = createdOrder;
-                const dbItems = fullItems.map((item: any) => ({
+                const dbItems = fullItems.map((item) => ({
                     order_id: createdOrder.id,
                     product_id: item.id,
                     product_name: item.name,
@@ -163,7 +198,7 @@ export async function GET(req: NextRequest) {
         }
 
         if (!finalOrder) {
-             return NextResponse.json({ error: "Order context lost" }, { status: 500 });
+            return NextResponse.json({ error: "Order context lost" }, { status: 500 });
         }
 
         let cardLast4: string | null = null;
@@ -177,7 +212,7 @@ export async function GET(req: NextRequest) {
                 .select("id")
                 .eq("order_id", finalOrder.id)
                 .maybeSingle();
-            
+
             try {
                 const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, { expand: ["payment_method"] });
                 const pm = paymentIntent.payment_method as Stripe.PaymentMethod;

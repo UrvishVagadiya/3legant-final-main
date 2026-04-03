@@ -3,33 +3,62 @@ import React from "react";
 import { Plus, Search } from "lucide-react";
 import ProductFormModal from "@/components/admin/ProductFormModal";
 import ProductTableRow, { Product } from "@/components/admin/ProductTableRow";
-import { useGetAdminProductsQuery, useAddProductMutation, useUpdateProductMutation, useDeleteProductMutation } from "@/store/api/productApi";
-import { ProductFormData, emptyProductForm } from "@/components/admin/ProductFormModal";
+import {
+  useGetAdminProductsQuery,
+  useAddProductMutation,
+  useUpdateProductMutation,
+  useDeleteProductMutation,
+} from "@/store/api/productApi";
+import {
+  ProductFormData,
+  emptyProductForm,
+} from "@/components/admin/ProductFormModal";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 
 export default function AdminProducts() {
-  const { data: products = [], isLoading: loading } = useGetAdminProductsQuery();
+  const { data: products = [], isLoading: loading } =
+    useGetAdminProductsQuery();
   const [addProductMutation] = useAddProductMutation();
   const [updateProductMutation] = useUpdateProductMutation();
   const [deleteProductMutation] = useDeleteProductMutation();
-  
+
   const [showFormState, setShowForm] = React.useState(false);
-  const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [formData, setFormData] = React.useState<ProductFormData>(emptyProductForm);
+  const [editingId, setEditingId] = React.useState<string | number | null>(
+    null,
+  );
+  const [formData, setFormData] =
+    React.useState<ProductFormData>(emptyProductForm);
   const [imageFiles, setImageFiles] = React.useState<File[]>([]);
   const [submitting, setSubmitting] = React.useState(false);
-  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [deletingId, setDeletingId] = React.useState<string | number | null>(
+    null,
+  );
   const [searchQuery, setSearchQuery] = React.useState("");
 
   const openEditForm = (p: Product) => {
     setEditingId(p.id);
     setFormData({
-      title: p.title || "", price: String(p.price || ""), mrp: p.mrp ? String(p.mrp) : "",
-      category: p.category || [], description: p.description || "",
-      sku: p.sku || "", stock: String(p.stock || 0), color: p.color || [],
-      status: p.status || "active", measurements: p.measurements || "",
-      weight: p.weight || "", valid_until: p.valid_until ? p.valid_until.slice(0, 16) : "",
+      title: p.title || "",
+      price: String(p.price || ""),
+      mrp: p.mrp ? String(p.mrp) : "",
+      category: Array.isArray(p.category)
+        ? p.category
+        : p.category
+          ? [String(p.category)]
+          : [],
+      description: p.description || "",
+      sku: p.sku ? String(p.sku) : "",
+      stock: String(p.stock || 0),
+      color: Array.isArray(p.color)
+        ? p.color
+        : p.color
+          ? [String(p.color)]
+          : [],
+      status: p.status || "active",
+      measurements: p.measurements || "",
+      weight: p.weight || "",
+      valid_until: p.valid_until ? p.valid_until.slice(0, 16) : "",
     });
     setImageFiles([]);
     setShowForm(true);
@@ -48,27 +77,46 @@ export default function AdminProducts() {
     try {
       const supabase = createClient();
       const imageUrls: string[] = [];
-      
+
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
         const fileName = `${Date.now()}-${i}-${file.name}`;
-        const { error: uploadError } = await supabase.storage.from("product_img").upload(fileName, file);
+        const { error: uploadError } = await supabase.storage
+          .from("product_img")
+          .upload(fileName, file);
         if (uploadError) throw uploadError;
-        const publicUrl = supabase.storage.from("product_img").getPublicUrl(fileName).data.publicUrl;
+        const publicUrl = supabase.storage
+          .from("product_img")
+          .getPublicUrl(fileName).data.publicUrl;
         imageUrls.push(publicUrl);
       }
 
       const priceNum = Number(formData.price);
       const mrpNum = formData.mrp ? Number(formData.mrp) : null;
-      const productData: any = {
-        title: formData.title, price: priceNum, category: formData.category,
-        discount: mrpNum && mrpNum > priceNum ? `-${Math.round(((mrpNum - priceNum) / mrpNum) * 100)}%` : null,
-        description: formData.description || null, sku: formData.sku || null, stock: Number(formData.stock) || 0,
-        color: formData.color, status: formData.status, measurements: formData.measurements || null,
-        weight: formData.weight || null, valid_until: formData.valid_until ? new Date(formData.valid_until).toISOString() : null,
+      const productData: Partial<Product> & {
+        images?: string[];
+        img?: string;
+      } = {
+        title: formData.title,
+        price: priceNum,
+        category: formData.category as Product["category"],
+        discount:
+          mrpNum && mrpNum > priceNum
+            ? `-${Math.round(((mrpNum - priceNum) / mrpNum) * 100)}%`
+            : null,
+        description: formData.description || null,
+        sku: formData.sku || null,
+        stock: Number(formData.stock) || 0,
+        color: formData.color as Product["color"],
+        status: formData.status,
+        measurements: formData.measurements || null,
+        weight: formData.weight || null,
+        valid_until: formData.valid_until
+          ? new Date(formData.valid_until).toISOString()
+          : null,
       };
       if (mrpNum) productData.mrp = mrpNum;
-      
+
       if (imageUrls.length > 0) {
         productData.img = imageUrls[0];
         productData.images = imageUrls;
@@ -77,37 +125,47 @@ export default function AdminProducts() {
       if (editingId) {
         await updateProductMutation({ id: editingId, productData }).unwrap();
       } else {
-        if (imageUrls.length === 0) { toast.error("Please select at least one image"); setSubmitting(false); return; }
+        if (imageUrls.length === 0) {
+          toast.error("Please select at least one image");
+          setSubmitting(false);
+          return;
+        }
         await addProductMutation(productData).unwrap();
       }
       setShowForm(false);
       setFormData(emptyProductForm);
       setEditingId(null);
       setImageFiles([]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to save product:", err);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string | number) => {
     if (confirm("Are you sure you want to delete this product?")) {
       try {
         setDeletingId(id);
-        await deleteProductMutation(id).unwrap();
+        await deleteProductMutation(String(id)).unwrap();
         toast.success("Product deleted successfully");
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to delete product:", err);
-        toast.error(err?.data?.message || err?.message || "Failed to delete product");
+        const message =
+          err instanceof Error ? err.message : "Failed to delete product";
+        toast.error(message);
       } finally {
         setDeletingId(null);
       }
     }
   };
 
-  const filtered = products.filter((p) =>
-    p.title?.toLowerCase().includes(searchQuery.toLowerCase()) || p.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filtered = products.filter(
+    (p) =>
+      p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(p.sku ?? "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()),
   );
 
   if (loading) return <div className="text-[#6C7275]">Loading products...</div>;
@@ -151,7 +209,7 @@ export default function AdminProducts() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p: any) => (
+              {filtered.map((p) => (
                 <ProductTableRow
                   key={p.id}
                   product={p}

@@ -33,6 +33,10 @@ export interface AddressData {
   is_default?: boolean;
 }
 
+interface AddressRow extends DbAddress {
+  created_at?: string;
+}
+
 export const addressApi = apiService.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
@@ -47,7 +51,7 @@ export const addressApi = apiService.injectEndpoints({
           .order("created_at", { ascending: false });
 
         if (error) return { error };
-        return { data: (data || []).map((a: any) => ({ ...a, label: a.label ?? null })) };
+        return { data: (data || []).map((a: AddressRow) => ({ ...a, label: a.label ?? null })) };
       },
       providesTags: (result, error, userId) => [{ type: 'Address', id: userId }],
     }),

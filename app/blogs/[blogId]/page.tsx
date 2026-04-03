@@ -5,6 +5,8 @@ import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { notFound } from "next/navigation";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import type { Blog } from "@/types/blog";
 
 export const dynamic = "force-dynamic";
 
@@ -17,27 +19,27 @@ const normalizeContentLayout = (content: string) => {
 
 const MDXComponents = {
   Link,
-  h2: ({ children }: any) => (
+  h2: ({ children }: { children?: ReactNode }) => (
     <h2 className="mt-7 mb-2 text-[30px] leading-[1.15] tracking-[-0.02em] font-medium text-[#141718]">
       {children}
     </h2>
   ),
-  h3: ({ children }: any) => (
+  h3: ({ children }: { children?: ReactNode }) => (
     <h3 className="mt-6 mb-2 text-[28px] leading-[1.2] tracking-[-0.02em] font-medium text-[#141718]">
       {children}
     </h3>
   ),
-  p: ({ children }: any) => (
+  p: ({ children }: { children?: ReactNode }) => (
     <p className="mb-5 text-[12px] md:text-[13px] text-[#343839] leading-[1.45]">
       {children}
     </p>
   ),
-  ul: ({ children }: any) => (
+  ul: ({ children }: { children?: ReactNode }) => (
     <ul className="list-disc ml-6 mb-6 space-y-2 text-[#343839] text-[13px]">
       {children}
     </ul>
   ),
-  img: ({ src, alt }: any) => (
+  img: ({ src, alt }: ComponentPropsWithoutRef<"img">) => (
     <img
       src={src || ""}
       alt={alt || "Blog image"}
@@ -130,7 +132,9 @@ const BlogPost = async ({
     .eq("id", parseId)
     .single();
 
-  if (blogError || !blog) {
+  const typedBlog = blog as Blog | null;
+
+  if (blogError || !typedBlog) {
     return notFound();
   }
 
@@ -165,17 +169,17 @@ const BlogPost = async ({
             ARTICLE
           </span>
           <h1 className="max-w-190 text-[44px] md:text-[58px] leading-[1.04] tracking-[-0.03em] font-medium text-[#141718]">
-            {blog.title}
+            {typedBlog.title}
           </h1>
           <div className="flex items-center gap-5 text-[#6C7275] text-[12px] font-medium pt-1">
             <div className="flex items-center gap-1.5">
               <FiUser size={15} className="text-[#6C7275]" />
-              <span>{blog.author || "admin"}</span>
+              <span>{typedBlog.author || "admin"}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <FiCalendar size={15} className="text-[#6C7275]" />
               <span>
-                {new Date(blog.date).toLocaleDateString("en-US", {
+                {new Date(typedBlog.date).toLocaleDateString("en-US", {
                   month: "long",
                   day: "numeric",
                   year: "numeric",
@@ -187,15 +191,15 @@ const BlogPost = async ({
 
         <div className="w-full h-auto mb-6 md:mb-8 bg-[#F3F5F7]">
           <img
-            src={blog.img}
-            alt={blog.title}
+            src={typedBlog.img}
+            alt={typedBlog.title}
             className="w-full h-auto object-cover"
           />
         </div>
 
         <article className="w-full">
           <MDXRemote
-            source={normalizeContentLayout(blog.content || "")}
+            source={normalizeContentLayout(typedBlog.content || "")}
             components={MDXComponents}
           />
         </article>

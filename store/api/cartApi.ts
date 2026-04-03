@@ -2,6 +2,20 @@ import { apiService } from '../apiService';
 import { createClient } from '@/utils/supabase/client';
 import { CartItem } from '../slices/cartSlice';
 
+interface CartRow {
+  product_id: string;
+  quantity: number;
+  color?: string | null;
+  products?: {
+    title?: string | null;
+    price?: number | string | null;
+    img?: string | null;
+    image_url?: string | null;
+    image?: string | null;
+    stock?: number | null;
+  } | null;
+}
+
 export const cartApi = apiService.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
@@ -15,7 +29,7 @@ export const cartApi = apiService.injectEndpoints({
 
         if (error) return { error };
 
-        const formatted = (data || []).map((row: any) => ({
+        const formatted = (data || []).map((row: CartRow) => ({
           id: row.product_id,
           name: row.products?.title || '',
           price: Number(row.products?.price) || 0,

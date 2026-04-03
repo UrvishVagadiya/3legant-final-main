@@ -7,18 +7,28 @@ import { FiFacebook } from "react-icons/fi";
 import { GoVideo } from "react-icons/go";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { useAppSelector, RootState } from "@/store";
+import type { CartItem } from "@/store/slices/cartSlice";
 
 interface MobileMenuFooterProps {
-  user: any;
+  user: {
+    user_metadata?: {
+      avatar_url?: string | null;
+    };
+  } | null;
   onClose: () => void;
 }
 
 const MobileMenuFooter = ({ user, onClose }: MobileMenuFooterProps) => {
   const { items: cartItems } = useAppSelector((state: RootState) => state.cart);
-  const { items: wishlistItems } = useAppSelector((state: RootState) => state.wishlist);
+  const { items: wishlistItems } = useAppSelector(
+    (state: RootState) => state.wishlist,
+  );
   const isMounted = useIsMounted();
 
-  const cartCount = cartItems.reduce((acc: number, item: any) => acc + item.quantity, 0);
+  const cartCount = cartItems.reduce(
+    (acc: number, item: CartItem) => acc + item.quantity,
+    0,
+  );
   const wishlistCount = wishlistItems.length;
 
   return (

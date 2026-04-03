@@ -68,7 +68,11 @@ export default function BlogFormFields({
     }));
   };
 
-  const updateSection = (sectionId: string, field: string, value: any) => {
+  const updateSection = (
+    sectionId: string,
+    field: keyof BlogSection,
+    value: string,
+  ) => {
     setFormData((p: BlogFormData) => ({
       ...p,
       sections: p.sections.map((s) =>
@@ -217,7 +221,7 @@ export default function BlogFormFields({
             <Input
               label="Image 2 URL (Right)"
               type="url"
-              value={(formData.sections[2] as any)?.image2 || ""}
+              value={formData.sections[2]?.image2 || ""}
               onChange={(e) =>
                 updateSection(
                   formData.sections[2]?.id,
@@ -252,7 +256,7 @@ export default function BlogFormFields({
           <div>
             <Input
               label="Text Block 1 - Title"
-              value={(formData.sections[3] as any)?.title1 || ""}
+              value={formData.sections[3]?.title1 || ""}
               onChange={(e) =>
                 updateSection(
                   formData.sections[3]?.id,
@@ -264,7 +268,7 @@ export default function BlogFormFields({
             />
             <Textarea
               label="Text Block 1 - Description"
-              value={(formData.sections[3] as any)?.content1 || ""}
+              value={formData.sections[3]?.content1 || ""}
               onChange={(e) =>
                 updateSection(
                   formData.sections[3]?.id,
@@ -281,7 +285,7 @@ export default function BlogFormFields({
           <div className="pt-4 border-t">
             <Input
               label="Text Block 2 - Title"
-              value={(formData.sections[3] as any)?.title2 || ""}
+              value={formData.sections[3]?.title2 || ""}
               onChange={(e) =>
                 updateSection(
                   formData.sections[3]?.id,
@@ -293,7 +297,7 @@ export default function BlogFormFields({
             />
             <Textarea
               label="Text Block 2 - Description"
-              value={(formData.sections[3] as any)?.content2 || ""}
+              value={formData.sections[3]?.content2 || ""}
               onChange={(e) =>
                 updateSection(
                   formData.sections[3]?.id,

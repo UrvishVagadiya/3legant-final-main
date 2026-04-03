@@ -1,6 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
 import Stripe from "npm:stripe@^14.16.0"
 
+interface CheckoutItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+  color?: string;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -71,7 +80,7 @@ Deno.serve(async (req) => {
     )
 
     const orderCode = `#${Date.now().toString().slice(-6)}${Math.random().toString(36).substring(2, 5).toUpperCase()}`
-    
+
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({
@@ -95,14 +104,14 @@ Deno.serve(async (req) => {
         shipping_country: shippingInfo.country,
         has_different_billing: !!useDifferentBilling,
         ...(useDifferentBilling && billingInfo ? {
-            billing_first_name: billingInfo.firstName,
-            billing_last_name: billingInfo.lastName,
-            billing_phone: billingInfo.phone,
-            billing_street_address: billingInfo.streetAddress,
-            billing_city: billingInfo.city,
-            billing_state: billingInfo.state,
-            billing_zip_code: billingInfo.zipCode,
-            billing_country: billingInfo.country,
+          billing_first_name: billingInfo.firstName,
+          billing_last_name: billingInfo.lastName,
+          billing_phone: billingInfo.phone,
+          billing_street_address: billingInfo.streetAddress,
+          billing_city: billingInfo.city,
+          billing_state: billingInfo.state,
+          billing_zip_code: billingInfo.zipCode,
+          billing_country: billingInfo.country,
         } : {})
       })
       .select()
@@ -114,7 +123,7 @@ Deno.serve(async (req) => {
     }
 
     // Create Order Items
-    const orderItems = items.map((item: any) => ({
+    const orderItems = items.map((item: CheckoutItem) => ({
       order_id: order.id,
       product_id: item.id,
       product_name: item.name,
@@ -130,7 +139,7 @@ Deno.serve(async (req) => {
 
     // Reduce Stock (Reservation)
     const { error: stockError } = await supabaseAdmin.rpc('reduce_product_stock', {
-      items: items.map((i: any) => ({ product_id: i.id, quantity: i.quantity }))
+      items: items.map((i: CheckoutItem) => ({ product_id: i.id, quantity: i.quantity }))
     })
     if (!stockError) {
       await supabaseAdmin.from('orders').update({ stock_reduced: true }).eq('id', order.id)
@@ -147,7 +156,7 @@ Deno.serve(async (req) => {
     })
 
     // Prepare Stripe Line Items
-    const lineItems = items.map((item: any) => ({
+    const lineItems = items.map((item: CheckoutItem) => ({
       price_data: {
         currency: 'usd',
         product_data: {
@@ -170,7 +179,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const discounts: any[] = []
+    const discounts: { coupon: string }[] = []
     if (discount > 0) {
       const stripeCoupon = await stripe.coupons.create({
         amount_off: Math.round(Number(discount) * 100),
@@ -198,7 +207,7 @@ Deno.serve(async (req) => {
         shipping_cost: shippingCost.toString(),
         discount: discount.toString(),
         items_json: JSON.stringify(
-          items.map((i: any) => ({
+          items.map((i: CheckoutItem) => ({
             id: i.id,
             qty: i.quantity,
             prc: i.price,
@@ -224,9 +233,10 @@ Deno.serve(async (req) => {
       status: 200,
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Checkout error:', error)
-    return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
+    const message = error instanceof Error ? error.message : 'Internal Server Error'
+    return new Response(JSON.stringify({ error: message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     })

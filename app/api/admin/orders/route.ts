@@ -3,6 +3,18 @@ import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { cookies } from "next/headers";
 
+interface OrderPaymentRow {
+    status?: string;
+}
+
+interface AdminOrderRow {
+    status: string;
+    refund_status?: string | null;
+    stock_reduced?: boolean | null;
+    payments?: OrderPaymentRow[] | OrderPaymentRow | null;
+    [key: string]: unknown;
+}
+
 async function getAuthUser() {
     const supabase = createClient(cookies());
     const { data: { user } } = await supabase.auth.getUser();
@@ -28,9 +40,9 @@ export async function GET() {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    const ordersWithPaymentStatus = (data || []).map((order: any) => {
+    const ordersWithPaymentStatus = (data || []).map((order: AdminOrderRow) => {
         const payments = Array.isArray(order.payments) ? order.payments : (order.payments ? [order.payments] : []);
-        const successfulPayment = payments.find((p: any) => p.status === 'completed' || p.status === 'succeeded');
+        const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'completed' || p.status === 'succeeded');
 
         return {
             ...order,
@@ -98,7 +110,7 @@ export async function PUT(req: NextRequest) {
                     .single();
                 if (updatedData) {
                     const payments = Array.isArray(updatedData.payments) ? updatedData.payments : (updatedData.payments ? [updatedData.payments] : []);
-                    const successfulPayment = payments.find((p: any) => p.status === 'completed' || p.status === 'succeeded');
+                    const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'completed' || p.status === 'succeeded');
 
                     return NextResponse.json({
                         ...updatedData,
@@ -115,7 +127,7 @@ export async function PUT(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     const payments = Array.isArray(data.payments) ? data.payments : (data.payments ? [data.payments] : []);
-    const successfulPayment = payments.find((p: any) => p.status === 'completed' || p.status === 'succeeded');
+    const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'completed' || p.status === 'succeeded');
 
     const orderWithPaymentStatus = {
         ...data,

@@ -24,6 +24,15 @@ interface Payment {
   refund_status?: string;
 }
 
+interface PaymentRow extends Payment {
+  orders?: {
+    order_code?: string;
+    shipping_first_name?: string;
+    shipping_last_name?: string;
+    refund_status?: string;
+  } | null;
+}
+
 const statusBadge = (s: string) =>
   ({
     pending: "bg-yellow-100 text-yellow-700",
@@ -50,7 +59,7 @@ export default function AdminPayments() {
     if (res.ok) {
       const data = await res.json();
       setPayments(
-        data.map((p: any) => ({
+        data.map((p: PaymentRow) => ({
           ...p,
           order_code: p.orders?.order_code || "N/A",
           customer_name: p.orders

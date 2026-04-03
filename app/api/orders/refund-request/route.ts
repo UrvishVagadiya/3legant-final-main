@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
                 .select("value")
                 .eq("id", "refund_period")
                 .single();
-            
+
             const refundDays = settings?.value?.days || 7;
             const deliveredDate = new Date(order.delivered_at);
             const now = new Date();
@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays > refundDays) {
-                return NextResponse.json({ 
-                    error: `Refund period has expired. Refunds are only allowed within ${refundDays} days of delivery.` 
+                return NextResponse.json({
+                    error: `Refund period has expired. Refunds are only allowed within ${refundDays} days of delivery.`
                 }, { status: 400 });
             }
         }
@@ -57,8 +57,8 @@ export async function POST(req: NextRequest) {
         // Only allow refund requests for shipped/delivered/cancelled orders
         const eligibleStatuses = ["shipped", "delivered", "cancelled"];
         if (!eligibleStatuses.includes(order.status)) {
-            return NextResponse.json({ 
-                error: `Refund request not allowed for current order status: ${order.status}. Use instant cancel instead.` 
+            return NextResponse.json({
+                error: `Refund request not allowed for current order status: ${order.status}. Use instant cancel instead.`
             }, { status: 400 });
         }
 
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({ success: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Refund request error:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }

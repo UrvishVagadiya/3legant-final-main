@@ -4,14 +4,31 @@ import { DisplayProduct } from "@/components/product/DisplayProduct";
 import { initialCartItems } from "@/constants/products";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
+import type { Product } from "@/store/slices/productSlice";
+
+function toProduct(item: (typeof initialCartItems)[number]): Product {
+  return {
+    id: item.id,
+    title: item.name,
+    name: item.name,
+    description: item.description,
+    color: item.color,
+    price: item.price,
+    img: "",
+    status: "active",
+    oldprice: item.oldprice,
+    sku: item.sku,
+    category: item.category,
+    validUntil: String(item.validUntil),
+  };
+}
 
 function ProductContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const productId = searchParams.get("id");
-  const [product, setProduct] = useState<any>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(!!productId);
- 
 
   useEffect(() => {
     if (productId) {
@@ -19,7 +36,7 @@ function ProductContent() {
       return;
     }
 
-    setProduct(initialCartItems[0]);
+    setProduct(toProduct(initialCartItems[0]));
   }, [productId, router]);
 
   if (loading) {

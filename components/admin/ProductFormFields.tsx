@@ -32,16 +32,18 @@ const colorOptions: ProductColor[] = [
 ];
 
 const PreviewImage = ({ file }: { file: File }) => {
-    const [preview, setPreview] = React.useState<string>("");
-    
-    useEffect(() => {
-        const url = URL.createObjectURL(file);
-        setPreview(url);
-        return () => URL.revokeObjectURL(url);
-    }, [file]);
+  const [preview, setPreview] = React.useState<string>("");
 
-    if (!preview) return null;
-    return <img src={preview} alt="Preview" className="w-full h-full object-cover" />;
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  if (!preview) return null;
+  return (
+    <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+  );
 };
 
 const Input = ({
@@ -104,7 +106,7 @@ const CheckboxGroup = ({
 interface Props {
   formData: ProductFormData;
   setFormData: React.Dispatch<React.SetStateAction<ProductFormData>>;
-  editingId: string | null;
+  editingId: string | number | null;
   imageFiles: File[];
   onImageChange: (files: File[]) => void;
 }
@@ -128,11 +130,12 @@ export default function ProductFormFields({
   };
 
   const generateSku = () => {
-    const categoryPrefix = formData.category.length > 0 
-      ? formData.category[0].substring(0, 3).toUpperCase() 
-      : "GEN";
-    const titlePrefix = formData.title 
-      ? formData.title.substring(0, 3).toUpperCase().padEnd(3, 'X') 
+    const categoryPrefix =
+      formData.category.length > 0
+        ? formData.category[0].substring(0, 3).toUpperCase()
+        : "GEN";
+    const titlePrefix = formData.title
+      ? formData.title.substring(0, 3).toUpperCase().padEnd(3, "X")
       : "PRD";
     const randomPart = Math.floor(1000 + Math.random() * 9000);
     return `${categoryPrefix}-${titlePrefix}-${randomPart}`;
@@ -140,13 +143,16 @@ export default function ProductFormFields({
 
   useEffect(() => {
     if (!editingId && !formData.sku && formData.title) {
-        setFormData(prev => ({ ...prev, sku: generateSku() }));
+      setFormData((prev) => ({ ...prev, sku: generateSku() }));
     }
   }, [formData.title, editingId]);
 
   const handleMultipleFilesChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
-    const newFiles = [...imageFiles.filter(f => f !== null), ...selectedFiles].slice(0, 6);
+    const newFiles = [
+      ...imageFiles.filter((f) => f !== null),
+      ...selectedFiles,
+    ].slice(0, 6);
     onImageChange(newFiles);
   };
 
@@ -163,10 +169,10 @@ export default function ProductFormFields({
             Product Images (Max 6)
           </label>
           <span className="text-[10px] text-gray-400">
-            {imageFiles.filter(f => f !== null).length} / 6 Selected
+            {imageFiles.filter((f) => f !== null).length} / 6 Selected
           </span>
         </div>
-        
+
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {/* Upload Button */}
           {imageFiles.length < 6 && (
@@ -174,7 +180,9 @@ export default function ProductFormFields({
               <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
                 <Plus size={16} />
               </div>
-              <span className="text-[10px] font-bold text-gray-500 uppercase">Upload Files</span>
+              <span className="text-[10px] font-bold text-gray-500 uppercase">
+                Upload Files
+              </span>
               <input
                 type="file"
                 multiple
@@ -187,7 +195,10 @@ export default function ProductFormFields({
 
           {/* Previews */}
           {imageFiles.map((file, i) => (
-            <div key={`${file.name}-${i}`} className="relative group aspect-square rounded-xl overflow-hidden border border-gray-100 bg-white">
+            <div
+              key={`${file.name}-${i}`}
+              className="relative group aspect-square rounded-xl overflow-hidden border border-gray-100 bg-white"
+            >
               <PreviewImage file={file} />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <button
@@ -205,8 +216,16 @@ export default function ProductFormFields({
           ))}
 
           {/* Placeholders for remaining slots */}
-          {Array.from({ length: Math.max(0, 6 - imageFiles.length - (imageFiles.length < 6 ? 1 : 0)) }).map((_, i) => (
-            <div key={`placeholder-${i}`} className="aspect-square rounded-xl bg-gray-50/50 border border-dashed border-gray-100" />
+          {Array.from({
+            length: Math.max(
+              0,
+              6 - imageFiles.length - (imageFiles.length < 6 ? 1 : 0),
+            ),
+          }).map((_, i) => (
+            <div
+              key={`placeholder-${i}`}
+              className="aspect-square rounded-xl bg-gray-50/50 border border-dashed border-gray-100"
+            />
           ))}
         </div>
       </div>
@@ -288,7 +307,7 @@ export default function ProductFormFields({
           />
           <button
             type="button"
-            onClick={() => setFormData(p => ({ ...p, sku: generateSku() }))}
+            onClick={() => setFormData((p) => ({ ...p, sku: generateSku() }))}
             className="absolute right-3 top-7 text-gray-400 hover:text-[#141718] transition-colors"
             title="Regenerate SKU"
           >

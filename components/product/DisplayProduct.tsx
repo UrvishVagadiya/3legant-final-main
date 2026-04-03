@@ -37,6 +37,8 @@ import {
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import type { Product } from "@/store/slices/productSlice";
+import type { Review } from "@/store/api/reviewApi";
 
 const refImages = [
   "/table/tray_table_premium.png",
@@ -47,7 +49,7 @@ const refImages = [
   "/table/table5.png",
 ];
 
-export const DisplayProduct = ({ p }: { p: any }) => {
+export const DisplayProduct = ({ p }: { p: Product }) => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
   const isMounted = useIsMounted();
@@ -63,7 +65,7 @@ export const DisplayProduct = ({ p }: { p: any }) => {
   );
 
   const { data: reviews = [] } = useGetReviewsQuery({
-    productId: p.id,
+    productId: String(p.id),
     userId: user?.id,
   });
   const { data: wishlistItems = [] } = useGetWishlistItemsQuery(
@@ -76,7 +78,7 @@ export const DisplayProduct = ({ p }: { p: any }) => {
     wishlistItems.some((i) => i.id == id);
   const { requireAuth } = useAuthGuard();
 
-  const pid = p.id || p.sku;
+  const pid = String(p.id || p.sku || "");
   const expired = isOfferExpired(p.valid_until || p.validUntil);
   const rawPrice =
     typeof p.price === "number"
@@ -86,8 +88,10 @@ export const DisplayProduct = ({ p }: { p: any }) => {
     typeof (p.mrp || p.oldprice) === "number"
       ? p.mrp || p.oldprice
       : parseFloat(String(p.mrp || p.oldprice).replace("$", ""));
-  const price = expired && rawMrp > rawPrice ? rawMrp : rawPrice;
-  const mrp = expired ? 0 : rawMrp;
+  const safeMrp = rawMrp || 0;
+  const price = expired && safeMrp > rawPrice ? safeMrp : rawPrice;
+  const mrp = expired ? 0 : safeMrp;
+  const stockCount = p.stock ?? 0;
 
   const img = p.img || p.image_url || p.image || refImages[0];
   const colorHex = colorMap[selectedColor] || "#6B7280";
@@ -129,7 +133,7 @@ export const DisplayProduct = ({ p }: { p: any }) => {
 
   const avgRating =
     reviews.length > 0
-      ? reviews.reduce((sum: number, r: any) => sum + r.rating, 0) /
+      ? reviews.reduce((sum: number, r: Review) => sum + r.rating, 0) /
         reviews.length
       : 0;
 
@@ -206,14 +210,12 @@ export const DisplayProduct = ({ p }: { p: any }) => {
                           </span>
                         )}
                         {!expired &&
-                          ((p.mrp ?? 0) > p.price ||
+                          (safeMrp > p.price ||
                             (p.oldprice ?? 0) > p.price) && (
                             <span className="bg-[#38CB89] text-white text-sm font-bold px-3 py-1 rounded w-fit">
                               -
                               {Math.round(
-                                (((p.mrp || p.oldprice) - p.price) /
-                                  (p.mrp || p.oldprice)) *
-                                  100,
+                                ((safeMrp - p.price) / safeMrp) * 100,
                               )}
                               %
                             </span>
@@ -254,15 +256,9 @@ export const DisplayProduct = ({ p }: { p: any }) => {
                   </span>
                 )}
                 {!expired &&
-                  ((p.mrp ?? 0) > p.price || (p.oldprice ?? 0) > p.price) && (
+                  (safeMrp > p.price || (p.oldprice ?? 0) > p.price) && (
                     <span className="bg-[#38CB89] text-white text-sm font-bold px-3 py-1 rounded w-fit">
-                      -
-                      {Math.round(
-                        (((p.mrp || p.oldprice) - p.price) /
-                          (p.mrp || p.oldprice)) *
-                          100,
-                      )}
-                      %
+                      -{Math.round(((safeMrp - p.price) / safeMrp) * 100)}%
                     </span>
                   )}
               </div>
@@ -327,19 +323,23 @@ export const DisplayProduct = ({ p }: { p: any }) => {
             </div>
           </div>
 
-          {!expired && <CountdownTimer validUntil={p.validUntil} />}
+          {!expired && (
+            <CountdownTimer
+              validUntil={p.validUntil ?? p.valid_until ?? undefined}
+            />
+          )}
           <ColorSelector
             colors={colorOptions}
             selected={selectedColor}
             onSelect={setSelectedColor}
-            measurements={p.measurements}
+            measurements={p.measurements ?? undefined}
           />
           <ProductActions
             quantity={quantity}
             onDecrease={() => setQuantity((q) => Math.max(1, q - 1))}
             onIncrease={() =>
               setQuantity((q) =>
-                p.stock > 0 ? Math.min(p.stock, q + 1) : q + 1,
+                stockCount > 0 ? Math.min(stockCount, q + 1) : q + 1,
               )
             }
             isWishlisted={isMounted && wishlistItems.some((i) => i.id == pid)}
@@ -372,7 +372,10 @@ export const DisplayProduct = ({ p }: { p: any }) => {
                 setOpenAccordion(openAccordion === id ? null : id)
               }
             >
-              <AdditionalInfo measurements={p.measurements} weight={p.weight} />
+              <AdditionalInfo
+                measurements={p.measurements ?? undefined}
+                weight={p.weight ?? undefined}
+              />
             </AccordionItem>
             <AccordionItem
               id="questions"
@@ -396,7 +399,7 @@ export const DisplayProduct = ({ p }: { p: any }) => {
               borderClass="border-y border-[#E8ECEF]"
             >
               <ReviewsSection
-                productId={p.id}
+                productId={String(p.id)}
                 productName={p.name || "Product"}
               />
             </AccordionItem>

@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         }
         const { error: updateError } = await supabase
             .from("orders")
-            .update({ 
+            .update({
                 status: "cancelled",
                 updated_at: new Date().toISOString()
             })
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         }
         const { error: paymentUpdateError } = await supabase
             .from("payments")
-            .update({ 
+            .update({
                 status: "cancelled",
                 updated_at: new Date().toISOString()
             })
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({ success: true, message: "Order cancelled and stock restored" });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Cancel pending order error:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }

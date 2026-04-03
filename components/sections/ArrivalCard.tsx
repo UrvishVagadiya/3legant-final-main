@@ -15,7 +15,10 @@ interface ArrivalCardProps {
   isInWishlist: (id: number | string) => boolean;
   handleWishlistToggle: (e: React.MouseEvent, card: Product) => void;
   handleAddToCart: (e: React.MouseEvent, card: Product) => void;
-  getRating: (id: number | string) => { avgRating: number; reviewCount: number };
+  getRating: (id: number | string) => {
+    avgRating: number;
+    reviewCount: number;
+  };
 }
 
 const discount = (price: number, mrp?: number) => {
@@ -34,8 +37,12 @@ const ArrivalCard = ({
   const expired = isOfferExpired(card.valid_until);
   const displayPrice =
     expired && card.mrp && card.mrp > card.price ? card.mrp : card.price;
-  const displayMrp = expired ? undefined : card.mrp;
-  const colorOptions = Array.isArray(card.color) ? card.color : card.color ? [card.color] : [];
+  const displayMrp = expired ? undefined : (card.mrp ?? undefined);
+  const colorOptions = Array.isArray(card.color)
+    ? card.color
+    : card.color
+      ? [card.color]
+      : [];
   const firstColor = colorOptions[0];
   const colorHex = firstColor ? colorMap[firstColor] : null;
   const shouldTint = firstColor && firstColor.toLowerCase() !== "white";

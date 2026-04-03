@@ -2,7 +2,10 @@
 import React, { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { useAppSelector, RootState } from "@/store";
-import { useCancelOrderMutation, useRequestRefundMutation } from "@/store/api/orderApi";
+import {
+  useCancelOrderMutation,
+  useRequestRefundMutation,
+} from "@/store/api/orderApi";
 
 interface RefundRequestModalProps {
   orderId: string;
@@ -22,7 +25,8 @@ const RefundRequestModal = ({
   const { user } = useAppSelector((state: RootState) => state.auth);
   const [reason, setReason] = useState("");
   const [cancelOrder, { isLoading: isCancelling }] = useCancelOrderMutation();
-  const [requestRefund, { isLoading: isRequestingRefund }] = useRequestRefundMutation();
+  const [requestRefund, { isLoading: isRequestingRefund }] =
+    useRequestRefundMutation();
 
   const loading = isCancelling || isRequestingRefund;
 
@@ -38,10 +42,10 @@ const RefundRequestModal = ({
       } else {
         await requestRefund({ orderId, userId: user.id, reason }).unwrap();
       }
-      
+
       onSuccess();
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Error is handled by RTK Query or toast
       console.error("Error:", error);
     }
@@ -51,8 +55,13 @@ const RefundRequestModal = ({
     <div className="fixed inset-0 bg-black/50 z-60 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-xl font-semibold">{isInstant ? "Cancel Order" : "Request Refund"}</h3>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+          <h3 className="text-xl font-semibold">
+            {isInstant ? "Cancel Order" : "Request Refund"}
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+          >
             <X size={20} />
           </button>
         </div>

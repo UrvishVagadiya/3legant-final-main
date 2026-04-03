@@ -34,7 +34,7 @@ const NewsLetter = () => {
         toast.success("Thank you for subscribing!");
         setEmail("");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Newsletter error:", err);
       toast.error("Something went wrong. Please try again later.");
     } finally {
@@ -43,11 +43,11 @@ const NewsLetter = () => {
   };
 
   return (
-    <div className="bg-[#F3F5F7] relative h-[auto] py-16 md:py-0 md:h-[360px] w-full overflow-hidden">
+    <div className="bg-[#F3F5F7] relative h-auto py-16 md:py-0 md:h-90 w-full overflow-hidden">
       <div className="hidden md:block">
         <Image
           style={{ mixBlendMode: "multiply" }}
-          className="absolute top-[-140px] left-[-260px]"
+          className="absolute -top-35 -left-65"
           src="/cupboard.jpg"
           width={690}
           height={380}
@@ -55,7 +55,7 @@ const NewsLetter = () => {
         />
         <Image
           style={{ mixBlendMode: "multiply" }}
-          className="absolute top-[-80px] right-[-460px]"
+          className="absolute -top-20 -right-115"
           src="/chair.jpg"
           width={890}
           height={380}
@@ -73,7 +73,7 @@ const NewsLetter = () => {
           </h3>
         </div>
 
-        <form 
+        <form
           onSubmit={handleSignup}
           className="flex w-full md:w-[60%] lg:w-[40%] xl:w-[30%] items-center justify-between pb-2 border-b border-gray-400 gap-3"
         >
@@ -88,7 +88,7 @@ const NewsLetter = () => {
               disabled={isLoading}
             />
           </div>
-          <button 
+          <button
             type="submit"
             disabled={isLoading}
             className="text-[#6C7275] hover:text-[#141718] transition-colors font-medium cursor-pointer pl-4 duration-300 ease-in-out disabled:opacity-50"

@@ -1,6 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
 import Stripe from "npm:stripe@^14.16.0"
 
+interface StockItem {
+  product_id: string;
+  quantity: number;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
@@ -33,13 +38,14 @@ Deno.serve(async (req) => {
     })
 
     const body = await req.text()
-    
+
     let event: Stripe.Event
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
-    } catch (err: any) {
-      console.error(`Webhook signature verification failed: ${err.message}`)
-      return new Response(`Webhook Error: ${err.message}`, { status: 400 })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Webhook signature verification failed'
+      console.error(`Webhook signature verification failed: ${message}`)
+      return new Response(`Webhook Error: ${message}`, { status: 400 })
     }
 
     const supabaseAdmin = createClient(
@@ -97,8 +103,8 @@ Deno.serve(async (req) => {
           .maybeSingle()
 
         if (orderError || !order) {
-           console.error(`Failed to fetch order ${orderId}:`, orderError)
-           break
+          console.error(`Failed to fetch order ${orderId}:`, orderError)
+          break
         }
 
         // Only cancel if still pending/failed
@@ -118,7 +124,7 @@ Deno.serve(async (req) => {
 
           if (items && items.length > 0) {
             const { error: rpcError } = await supabaseAdmin.rpc('restore_product_stock', {
-              items: items.map((i: any) => ({
+              items: items.map((i: StockItem) => ({
                 product_id: i.product_id,
                 quantity: i.quantity
               }))
@@ -128,19 +134,19 @@ Deno.serve(async (req) => {
         }
 
         // 3. Cancel order & payment
-        const { error: finalError } = await supabaseAdmin.from('orders').update({ 
+        const { error: finalError } = await supabaseAdmin.from('orders').update({
           status: 'cancelled',
           updated_at: new Date().toISOString()
         }).eq('id', orderId)
 
-        await supabaseAdmin.from('payments').update({ 
+        await supabaseAdmin.from('payments').update({
           status: 'cancelled',
           updated_at: new Date().toISOString()
         }).eq('order_id', orderId)
 
         if (finalError) console.error('Cancellation update failed:', finalError)
         else console.log(`Successfully cancelled expired order: ${orderId}`)
-        
+
         break
       }
 
@@ -152,11 +158,11 @@ Deno.serve(async (req) => {
         if (!orderId) break
 
         console.log(`Charge refunded for order: ${orderId}. Updating status...`)
-        
+
         // Mark as refunded
         await supabaseAdmin.from('orders').update({ status: 'refunded' }).eq('id', orderId)
         await supabaseAdmin.from('payments').update({ status: 'refunded' }).eq('order_id', orderId)
-        
+
         break
       }
 
@@ -169,9 +175,10 @@ Deno.serve(async (req) => {
       status: 200,
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Webhook processing error:', error)
-    return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
+    const message = error instanceof Error ? error.message : 'Internal Server Error'
+    return new Response(JSON.stringify({ error: message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     })

@@ -43,9 +43,13 @@ const ContactForm = () => {
 
       toast.success("Message sent successfully!");
       reset();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error submitting contact form:", error);
-      toast.error(error.message || "Failed to send message. Please try again.");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to send message. Please try again.";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -66,7 +70,9 @@ const ContactForm = () => {
           }`}
         />
         {errors.fullName && (
-          <span className="text-red-500 text-xs">{errors.fullName.message}</span>
+          <span className="text-red-500 text-xs">
+            {errors.fullName.message}
+          </span>
         )}
       </div>
       <div className="flex flex-col gap-2 mb-3">

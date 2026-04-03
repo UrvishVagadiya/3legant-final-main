@@ -4,6 +4,7 @@ import { Search, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useLazySearchProductsQuery } from "@/store/api/productApi";
+import type { Product } from "@/store/slices/productSlice";
 import { colorMap } from "../product/ColorSelector";
 import TintedProductImage from "../product/TintedProductImage";
 import { typography } from "@/constants/typography";
@@ -115,7 +116,7 @@ const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
 
             {!loading && searchedQuery && results.length > 0 && (
               <div className="flex flex-col divide-y divide-gray-100">
-                {results.map((product) => (
+                {results.map((product: Product) => (
                   <Link
                     key={product.id}
                     href={`/product?id=${product.id}`}
@@ -126,10 +127,9 @@ const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
                       <TintedProductImage
                         src={
                           product.img ||
-                          (product as any).image_url ||
-                          (product as any).image ||
-                          ((product as any).images &&
-                            (product as any).images[0]) ||
+                          product.image_url ||
+                          product.image ||
+                          product.images?.[0] ||
                           "/image-1.png"
                         }
                         alt={product.title}
@@ -137,11 +137,11 @@ const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
                         unoptimized
                         className="object-cover object-center"
                         colorHex={
-                          (product as any).color
+                          product.color
                             ? colorMap[
-                                Array.isArray((product as any).color)
-                                  ? (product as any).color[0]
-                                  : (product as any).color
+                                Array.isArray(product.color)
+                                  ? product.color[0]
+                                  : product.color
                               ]
                             : null
                         }

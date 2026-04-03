@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
         }
 
         const admin = createAdminClient();
-        
+
         let { data: profile, error } = await admin
             .from("user_profiles")
             .select("*")
@@ -47,8 +47,9 @@ export async function GET(req: NextRequest) {
         }
 
         return NextResponse.json(profile);
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Profile route error:", err);
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        const message = err instanceof Error ? err.message : "Unknown error";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

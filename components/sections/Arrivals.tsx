@@ -17,6 +17,7 @@ import { useToggleWishlistMutation } from "@/store/api/wishlistApi";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import ArrivalCard from "./ArrivalCard";
 import { isProductNew } from "@/utils/isProductNew";
+import type { Product } from "@/store/slices/productSlice";
 
 const Arrivals = () => {
   const dispatch = useAppDispatch();
@@ -24,10 +25,11 @@ const Arrivals = () => {
   const products = useMemo(
     () =>
       allProducts
-        .filter((p: any) => isProductNew(p.created_at))
+        .filter((p: Product) => isProductNew(p.created_at))
         .sort(
-          (a: any, b: any) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+          (a: Product, b: Product) =>
+            new Date(b.created_at || b.createdAt || 0).getTime() -
+            new Date(a.created_at || a.createdAt || 0).getTime(),
         )
         .slice(0, 10),
     [allProducts],
@@ -43,7 +45,10 @@ const Arrivals = () => {
   const isMounted = useIsMounted();
   const [toggleWishlistMutation] = useToggleWishlistMutation();
 
-  const productIds = useMemo(() => products.map((p: any) => p.id), [products]);
+  const productIds = useMemo(
+    () => products.map((p: Product) => p.id),
+    [products],
+  );
   const { data: ratingsByProduct = {} } = useGetRatingsByProductsQuery(
     productIds,
     { skip: productIds.length === 0 },
@@ -58,7 +63,7 @@ const Arrivals = () => {
     );
   };
 
-  const handleWishlistToggle = (e: React.MouseEvent, product: any) => {
+  const handleWishlistToggle = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
     requireAuth(async () => {
@@ -76,12 +81,7 @@ const Arrivals = () => {
               id: product.id,
               name: product.title || product.name || "",
               price: product.price,
-              MRP:
-                product.mrp ||
-                product.MRP ||
-                product.old_price ||
-                product.oldprice ||
-                0,
+              MRP: product.mrp || product.old_price || product.oldprice || 0,
               image: product.img || product.image_url || "/image-1.png",
               color: preferredColor,
               stock: Number(product.stock) || 0,
@@ -113,7 +113,7 @@ const Arrivals = () => {
     });
   };
 
-  const handleAddToCart = (e: React.MouseEvent, product: any) => {
+  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
     requireAuth(() => {
@@ -184,7 +184,7 @@ const Arrivals = () => {
                 display: none;
               }
             `}</style>
-            {products.map((card: any) => (
+            {products.map((card: Product) => (
               <ArrivalCard
                 key={card.id}
                 card={card}

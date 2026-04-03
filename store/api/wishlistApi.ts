@@ -2,6 +2,21 @@ import { apiService } from '../apiService';
 import { createClient } from '@/utils/supabase/client';
 import { WishlistItem } from '../slices/wishlistSlice';
 
+interface WishlistRow {
+  product_id: string;
+  color?: string | null;
+  products?: {
+    title?: string | null;
+    price?: number | string | null;
+    mrp?: number | string | null;
+    img?: string | null;
+    image_url?: string | null;
+    image?: string | null;
+    color?: string | string[] | null;
+    stock?: number | null;
+  } | null;
+}
+
 export const wishlistApi = apiService.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
@@ -15,7 +30,7 @@ export const wishlistApi = apiService.injectEndpoints({
 
         if (error) return { error };
 
-        const formatted = (data || []).map((row: any) => ({
+        const formatted = (data || []).map((row: WishlistRow) => ({
           id: row.product_id,
           name: row.products?.title || '',
           price: row.products?.price || 0,

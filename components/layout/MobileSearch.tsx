@@ -8,6 +8,7 @@ import { useSearchProductsQuery } from "@/store/api/productApi";
 import { setSearchQuery } from "@/store/slices/productSlice";
 import { colorMap } from "../product/ColorSelector";
 import TintedProductImage from "../product/TintedProductImage";
+import type { Product } from "@/store/slices/productSlice";
 
 interface MobileSearchProps {
   onResultClick: () => void;
@@ -21,9 +22,10 @@ const MobileSearch = ({ onResultClick }: MobileSearchProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const { data: searchResults = [], isFetching: searchLoading } = useSearchProductsQuery(searchQuery, {
-    skip: !searchQuery.trim(),
-  });
+  const { data: searchResults = [], isFetching: searchLoading } =
+    useSearchProductsQuery(searchQuery, {
+      skip: !searchQuery.trim(),
+    });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -31,7 +33,7 @@ const MobileSearch = ({ onResultClick }: MobileSearchProps) => {
     setShowResults(!!value.trim());
   };
 
-  const handleClick = (productId: any) => {
+  const handleClick = (productId: string | number) => {
     onResultClick();
     router.push(`/product?id=${productId}`);
   };
@@ -65,7 +67,7 @@ const MobileSearch = ({ onResultClick }: MobileSearchProps) => {
               </p>
             )}
           {!searchLoading &&
-            searchResults.map((product) => (
+            searchResults.map((product: Product) => (
               <button
                 key={product.id}
                 onClick={() => handleClick(product.id)}
@@ -73,12 +75,26 @@ const MobileSearch = ({ onResultClick }: MobileSearchProps) => {
               >
                 <div className="w-10 h-10 bg-[#F3F5F7] rounded overflow-hidden shrink-0 flex items-center justify-center relative">
                   <TintedProductImage
-                    src={product.img || (product as any).image_url || (product as any).image || ((product as any).images && (product as any).images[0]) || "/image-1.png"}
+                    src={
+                      product.img ||
+                      product.image_url ||
+                      product.image ||
+                      product.images?.[0] ||
+                      "/image-1.png"
+                    }
                     alt={product.title}
                     fill
                     unoptimized
                     className="object-cover"
-                    colorHex={(product as any).color ? colorMap[Array.isArray((product as any).color) ? (product as any).color[0] : (product as any).color] : null}
+                    colorHex={
+                      product.color
+                        ? colorMap[
+                            Array.isArray(product.color)
+                              ? product.color[0]
+                              : product.color
+                          ]
+                        : null
+                    }
                   />
                 </div>
                 <div className="flex-1 min-w-0">

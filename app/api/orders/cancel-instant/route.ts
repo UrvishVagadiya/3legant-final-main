@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
         // 2. Validate status for instant cancel
         const instantStatuses = ["pending", "confirmed", "processing"];
         if (!instantStatuses.includes(order.status)) {
-            return NextResponse.json({ 
-                error: `This order is in '${order.status}' status and cannot be instantly cancelled. Please request a refund instead.` 
+            return NextResponse.json({
+                error: `This order is in '${order.status}' status and cannot be instantly cancelled. Please request a refund instead.`
             }, { status: 400 });
         }
 
@@ -60,17 +60,17 @@ export async function POST(req: NextRequest) {
                     }
                 });
                 refundProcessed = true;
-            } catch (stripeError: any) {
+            } catch (stripeError: unknown) {
                 console.error("Stripe refund error:", stripeError);
-                return NextResponse.json({ 
-                    error: "Failed to process automatic refund via Stripe. Please contact support or try again later." 
+                return NextResponse.json({
+                    error: "Failed to process automatic refund via Stripe. Please contact support or try again later."
                 }, { status: 500 });
             }
         }
 
         // 4. Update Supabase records
         const now = new Date().toISOString();
-        
+
         // Update Order
         const { error: updateOrderError } = await admin
             .from("orders")
@@ -98,12 +98,12 @@ export async function POST(req: NextRequest) {
                 .eq("id", payment.id);
         }
 
-        return NextResponse.json({ 
-            success: true, 
-            message: refundProcessed ? "Order cancelled and refund processed successfully." : "Order cancelled successfully." 
+        return NextResponse.json({
+            success: true,
+            message: refundProcessed ? "Order cancelled and refund processed successfully." : "Order cancelled successfully."
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Instant cancel error:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }

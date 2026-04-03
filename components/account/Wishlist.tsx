@@ -5,11 +5,14 @@ import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import { removeFromWishlist } from "@/store/slices/wishlistSlice";
 import { addToCart } from "@/store/slices/cartSlice";
 import { useToggleWishlistMutation } from "@/store/api/wishlistApi";
+import type { WishlistItem } from "@/store/slices/wishlistSlice";
 
 const Wishlist = () => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
-  const { items: wishlistItems } = useAppSelector((state: RootState) => state.wishlist);
+  const { items: wishlistItems } = useAppSelector(
+    (state: RootState) => state.wishlist,
+  );
   const [toggleWishlistMutation] = useToggleWishlistMutation();
 
   const formatPrice = (price: string | number) => {
@@ -23,23 +26,30 @@ const Wishlist = () => {
   const handleRemoveFromWishlist = (id: string | number) => {
     dispatch(removeFromWishlist({ id }));
     if (user) {
-      toggleWishlistMutation({ userId: user.id, productId: String(id), adding: false });
+      toggleWishlistMutation({
+        userId: user.id,
+        productId: String(id),
+        adding: false,
+      });
     }
   };
 
-  const handleAddToCart = (item: any) => {
-    dispatch(addToCart({
-      item: {
-        id: String(item.id),
-        name: item.name,
-        price: typeof item.price === "string" 
-          ? parseFloat(item.price.replace(/[^0-9.]/g, "")) 
-          : Number(item.price),
-        image: item.image,
-        color: item.color,
-        stock: item.stock,
-      }
-    }));
+  const handleAddToCart = (item: WishlistItem) => {
+    dispatch(
+      addToCart({
+        item: {
+          id: String(item.id),
+          name: item.name,
+          price:
+            typeof item.price === "string"
+              ? parseFloat(item.price.replace(/[^0-9.]/g, ""))
+              : Number(item.price),
+          image: item.image,
+          color: item.color || "Default",
+          stock: item.stock || 1,
+        },
+      }),
+    );
   };
 
   if (wishlistItems.length === 0) {

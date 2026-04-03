@@ -12,13 +12,18 @@ import { useGetWishlistItemsQuery } from "@/store/api/wishlistApi";
 import { useGetProfileQuery } from "@/store/api/authApi";
 import { useAppSelector } from "@/store";
 import { setRole } from "@/store/slices/authSlice";
+import type { Session } from "@supabase/supabase-js";
 
 function AuthInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector(state => state.auth);
-  
-  const { data: remoteCart } = useGetCartItemsQuery(user?.id ?? '', { skip: !user?.id });
-  const { data: remoteWishlist } = useGetWishlistItemsQuery(user?.id ?? '', { skip: !user?.id });
+  const { user } = useAppSelector((state) => state.auth);
+
+  const { data: remoteCart } = useGetCartItemsQuery(user?.id ?? "", {
+    skip: !user?.id,
+  });
+  const { data: remoteWishlist } = useGetWishlistItemsQuery(user?.id ?? "", {
+    skip: !user?.id,
+  });
   const { data: profile } = useGetProfileQuery(undefined, { skip: !user });
 
   useEffect(() => {
@@ -42,15 +47,19 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = createClient();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
-      const user = session?.user ?? null;
-      dispatch(setAuth({ user, session }));
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      async (event: string, session: Session | null) => {
+        const user = session?.user ?? null;
+        dispatch(setAuth({ user, session }));
 
-      if (!user && (event === 'SIGNED_OUT' || !user)) {
-        dispatch(clearCart());
-        dispatch(clearWishlist());
-      }
-    });
+        if (!user && (event === "SIGNED_OUT" || !user)) {
+          dispatch(clearCart());
+          dispatch(clearWishlist());
+        }
+      },
+    );
 
     return () => {
       subscription.unsubscribe();
