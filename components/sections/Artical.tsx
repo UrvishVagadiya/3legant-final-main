@@ -57,11 +57,11 @@ const Artical = () => {
             >
               <div className="w-full">
                 <img
-                  className="w-full h-80 object-cover mt-3 rounded-sm"
+                  className="w-full h-80 object-cover  mt-3 rounded-sm"
                   src={article.img}
                   alt={article.title}
                 />
-                <h3 className="my-3 text-base font-medium line-clamp-2">
+                <h3 className="my-3 text-base font-medium line-clamp-1">
                   {article.title}
                 </h3>
                 <div>

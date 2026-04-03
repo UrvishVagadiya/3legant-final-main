@@ -4,7 +4,7 @@ import AuthLayout from "@/components/layout/AuthLayout";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { createClient } from "../../../utils/supabase/client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { typography } from "@/constants/typography";
 
 const supabase = createClient();
@@ -17,6 +17,8 @@ type FormInputs = {
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [message, setMessage] = useState("");
+  const [linkChecked, setLinkChecked] = useState(false);
+  const [linkError, setLinkError] = useState("");
 
   const {
     register,
@@ -24,6 +26,62 @@ export default function ResetPasswordPage() {
     watch,
     formState: { errors, isSubmitting },
   } = useForm<FormInputs>();
+
+  useEffect(() => {
+    const initRecoverySession = async () => {
+      try {
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get("code");
+
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            setLinkError(
+              "This reset link is invalid or expired. Please request a new one.",
+            );
+          }
+        }
+
+        const hashParams = new URLSearchParams(
+          window.location.hash.replace(/^#/, ""),
+        );
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+        const type = hashParams.get("type");
+
+        if (type === "recovery" && accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) {
+            setLinkError(
+              "This reset link is invalid or expired. Please request a new one.",
+            );
+          }
+        }
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          setLinkError(
+            "This reset link is invalid or expired. Please request a new one.",
+          );
+        } else {
+          window.history.replaceState({}, "", "/reset-password");
+        }
+      } catch {
+        setLinkError("Unable to verify reset link. Please request a new one.");
+      } finally {
+        setLinkChecked(true);
+      }
+    };
+
+    initRecoverySession();
+  }, []);
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     setMessage("");
@@ -57,6 +115,14 @@ export default function ResetPasswordPage() {
           className={`mb-4 p-3 bg-green-100 text-green-700 rounded-md ${typography.text14}`}
         >
           {message}
+        </div>
+      )}
+
+      {linkChecked && linkError && (
+        <div
+          className={`mb-4 p-3 bg-red-100 text-red-700 rounded-md ${typography.text14}`}
+        >
+          {linkError}
         </div>
       )}
 
@@ -104,10 +170,14 @@ export default function ResetPasswordPage() {
 
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !linkChecked || !!linkError}
           className={`w-full bg-black text-white rounded-lg py-3 ${typography.buttonSmall} hover:bg-gray-800 transition-colors`}
         >
-          {isSubmitting ? "Updating..." : "Update Password"}
+          {isSubmitting
+            ? "Updating..."
+            : !linkChecked
+              ? "Verifying link..."
+              : "Update Password"}
         </button>
       </form>
     </AuthLayout>

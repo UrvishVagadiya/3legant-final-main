@@ -196,6 +196,7 @@ Deno.serve(async (req) => {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
+      client_reference_id: order.id,
       expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // Set expiry to 30 minutes from now
       discounts: discounts.length > 0 ? discounts : undefined,
       customer_email: shippingInfo.email || user?.email,

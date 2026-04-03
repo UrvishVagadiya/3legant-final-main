@@ -6,6 +6,12 @@ interface StockItem {
   quantity: number;
 }
 
+type ExpirableOrderRow = {
+  id: string;
+  status: string;
+  stock_reduced: boolean | null;
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
@@ -88,7 +94,25 @@ Deno.serve(async (req) => {
 
       case 'checkout.session.expired': {
         const session = event.data.object as Stripe.Checkout.Session
-        const orderId = session.metadata?.order_id
+        let orderId = session.metadata?.order_id || session.client_reference_id || null
+        let order: ExpirableOrderRow | null = null
+
+        if (!orderId && session.id) {
+          const { data: bySession, error: bySessionError } = await supabaseAdmin
+            .from('orders')
+            .select('id, status, stock_reduced')
+            .eq('stripe_session_id', session.id)
+            .maybeSingle()
+
+          if (bySessionError) {
+            console.error('Failed to resolve order via stripe_session_id:', bySessionError)
+          }
+
+          if (bySession) {
+            orderId = bySession.id
+            order = bySession as ExpirableOrderRow
+          }
+        }
 
         if (!orderId) {
           console.error('No orderId in metadata for expired session:', session.id)
@@ -96,15 +120,19 @@ Deno.serve(async (req) => {
         }
 
         // 1. Fetch order to check status and stock_reduced flag
-        const { data: order, error: orderError } = await supabaseAdmin
-          .from('orders')
-          .select('status, stock_reduced')
-          .eq('id', orderId)
-          .maybeSingle()
+        if (!order) {
+          const { data: fetchedOrder, error: orderError } = await supabaseAdmin
+            .from('orders')
+            .select('id, status, stock_reduced')
+            .eq('id', orderId)
+            .maybeSingle()
 
-        if (orderError || !order) {
-          console.error(`Failed to fetch order ${orderId}:`, orderError)
-          break
+          if (orderError || !fetchedOrder) {
+            console.error(`Failed to fetch order ${orderId}:`, orderError)
+            break
+          }
+
+          order = fetchedOrder as ExpirableOrderRow
         }
 
         // Only cancel if still pending/failed
@@ -114,6 +142,8 @@ Deno.serve(async (req) => {
         }
 
         console.log(`Order session expired: ${orderId}. Processing cancellation...`)
+
+        let stockRestoreSucceeded = false
 
         // 2. Restore stock if needed
         if (order.stock_reduced) {
@@ -130,19 +160,21 @@ Deno.serve(async (req) => {
               }))
             })
             if (rpcError) console.error('Stock restoration failed:', rpcError)
+            else stockRestoreSucceeded = true
           }
         }
 
         // 3. Cancel order & payment
         const { error: finalError } = await supabaseAdmin.from('orders').update({
           status: 'cancelled',
+          ...(stockRestoreSucceeded ? { stock_reduced: false } : {}),
           updated_at: new Date().toISOString()
         }).eq('id', orderId)
 
         await supabaseAdmin.from('payments').update({
           status: 'cancelled',
           updated_at: new Date().toISOString()
-        }).eq('order_id', orderId)
+        }).eq('order_id', orderId).in('status', ['pending', 'processing', 'failed'])
 
         if (finalError) console.error('Cancellation update failed:', finalError)
         else console.log(`Successfully cancelled expired order: ${orderId}`)

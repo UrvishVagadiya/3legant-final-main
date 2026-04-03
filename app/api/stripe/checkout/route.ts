@@ -202,6 +202,7 @@ export async function POST(req: NextRequest) {
             mode: "payment",
             ...(discounts.length > 0 ? { discounts } : {}),
             customer_email: user.email,
+            client_reference_id: order.id,
             expires_at: Math.floor(Date.now() / 1000) + (30 * 60),
             metadata: {
                 order_id: order.id,

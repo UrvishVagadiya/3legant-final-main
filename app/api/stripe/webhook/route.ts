@@ -4,6 +4,12 @@ import { stripe } from "@/utils/stripe/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import Stripe from "stripe";
 
+type ExpirableOrderRow = {
+    id: string;
+    status: string;
+    stock_reduced: boolean | null;
+};
+
 export async function POST(req: NextRequest) {
     const body = await req.text();
     const signature = req.headers.get("stripe-signature");
@@ -140,10 +146,10 @@ export async function POST(req: NextRequest) {
         }
         case "checkout.session.expired": {
             const session = event.data.object as Stripe.Checkout.Session;
-            let orderId = session.metadata?.order_id || null;
-            let order: { id: string; status: string; stock_reduced: boolean | null } | null = null;
+            let orderId = session.metadata?.order_id || session.client_reference_id || null;
+            let order: ExpirableOrderRow | null = null;
 
-            // Fallback: derive order by Stripe session id when metadata is missing.
+            // Fallback: derive order by Stripe session id when metadata/reference id is missing.
             if (!orderId && session.id) {
                 const { data: orderBySession, error: orderBySessionError } = await admin
                     .from("orders")
@@ -189,6 +195,8 @@ export async function POST(req: NextRequest) {
                 console.log(`Order ${orderId} is in status '${order.status}', skipping order status change.`);
             }
 
+            let stockRestoreSucceeded = false;
+
             // 2. Restore stock if it was previously reduced
             if (canAutoCancelOrder && order.stock_reduced) {
                 const { data: items, error: itemsError } = await admin
@@ -207,6 +215,7 @@ export async function POST(req: NextRequest) {
                     if (rpcError) {
                         console.error(`Failed to restore stock for order ${orderId}:`, rpcError);
                     } else {
+                        stockRestoreSucceeded = true;
                         console.log(`Successfully restored stock for expired order ${orderId}`);
                     }
                 }
@@ -219,6 +228,7 @@ export async function POST(req: NextRequest) {
                     .from("orders")
                     .update({
                         status: "cancelled",
+                        ...(stockRestoreSucceeded ? { stock_reduced: false } : {}),
                         updated_at: new Date().toISOString(),
                     })
                     .eq("id", orderId);
