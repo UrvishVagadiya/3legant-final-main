@@ -27,6 +27,23 @@ const mobileIcons = [
   { icon: <PiRowsFill />, grid: 1 },
 ];
 
+const getBlogExcerpt = (article: Blog) => {
+  const fallback = [
+    article.intro,
+    ...(article.sections || []).flatMap((section) => [
+      section.content,
+      section.content1,
+      section.content2,
+    ]),
+  ]
+    .find((part) => String(part || "").trim().length > 0)
+    ?.toString();
+
+  const raw = (article.content || fallback || "").replace(/[#*`]/g, "");
+  if (!raw.trim()) return "";
+  return `${raw.substring(0, 160)}...`;
+};
+
 const Blogs = () => {
   const [fetchBlogsPage] = useLazyGetBlogsPageQuery();
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -204,8 +221,7 @@ const Blogs = () => {
                 </p>
                 {viewGrid === 1 && (
                   <p className="hidden md:block mt-4 text-[#6C7275] line-clamp-3 leading-relaxed">
-                    {article.content?.replace(/[#*`]/g, "").substring(0, 160)}
-                    ...
+                    {getBlogExcerpt(article)}
                   </p>
                 )}
               </div>
