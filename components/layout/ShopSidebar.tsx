@@ -67,31 +67,34 @@ const ShopSidebar = ({
           Price
         </h1>
         <div className="flex flex-col gap-3">
-          {priceRanges.map((price, index) => (
-            <div
-              key={index}
-              className="flex justify-between items-center group"
-            >
-              <h3
-                onClick={() => handlePriceChange(price.label)}
-                className={`text-sm cursor-pointer transition-colors ${
-                  isAllPricesSelected || selectedPrices.includes(price.label)
-                    ? "text-[#141718] font-semibold"
-                    : "text-[#807E7E] group-hover:text-[#141718]"
-                }`}
+          {priceRanges.map((price, index) => {
+            // Show as checked if "All Price" is selected OR if the specific price is in selectedPrices
+            const isChecked =
+              isAllPricesSelected || selectedPrices.includes(price.label);
+            return (
+              <div
+                key={index}
+                className="flex justify-between items-center group"
               >
-                {price.label}
-              </h3>
-              <input
-                type="checkbox"
-                checked={
-                  isAllPricesSelected || selectedPrices.includes(price.label)
-                }
-                onChange={() => handlePriceChange(price.label)}
-                className="w-5 h-5 border-gray-300 rounded text-black focus:ring-black accent-black cursor-pointer"
-              />
-            </div>
-          ))}
+                <h3
+                  onClick={() => handlePriceChange(price.label)}
+                  className={`text-sm cursor-pointer transition-colors ${
+                    isChecked
+                      ? "text-[#141718] font-semibold"
+                      : "text-[#807E7E] group-hover:text-[#141718]"
+                  }`}
+                >
+                  {price.label}
+                </h3>
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => handlePriceChange(price.label)}
+                  className="w-5 h-5 border-gray-300 rounded text-black focus:ring-black accent-black cursor-pointer"
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

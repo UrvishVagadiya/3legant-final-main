@@ -6,8 +6,8 @@ import { typography } from "@/constants/typography";
 
 const Footer = () => {
   return (
-    <div className="bg-[#141718]">
-      <div className="px-5 md:px-10 lg:px-40 py-12 md:py-18 w-full">
+    <div className="relative left-1/2 w-screen -translate-x-1/2 bg-[#141718]">
+      <div className="max-w-400 mx-auto px-5 md:px-10 lg:px-40 py-12 md:py-18 w-full">
         <div className="flex flex-col md:flex-row justify-between mb-8 md:mb-19 text-white items-center gap-8 md:gap-0">
           <div className="flex flex-col md:flex-row items-center gap-4 md:gap-5">
             <h3 className={`${typography.h6} leading-none`}>3legant.</h3>

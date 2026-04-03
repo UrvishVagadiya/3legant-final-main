@@ -1,41 +1,117 @@
 import Link from "next/link";
-import Image from "next/image";
 import { FiUser, FiCalendar } from "react-icons/fi";
 import SuggestedArticles from "@/components/sections/SuggestedArticles";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { notFound } from "next/navigation";
-import { typography } from "@/constants/typography";
 
 export const dynamic = "force-dynamic";
 
+const normalizeContentLayout = (content: string) => {
+  return content.replace(
+    /!\[[^\]]*\]\(([^)]+)\)\s*\n\s*!\[[^\]]*\]\(([^)]+)\)/g,
+    (_match, left, right) => `<ImageRow left="${left}" right="${right}" />`,
+  );
+};
+
 const MDXComponents = {
-  Image,
   Link,
   h2: ({ children }: any) => (
-    <h2 className={`${typography.text26Semibold} mt-10 mb-4 text-[#141718]`}>
+    <h2 className="mt-7 mb-2 text-[30px] leading-[1.15] tracking-[-0.02em] font-medium text-[#141718]">
       {children}
     </h2>
   ),
   h3: ({ children }: any) => (
-    <h3 className={`${typography.text22Semibold} mt-8 mb-3 text-[#141718]`}>
+    <h3 className="mt-6 mb-2 text-[28px] leading-[1.2] tracking-[-0.02em] font-medium text-[#141718]">
       {children}
     </h3>
   ),
   p: ({ children }: any) => (
-    <p className="mb-6 md:mb-8 text-[#141718] leading-[1.6]">{children}</p>
+    <p className="mb-5 text-[12px] md:text-[13px] text-[#343839] leading-[1.45]">
+      {children}
+    </p>
   ),
   ul: ({ children }: any) => (
-    <ul className="list-disc ml-6 mb-6 space-y-2 text-[#6C7275]">{children}</ul>
+    <ul className="list-disc ml-6 mb-6 space-y-2 text-[#343839] text-[13px]">
+      {children}
+    </ul>
   ),
-  HighlightBox: ({ children }: any) => (
-    <div className="my-8 p-6 md:p-8 border-2 border-[#FFC107] bg-[#FFFBF0] rounded-sm">
-      <div className="text-[#141718] italic font-medium">{children}</div>
+  img: ({ src, alt }: any) => (
+    <img
+      src={src || ""}
+      alt={alt || "Blog image"}
+      className="w-full h-auto object-cover my-6"
+    />
+  ),
+  ImageRow: ({ left, right }: { left?: string; right?: string }) => (
+    <div className="grid grid-cols-2 gap-4 md:gap-5 my-6 md:my-8">
+      <div className="bg-[#F3F5F7] min-h-60">
+        {left ? (
+          <img
+            src={left}
+            alt="Blog section image"
+            className="w-full h-full object-cover"
+          />
+        ) : null}
+      </div>
+      <div className="bg-[#F3F5F7] min-h-60">
+        {right ? (
+          <img
+            src={right}
+            alt="Blog section image"
+            className="w-full h-full object-cover"
+          />
+        ) : null}
+      </div>
     </div>
   ),
-  Row: ({ children }: any) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-8">{children}</div>
+  SplitFeature: ({
+    image,
+    title1,
+    content1,
+    title2,
+    content2,
+  }: {
+    image?: string;
+    title1?: string;
+    content1?: string;
+    title2?: string;
+    content2?: string;
+  }) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-7 my-8 md:my-10 items-start">
+      <div className="bg-[#F3F5F7] min-h-80 md:min-h-95">
+        {image ? (
+          <img
+            src={image}
+            alt="Featured blog section"
+            className="w-full h-full object-cover"
+          />
+        ) : null}
+      </div>
+      <div className="pt-1">
+        {title1 ? (
+          <h3 className="text-[30px] leading-[1.12] tracking-[-0.02em] font-medium text-[#141718] mb-2">
+            {title1}
+          </h3>
+        ) : null}
+        {content1 ? (
+          <p className="text-[12px] md:text-[13px] text-[#343839] leading-[1.45] mb-6">
+            {content1}
+          </p>
+        ) : null}
+        {title2 ? (
+          <h3 className="text-[30px] leading-[1.12] tracking-[-0.02em] font-medium text-[#141718] mb-2">
+            {title2}
+          </h3>
+        ) : null}
+        {content2 ? (
+          <p className="text-[12px] md:text-[13px] text-[#343839] leading-[1.45]">
+            {content2}
+          </p>
+        ) : null}
+      </div>
+    </div>
   ),
 };
 
@@ -67,56 +143,67 @@ const BlogPost = async ({
   const suggested = suggestedData || [];
 
   return (
-    <div className="max-w-310 mx-auto px-4 sm:px-6 lg:px-8 mb-20 mt-8 font-inter text-[#141718]">
-      <div className="flex flex-wrap items-center gap-3 text-[14px] font-medium mb-8 text-[#6C7275]">
-        <Link href="/" className="hover:text-[#141718] transition-colors">
-          Home
-        </Link>
-        <span className="text-xs">{">"}</span>
-        <Link href="/blogs" className="hover:text-[#141718] transition-colors">
-          Blog
-        </Link>
-        <span className="text-xs">{">"}</span>
-        <span className="text-[#141718]">{blog.title}</span>
-      </div>
+    <div className="max-w-295 mx-auto px-4 sm:px-6 lg:px-8 mb-20 mt-8 text-[#141718]">
+      <div className="max-w-245 mx-auto">
+        <div className="flex flex-wrap items-center gap-3 text-[12px] font-medium mb-7 text-[#6C7275]">
+          <Link href="/" className="hover:text-[#141718] transition-colors">
+            Home
+          </Link>
+          <span className="text-[10px]">{">"}</span>
+          <Link
+            href="/blogs"
+            className="hover:text-[#141718] transition-colors"
+          >
+            Blog
+          </Link>
+          <span className="text-[10px]">{">"}</span>
+          <span className="text-[#141718]">{blog.title}</span>
+        </div>
 
-      <div className="space-y-4 mb-8 md:mb-10 w-full lg:w-[85%]">
-        <span className="text-xs font-bold uppercase tracking-wider text-[#6C7275]">
-          ARTICLE
-        </span>
-        <h1 className={`${typography.h3} text-[#141718]`}>{blog.title}</h1>
-        <div className="flex items-center gap-6 text-[#6C7275] text-[14px] font-medium pt-2">
-          <div className="flex items-center gap-1.5">
-            <FiUser size={18} className="text-[#6C7275]" />
-            <span>{blog.author || "admin"}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <FiCalendar size={18} className="text-[#6C7275]" />
-            <span>
-              {new Date(blog.date).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </span>
+        <div className="space-y-3 mb-7">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6C7275]">
+            ARTICLE
+          </span>
+          <h1 className="max-w-190 text-[44px] md:text-[58px] leading-[1.04] tracking-[-0.03em] font-medium text-[#141718]">
+            {blog.title}
+          </h1>
+          <div className="flex items-center gap-5 text-[#6C7275] text-[12px] font-medium pt-1">
+            <div className="flex items-center gap-1.5">
+              <FiUser size={15} className="text-[#6C7275]" />
+              <span>{blog.author || "admin"}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <FiCalendar size={15} className="text-[#6C7275]" />
+              <span>
+                {new Date(blog.date).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </span>
+            </div>
           </div>
         </div>
+
+        <div className="w-full h-auto mb-6 md:mb-8 bg-[#F3F5F7]">
+          <img
+            src={blog.img}
+            alt={blog.title}
+            className="w-full h-auto object-cover"
+          />
+        </div>
+
+        <article className="w-full">
+          <MDXRemote
+            source={normalizeContentLayout(blog.content || "")}
+            components={MDXComponents}
+          />
+        </article>
       </div>
 
-      <div className="w-full aspect-4/3 md:aspect-21/9 relative rounded-lg overflow-hidden mb-8 md:mb-12">
-        <Image
-          src={blog.img}
-          alt={blog.title}
-          fill
-          className="object-cover object-center"
-        />
+      <div className="max-w-245 mx-auto">
+        <SuggestedArticles articles={suggested} />
       </div>
-
-      <div className="w-full text-[#141718] text-[15px] md:text-[18px] leading-[1.6]">
-        <MDXRemote source={blog.content} components={MDXComponents} />
-      </div>
-
-      <SuggestedArticles articles={suggested} />
     </div>
   );
 };

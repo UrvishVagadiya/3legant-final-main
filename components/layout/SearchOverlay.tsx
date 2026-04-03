@@ -20,11 +20,12 @@ const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
   const { searchQuery: query } = useAppSelector(
     (state: RootState) => state.product,
   );
+  const hasQuery = query.trim().length > 0;
 
   const { data: results = [], isFetching: loading } = useSearchProductsQuery(
     query,
     {
-      skip: !query.trim(),
+      skip: !hasQuery,
     },
   );
 
@@ -62,20 +63,22 @@ const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
       <div className="relative bg-white w-full shadow-xl animate-in slide-in-from-top duration-200">
         <div className="max-w-200 mx-auto px-4 sm:px-6 py-6">
           {/* Search Input */}
-          <div className="flex items-center gap-3 border-b-2 border-[#141718] pb-3">
-            <Search className="w-5 h-5 text-[#6C7275] shrink-0" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Search for products..."
-              className={`${typography.text18} text-[#141718] placeholder:text-[#6C7275] outline-none bg-transparent`}
-            />
+          <div className="flex justify-between items-center gap-3 border-b-2 border-[#141718] pb-3">
+            <div className="flex items-center gap-3">
+              <Search className="w-5 h-5 text-[#6C7275] shrink-0" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder="Search for products..."
+                className={`${typography.text18} text-[#141718] placeholder:text-[#6C7275] outline-none bg-transparent`}
+              />
+            </div>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
             >
               <X className="w-5 h-5 text-[#6C7275]" />
             </button>
@@ -89,13 +92,13 @@ const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
               </div>
             )}
 
-            {!loading && query.trim() && results.length === 0 && (
+            {!loading && hasQuery && results.length === 0 && (
               <p className="text-center text-[#6C7275] py-8 text-sm">
                 No products found for &quot;{query}&quot;
               </p>
             )}
 
-            {!loading && results.length > 0 && (
+            {!loading && hasQuery && results.length > 0 && (
               <div className="flex flex-col divide-y divide-gray-100">
                 {results.map((product) => (
                   <Link
@@ -156,7 +159,7 @@ const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
               </div>
             )}
 
-            {!loading && !query.trim() && (
+            {!loading && !hasQuery && (
               <p className="text-center text-[#6C7275] py-8 text-sm">
                 Start typing to search products...
               </p>

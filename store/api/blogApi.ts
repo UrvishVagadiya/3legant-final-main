@@ -3,6 +3,15 @@ import { createClient } from '@/utils/supabase/client';
 
 import { Blog } from '@/types/blog';
 
+const toApiError = (error: any) => ({
+  status: 'CUSTOM_ERROR',
+  data: {
+    message: error?.message || 'Supabase request failed',
+    code: error?.code || 'UNKNOWN',
+    details: error?.details || null,
+  },
+});
+
 export const blogApi = apiService.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
@@ -38,7 +47,7 @@ export const blogApi = apiService.injectEndpoints({
           .order(orderColumn, { ascending })
           .range(offset, to);
 
-        if (error) return { error };
+        if (error) return { error: toApiError(error) };
         return { data: data || [] };
       },
       providesTags: (result) =>
@@ -57,7 +66,7 @@ export const blogApi = apiService.injectEndpoints({
           .select('*')
           .order('date', { ascending: false });
 
-        if (error) return { error };
+        if (error) return { error: toApiError(error) };
         return { data: data || [] };
       },
       providesTags: (result) =>
@@ -78,7 +87,7 @@ export const blogApi = apiService.injectEndpoints({
           .select()
           .single();
 
-        if (error) return { error };
+        if (error) return { error: toApiError(error) };
         return { data };
       },
       invalidatesTags: [{ type: 'Blog', id: 'LIST' }],
@@ -93,7 +102,7 @@ export const blogApi = apiService.injectEndpoints({
           .select()
           .single();
 
-        if (error) return { error };
+        if (error) return { error: toApiError(error) };
         return { data };
       },
       invalidatesTags: (result, error, { id }) => [{ type: 'Blog', id }, { type: 'Blog', id: 'LIST' }],
@@ -102,7 +111,7 @@ export const blogApi = apiService.injectEndpoints({
       queryFn: async (id) => {
         const supabase = createClient();
         const { error } = await supabase.from('blogs').delete().eq('id', id);
-        if (error) return { error };
+        if (error) return { error: toApiError(error) };
         return { data: null };
       },
       invalidatesTags: [{ type: 'Blog', id: 'LIST' }],

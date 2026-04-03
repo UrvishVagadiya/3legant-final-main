@@ -125,21 +125,44 @@ import {
 
 const OrdersHistory = () => {
   const { user } = useAppSelector((state: RootState) => state.auth);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
   const {
-    data: orders = [],
+    data,
     isLoading: loading,
     refetch,
     isFetching,
-  } = useGetOrdersQuery(user?.id ?? "", {
-    skip: !user?.id,
-    refetchOnMountOrArgChange: true,
-    refetchOnFocus: true,
-    refetchOnReconnect: true,
-  });
+  } = useGetOrdersQuery(
+    {
+      userId: user?.id ?? "",
+      page: currentPage,
+      pageSize,
+    },
+    {
+      skip: !user?.id,
+      refetchOnMountOrArgChange: true,
+      refetchOnFocus: true,
+      refetchOnReconnect: true,
+    },
+  );
+
+  const orders = data?.orders ?? [];
+  const totalPages = data?.totalPages ?? 1;
+  const totalOrders = data?.total ?? 0;
   const { data: refundSettings } = useGetRefundPeriodQuery();
   const refundPeriod = refundSettings?.days || 7;
 
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setExpandedOrder(null);
+  }, [currentPage]);
+
+  React.useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const toggleOrderDetails = (orderId: string) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
@@ -159,7 +182,14 @@ const OrdersHistory = () => {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 md:mb-8">
-        <h1 className="font-semibold text-[20px]">Orders History</h1>
+        <div>
+          <h1 className="font-semibold text-[20px]">Orders History</h1>
+          {totalOrders > 0 && (
+            <p className="text-xs text-[#6C7275] mt-1">
+              Showing page {currentPage} of {totalPages} ({totalOrders} total)
+            </p>
+          )}
+        </div>
         <button
           onClick={() => refetch()}
           disabled={isFetching}
@@ -245,6 +275,34 @@ const OrdersHistory = () => {
           ))
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1 || isFetching}
+            className="px-4 py-2 border border-gray-300 rounded-md text-sm text-[#141718] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+
+          <span className="text-sm text-[#6C7275]">
+            Page {currentPage} / {totalPages}
+          </span>
+
+          <button
+            type="button"
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
+            disabled={currentPage === totalPages || isFetching}
+            className="px-4 py-2 border border-gray-300 rounded-md text-sm text-[#141718] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

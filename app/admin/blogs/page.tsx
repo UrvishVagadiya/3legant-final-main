@@ -10,8 +10,114 @@ import {
   useDeleteBlogMutation,
 } from "@/store/api/blogApi";
 import { BlogFormData, emptyBlogForm, Blog } from "@/types/blog";
-import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
+
+const buildContentFromForm = (formData: BlogFormData) => {
+  const escapeMdxAttr = (value: string) =>
+    value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+
+  const section1 = formData.sections[0];
+  const section2 = formData.sections[1];
+  const section3 = formData.sections[2];
+  const section4 = formData.sections[3];
+  const blocks: string[] = [];
+
+  if (formData.intro?.trim()) {
+    blocks.push(formData.intro.trim());
+  }
+
+  if (section1?.title?.trim()) {
+    blocks.push(`## ${section1.title.trim()}`);
+  }
+
+  if (section1?.content?.trim()) {
+    blocks.push(section1.content.trim());
+  }
+
+  if (section2?.title?.trim()) {
+    blocks.push(`## ${section2.title.trim()}`);
+  }
+
+  if (section2?.content?.trim()) {
+    blocks.push(section2.content.trim());
+  }
+
+  if (section3?.title?.trim()) {
+    blocks.push(`## ${section3.title.trim()}`);
+  }
+
+  if (section3?.content?.trim()) {
+    blocks.push(section3.content.trim());
+  }
+
+  const rowLeft = section3?.image?.trim() || "";
+  const rowRight = section3?.image2?.trim() || "";
+  if (rowLeft || rowRight) {
+    blocks.push(
+      `<ImageRow left="${escapeMdxAttr(rowLeft)}" right="${escapeMdxAttr(rowRight)}" />`,
+    );
+  }
+
+  const splitImage = section4?.image?.trim() || "";
+  const splitTitle1 = section4?.title1?.trim() || "";
+  const splitContent1 = section4?.content1?.trim() || "";
+  const splitTitle2 = section4?.title2?.trim() || "";
+  const splitContent2 = section4?.content2?.trim() || "";
+
+  if (
+    splitImage ||
+    splitTitle1 ||
+    splitContent1 ||
+    splitTitle2 ||
+    splitContent2
+  ) {
+    blocks.push(
+      `<SplitFeature image="${escapeMdxAttr(splitImage)}" title1="${escapeMdxAttr(splitTitle1)}" content1="${escapeMdxAttr(splitContent1)}" title2="${escapeMdxAttr(splitTitle2)}" content2="${escapeMdxAttr(splitContent2)}" />`,
+    );
+  }
+
+  return blocks.join("\n\n");
+};
+
+const getErrorMessage = (err: unknown) => {
+  if (!err) return "Unknown error";
+  if (typeof err === "string") return err;
+  if (err instanceof Error) return err.message;
+
+  const maybeObj = err as {
+    message?: string;
+    error?: string;
+    data?: { message?: string };
+  };
+
+  return (
+    maybeObj.message ||
+    maybeObj.error ||
+    maybeObj.data?.message ||
+    "Blog save failed. Please check required fields and DB policies."
+  );
+};
+
+const normalizeFormData = (formData: Partial<BlogFormData> | undefined) => ({
+  ...emptyBlogForm,
+  ...formData,
+  title: formData?.title ?? "",
+  img: formData?.img ?? "",
+  author: formData?.author ?? "admin",
+  date: formData?.date ?? new Date().toISOString().split("T")[0],
+  intro: formData?.intro ?? "",
+  sections: Array.isArray(formData?.sections)
+    ? formData!.sections
+    : emptyBlogForm.sections,
+});
+
+const pickFirstNonEmpty = (values: Array<string | undefined>) => {
+  for (const value of values) {
+    const trimmed = String(value ?? "").trim();
+    if (trimmed) return trimmed;
+  }
+  return "";
+};
 
 export default function AdminBlogs() {
   const { data: blogs = [], isLoading: loading } = useGetBlogsQuery();
@@ -22,7 +128,6 @@ export default function AdminBlogs() {
   const [showForm, setShowForm] = React.useState(false);
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [formData, setFormData] = React.useState<BlogFormData>(emptyBlogForm);
-  const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
 
@@ -30,18 +135,21 @@ export default function AdminBlogs() {
     setEditingId(b.id);
     setFormData({
       title: b.title || "",
+      img: b.img || "",
       author: b.author || "admin",
-      date: b.date || new Date().toISOString(),
-      content: b.content || "",
+      date: b.date ? new Date(b.date).toISOString().split("T")[0] : "",
+      intro: b.intro || "",
+      sections: Array.isArray(b.sections) ? b.sections : emptyBlogForm.sections,
     });
-    setImageFile(null);
     setShowForm(true);
   };
 
   const openAddForm = () => {
     setEditingId(null);
-    setFormData(emptyBlogForm);
-    setImageFile(null);
+    setFormData({
+      ...emptyBlogForm,
+      sections: emptyBlogForm.sections.map((s) => ({ ...s })),
+    });
     setShowForm(true);
   };
 
@@ -49,32 +157,40 @@ export default function AdminBlogs() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const supabase = createClient();
-      let imageUrl = editingId
-        ? blogs.find((b) => b.id === editingId)?.img
-        : "";
+      const safeFormData = normalizeFormData(formData);
+      const title = pickFirstNonEmpty([
+        safeFormData.title,
+        safeFormData.sections[0]?.title,
+        safeFormData.sections[1]?.title,
+        safeFormData.sections[2]?.title,
+        safeFormData.sections[3]?.title1,
+      ]);
+      const img = pickFirstNonEmpty([
+        safeFormData.img,
+        safeFormData.sections[3]?.image,
+        safeFormData.sections[2]?.image,
+        safeFormData.sections[2]?.image2,
+      ]);
+      const content = buildContentFromForm(safeFormData);
 
-      if (imageFile) {
-        const fileName = `blog-${Date.now()}-${imageFile.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from("product_img")
-          .upload(fileName, imageFile);
-
-        if (uploadError) throw uploadError;
-
-        imageUrl = supabase.storage.from("product_img").getPublicUrl(fileName)
-          .data.publicUrl;
+      if (!title || !img) {
+        toast.error("Please fill blog title and at least one image URL");
+        return;
       }
 
-      if (!editingId && !imageUrl) {
-        toast.error("Please upload an image");
-        setSubmitting(false);
+      if (!content.trim()) {
+        toast.error("Please add blog content in intro or sections");
         return;
       }
 
       const blogData = {
-        ...formData,
-        img: imageUrl,
+        title,
+        img,
+        author: String(safeFormData.author || "admin").trim() || "admin",
+        content,
+        date: safeFormData.date
+          ? new Date(safeFormData.date).toISOString()
+          : new Date().toISOString(),
       };
 
       if (editingId) {
@@ -86,9 +202,10 @@ export default function AdminBlogs() {
       setShowForm(false);
       setFormData(emptyBlogForm);
       setEditingId(null);
-      setImageFile(null);
-    } catch (err: any) {
-      console.error("Failed to save blog:", err);
+    } catch (err: unknown) {
+      const message = getErrorMessage(err);
+      console.error("Failed to save blog:", err, message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -98,10 +215,6 @@ export default function AdminBlogs() {
     if (confirm("Are you sure you want to delete this blog?")) {
       await deleteBlogMutation(id).unwrap();
     }
-  };
-
-  const handleImageChange = (file: File | null) => {
-    setImageFile(file);
   };
 
   const filtered = blogs.filter(
@@ -181,11 +294,9 @@ export default function AdminBlogs() {
           formData={formData}
           setFormData={setFormData}
           editingId={editingId}
-          imageFile={imageFile}
           submitting={submitting}
           onSubmit={handleSubmit}
           onClose={() => setShowForm(false)}
-          onImageChange={handleImageChange}
         />
       )}
     </div>

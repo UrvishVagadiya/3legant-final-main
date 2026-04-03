@@ -7,22 +7,18 @@ interface Props {
   formData: BlogFormData;
   setFormData: React.Dispatch<React.SetStateAction<BlogFormData>>;
   editingId: number | null;
-  imageFile: File | null;
   submitting: boolean;
   onSubmit: (e: FormEvent) => void;
   onClose: () => void;
-  onImageChange: (file: File | null) => void;
 }
 
 export default function BlogFormModal({
   formData,
   setFormData,
   editingId,
-  imageFile,
   submitting,
   onSubmit,
   onClose,
-  onImageChange,
 }: Props) {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto">
@@ -42,8 +38,6 @@ export default function BlogFormModal({
             formData={formData}
             setFormData={setFormData}
             editingId={editingId}
-            imageFile={imageFile}
-            onImageChange={onImageChange}
           />
           <div className="flex gap-3 pt-2">
             <button

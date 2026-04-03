@@ -5,7 +5,9 @@ import { useState, useEffect } from "react";
 import { BsGrid3X3GapFill, BsGridFill } from "react-icons/bs";
 import { PiColumnsFill, PiRowsFill } from "react-icons/pi";
 import GridIconBar from "@/components/shop/GridIconBar";
-import BlogSortMenu from "@/components/sections/BlogSortMenu";
+import BlogSortMenu, {
+  type BlogSortOption,
+} from "@/components/sections/BlogSortMenu";
 import { useLazyGetBlogsPageQuery } from "@/store/api/blogApi";
 import { typography } from "@/constants/typography";
 
@@ -34,7 +36,7 @@ const Blogs = () => {
   const [loadedCount, setLoadedCount] = useState<number>(0);
   const [viewGrid, setViewGrid] = useState<number>(3);
   const [mobileViewGrid, setMobileViewGrid] = useState<number>(1);
-  const [sortOption, setSortOption] = useState("default");
+  const [sortOption, setSortOption] = useState<BlogSortOption>("default");
 
   useEffect(() => {
     const loadInitialBlogs = async () => {

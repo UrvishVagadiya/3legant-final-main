@@ -188,7 +188,7 @@ export default function ReviewsSection({ productId, productName }: { productId: 
           <span className="text-sm text-[#6C7275]">{productName}</span>
           <button 
             onClick={userReview ? handleEdit : () => setShowForm(true)}
-            className="bg-black text-white px-6 py-2 rounded-full text-sm font-medium hover:opacity-90 transition"
+            className="bg-black cursor-pointer text-white px-6 py-2 rounded-full text-sm font-medium hover:opacity-90 transition"
           >
             {userReview ? "Edit Review" : "Write Review"}
           </button>
@@ -223,7 +223,7 @@ export default function ReviewsSection({ productId, productName }: { productId: 
         <h4 className="text-lg font-medium">{reviews.length} Reviews</h4>
         <select 
           value={sortOption} onChange={e => setSortOption(e.target.value)}
-          className="bg-transparent border rounded p-2 text-sm outline-none"
+          className="bg-transparent cursor-pointer border rounded p-2 text-sm outline-none"
         >
           <option>Newest</option>
           <option>Highest Rating</option>

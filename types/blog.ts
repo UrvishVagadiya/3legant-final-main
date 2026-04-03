@@ -2,46 +2,72 @@ export interface Blog {
   id: number;
   title: string;
   img: string;
-  date: string; // ISO string from timestamptz
+  date: string;
   author?: string;
-  content?: string;
   category?: string;
   slug?: string;
+  intro?: string;
+  sections?: BlogSection[];
+}
+
+export interface BlogSection {
+  id: string;
+  type: "section";
+  title?: string;
+  content?: string;
+  image?: string;
+  title1?: string;
+  content1?: string;
+  title2?: string;
+  content2?: string;
+  image2?: string;
+  imageFile?: File;
 }
 
 export type BlogFormData = {
   title: string;
+  img: string;
   author: string;
   date: string;
-  content: string;
+  intro: string;
+  sections: BlogSection[];
 };
 
 export const emptyBlogForm: BlogFormData = {
   title: "",
+  img: "",
   author: "admin",
   date: new Date().toISOString().split("T")[0],
-  content: `<h2>Introduction</h2>
-<p>Write your introduction here...</p>
-
-<HighlightBox>
-  <h4>Key Insight</h4>
-  <p>Provide a quick takeaway or important point here.</p>
-</HighlightBox>
-
-<h2>The Main Event</h2>
-<p>Dive deep into your primary content. You can add more paragraphs as needed.</p>
-
-<Row>
-  <div>
-    <h3>Sub-topic A</h3>
-    <p>Details about the first sub-topic go here.</p>
-  </div>
-  <div>
-    <h3>Sub-topic B</h3>
-    <p>Details about the second sub-topic go here.</p>
-  </div>
-</Row>
-
-<h2>Final Thoughts</h2>
-<p>Summarize your findings and provide a call to action.</p>`,
+  intro: "",
+  sections: [
+    {
+      id: "section-1",
+      type: "section",
+      title: "",
+      content: "",
+    },
+    {
+      id: "section-2",
+      type: "section",
+      title: "",
+      content: "",
+    },
+    {
+      id: "section-3",
+      type: "section",
+      title: "",
+      content: "",
+      image: "",
+      image2: "",
+    },
+    {
+      id: "section-4",
+      type: "section",
+      title1: "",
+      content1: "",
+      title2: "",
+      content2: "",
+      image: "",
+    },
+  ],
 };

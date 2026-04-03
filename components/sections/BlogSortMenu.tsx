@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { RiArrowDropDownLine } from "react-icons/ri";
 
+export type BlogSortOption = "default" | "newest" | "oldest" | "az" | "za";
+
 interface BlogSortMenuProps {
-  sortOption: string;
-  onSort: (option: string) => void;
+  sortOption: BlogSortOption;
+  onSort: (option: BlogSortOption) => void;
 }
 
-const sortLabels: Record<string, string> = {
+const sortLabels: Record<BlogSortOption, string> = {
   default: "Sort by",
   newest: "Newest",
   oldest: "Oldest",
@@ -16,7 +18,7 @@ const sortLabels: Record<string, string> = {
   za: "Title (Z-A)",
 };
 
-const options = ["default", "newest", "oldest", "az", "za"];
+const options: BlogSortOption[] = ["default", "newest", "oldest", "az", "za"];
 
 const BlogSortMenu = ({ sortOption, onSort }: BlogSortMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);

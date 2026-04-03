@@ -30,12 +30,30 @@ export interface OrderItem {
   total_price: number;
 }
 
+export interface GetOrdersParams {
+  userId: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PaginatedOrdersResponse {
+  orders: Order[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export const orderApi = apiService.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
-    getOrders: builder.query<Order[], string>({
-      queryFn: async (userId) => {
+    getOrders: builder.query<PaginatedOrdersResponse, GetOrdersParams>({
+      queryFn: async ({ userId, page = 1, pageSize = 5 }) => {
         const supabase = createClient();
+        const safePage = Math.max(1, Number(page) || 1);
+        const safePageSize = Math.max(1, Number(pageSize) || 5);
+        const from = (safePage - 1) * safePageSize;
+        const to = from + safePageSize - 1;
 
         // Keep order/payment status in sync even if webhook delivery is delayed.
         try {
@@ -44,13 +62,15 @@ export const orderApi = apiService.injectEndpoints({
           console.error("Failed to auto-cleanup expired orders:", cleanupError);
         }
 
-        const { data, error } = await supabase
+        const { data, error, count } = await supabase
           .from("orders")
           .select(
             "id, order_code, created_at, status, subtotal, shipping_cost, discount, total, shipping_method, tracking_number, payments(*), refund_status, refund_request_reason, refund_requested_at, delivered_at, order_items(*)",
+            { count: "exact" },
           )
           .eq("user_id", userId)
-          .order("created_at", { ascending: false });
+          .order("created_at", { ascending: false })
+          .range(from, to);
 
         if (error) return { error };
 
@@ -67,9 +87,20 @@ export const orderApi = apiService.injectEndpoints({
           };
         });
 
-        return { data: mappedData };
+        const total = typeof count === "number" ? count : 0;
+        const totalPages = Math.max(1, Math.ceil(total / safePageSize));
+
+        return {
+          data: {
+            orders: mappedData,
+            total,
+            page: safePage,
+            pageSize: safePageSize,
+            totalPages,
+          },
+        };
       },
-      providesTags: (result, error, userId) => [{ type: 'Order', id: userId }],
+      providesTags: (result, error, arg) => [{ type: 'Order', id: arg.userId }],
       keepUnusedDataFor: 10, // Shorten TTL for orders to 10 seconds to ensure quick updates
     }),
     requestRefund: builder.mutation<null, { orderId: string; userId: string; reason: string }>({

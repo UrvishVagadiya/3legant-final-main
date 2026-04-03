@@ -37,132 +37,134 @@ const Navbar = () => {
   };
 
   return (
-    <div className="px-4 sm:px-5 md:px-10 lg:px-40 py-4 md:py-5 flex items-center justify-between w-full border-b text-gray-100">
-      <div className="flex items-center gap-3">
-        <Menu
-          onClick={() => setIsMobileMenuOpen(true)}
-          className="block md:hidden cursor-pointer w-6 h-6 text-[#141718] transition-all duration-300 ease-in-out"
-        />
-        <Link href="/">
-          <h3
-            className={`${typography.h6} cursor-pointer text-[#141718] leading-none transition-all duration-300 ease-in-out`}
-          >
-            3legant.
-          </h3>
-        </Link>
-      </div>
-      <div className="hidden md:flex items-center gap-6 lg:gap-10 text-sm font-medium text-[#6C7275]">
-        <Link
-          href={"/"}
-          className={`${
-            pathname === "/"
-              ? "text-[#141718] font-bold"
-              : "text-[#6C7275] hover:text-[#141718]"
-          } transition-colors duration-300 ease-in-out`}
-        >
-          Home
-        </Link>
-        <Link
-          href={"/shop"}
-          className={`${
-            pathname.startsWith("/shop")
-              ? "text-[#141718] font-bold"
-              : "text-[#6C7275] hover:text-[#141718]"
-          } transition-colors duration-300 ease-in-out`}
-        >
-          Shop
-        </Link>
-        <Link
-          href={"/blogs"}
-          className={`${
-            pathname.startsWith("/blogs")
-              ? "text-[#141718] font-bold"
-              : "text-[#6C7275] hover:text-[#141718]"
-          } transition-colors duration-300 ease-in-out`}
-        >
-          Blog
-        </Link>
-        <Link
-          href={"/contact"}
-          className={`${
-            pathname.startsWith("/contact")
-              ? "text-[#141718] font-bold"
-              : "text-[#6C7275] hover:text-[#141718]"
-          } transition-colors duration-300 ease-in-out`}
-        >
-          Contact Us
-        </Link>
-        {role === "admin" && (
+    <div className="relative left-1/2 w-screen -translate-x-1/2 border-b text-gray-100 bg-white">
+      <div className="max-w-400 mx-auto px-4 sm:px-5 md:px-10 lg:px-40 py-4 md:py-5 flex items-center justify-between w-full">
+        <div className="flex items-center gap-3">
+          <Menu
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="block md:hidden cursor-pointer w-6 h-6 text-[#141718] transition-all duration-300 ease-in-out"
+          />
+          <Link href="/">
+            <h3
+              className={`${typography.h6} cursor-pointer text-[#141718] leading-none transition-all duration-300 ease-in-out`}
+            >
+              3legant.
+            </h3>
+          </Link>
+        </div>
+        <div className="hidden md:flex items-center gap-6 lg:gap-10 text-sm font-medium text-[#6C7275]">
           <Link
-            href={"/admin"}
+            href={"/"}
             className={`${
-              pathname.startsWith("/admin")
+              pathname === "/"
                 ? "text-[#141718] font-bold"
                 : "text-[#6C7275] hover:text-[#141718]"
             } transition-colors duration-300 ease-in-out`}
           >
-            Admin
+            Home
           </Link>
-        )}
-      </div>
-
-      <div className="flex items-center gap-3 md:gap-4 text-[#141718]">
-        <Search
-          onClick={() => setIsSearchOpen(true)}
-          className="hidden md:block cursor-pointer w-5 h-5 lg:w-6 lg:h-6 hover:text-gray-500 transition-colors duration-300 ease-in-out"
-        />
-        <div className="relative">
-          {user ? (
+          <Link
+            href={"/shop"}
+            className={`${
+              pathname.startsWith("/shop")
+                ? "text-[#141718] font-bold"
+                : "text-[#6C7275] hover:text-[#141718]"
+            } transition-colors duration-300 ease-in-out`}
+          >
+            Shop
+          </Link>
+          <Link
+            href={"/blogs"}
+            className={`${
+              pathname.startsWith("/blogs")
+                ? "text-[#141718] font-bold"
+                : "text-[#6C7275] hover:text-[#141718]"
+            } transition-colors duration-300 ease-in-out`}
+          >
+            Blog
+          </Link>
+          <Link
+            href={"/contact"}
+            className={`${
+              pathname.startsWith("/contact")
+                ? "text-[#141718] font-bold"
+                : "text-[#6C7275] hover:text-[#141718]"
+            } transition-colors duration-300 ease-in-out`}
+          >
+            Contact Us
+          </Link>
+          {role === "admin" && (
             <Link
-              href={"/account"}
-              className="hidden md:flex cursor-pointer w-7 h-7 lg:w-8 lg:h-8 rounded-full items-center justify-center transition-opacity hover:opacity-80 overflow-hidden"
+              href={"/admin"}
+              className={`${
+                pathname.startsWith("/admin")
+                  ? "text-[#141718] font-bold"
+                  : "text-[#6C7275] hover:text-[#141718]"
+              } transition-colors duration-300 ease-in-out`}
             >
-              {user.user_metadata?.avatar_url ? (
-                <img
-                  src={user.user_metadata.avatar_url}
-                  alt={user.user_metadata?.full_name || "User"}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-[#141718] text-white flex items-center justify-center text-sm font-semibold">
-                  {getInitial()}
-                </div>
-              )}
-            </Link>
-          ) : (
-            <Link href={"/signin"}>
-              <CircleUserRound className="hidden md:block cursor-pointer w-5 h-5 lg:w-6 lg:h-6 hover:text-gray-500 transition-colors duration-300 ease-in-out" />
+              Admin
             </Link>
           )}
         </div>
-        <div
-          onClick={() => {
-            if (items.length === 0) {
-              toast.error("Your cart is empty!");
-              return;
-            }
-            dispatch(toggleCart());
-          }}
-          className="flex items-center gap-1.5 cursor-pointer group transition-all duration-300 ease-in-out"
-        >
-          <Handbag className="w-5 h-5 lg:w-6 lg:h-6 group-hover:text-gray-500 transition-colors duration-300 ease-in-out" />
-          {isMounted && cartItemCount > 0 && (
-            <div className="bg-[#141718] text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
-              {cartItemCount}
-            </div>
-          )}
+
+        <div className="flex items-center gap-3 md:gap-4 text-[#141718]">
+          <Search
+            onClick={() => setIsSearchOpen(true)}
+            className="hidden md:block cursor-pointer w-5 h-5 lg:w-6 lg:h-6 hover:text-gray-500 transition-colors duration-300 ease-in-out"
+          />
+          <div className="relative">
+            {user ? (
+              <Link
+                href={"/account"}
+                className="hidden md:flex cursor-pointer w-7 h-7 lg:w-8 lg:h-8 rounded-full items-center justify-center transition-opacity hover:opacity-80 overflow-hidden"
+              >
+                {user.user_metadata?.avatar_url ? (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    alt={user.user_metadata?.full_name || "User"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-[#141718] text-white flex items-center justify-center text-sm font-semibold">
+                    {getInitial()}
+                  </div>
+                )}
+              </Link>
+            ) : (
+              <Link href={"/signin"}>
+                <CircleUserRound className="hidden md:block cursor-pointer w-5 h-5 lg:w-6 lg:h-6 hover:text-gray-500 transition-colors duration-300 ease-in-out" />
+              </Link>
+            )}
+          </div>
+          <div
+            onClick={() => {
+              if (items.length === 0) {
+                toast.error("Your cart is empty!");
+                return;
+              }
+              dispatch(toggleCart());
+            }}
+            className="flex items-center gap-1.5 cursor-pointer group transition-all duration-300 ease-in-out"
+          >
+            <Handbag className="w-5 h-5 lg:w-6 lg:h-6 group-hover:text-gray-500 transition-colors duration-300 ease-in-out" />
+            {isMounted && cartItemCount > 0 && (
+              <div className="bg-[#141718] text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                {cartItemCount}
+              </div>
+            )}
+          </div>
         </div>
+
+        <SearchOverlay
+          isOpen={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+        />
+
+        <MobileMenu
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
+        />
       </div>
-
-      <SearchOverlay
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-      />
-
-      <MobileMenu
-        isOpen={isMobileMenuOpen}
-        onClose={() => setIsMobileMenuOpen(false)}
-      />
     </div>
   );
 };

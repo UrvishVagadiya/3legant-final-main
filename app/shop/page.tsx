@@ -99,18 +99,24 @@ const Shop = () => {
   };
 
   const handlePriceChange = (priceLabel: string) => {
-    let updated: string[];
-    if (priceLabel === "All Price") {
-      updated = ["All Price"];
-    } else {
-      const n = selectedPrices.filter((p) => p !== "All Price");
-      updated = n.includes(priceLabel)
-        ? n.filter((p) => p !== priceLabel)
-        : [...n, priceLabel];
+    const individualPriceLabels = priceRanges
+      .map((range) => range.label)
+      .filter((label) => label !== "All Price");
 
-      const individualPriceLabels = priceRanges
-        .map((range) => range.label)
-        .filter((label) => label !== "All Price");
+    let updated: string[];
+
+    if (priceLabel === "All Price") {
+      updated = selectedPrices.includes("All Price") ? [] : ["All Price"];
+    } else {
+      if (selectedPrices.includes("All Price")) {
+        // If All Price is active and user clicks one label,
+        // uncheck both "All Price" and that clicked label.
+        updated = individualPriceLabels.filter((label) => label !== priceLabel);
+      } else {
+        updated = selectedPrices.includes(priceLabel)
+          ? selectedPrices.filter((p) => p !== priceLabel)
+          : [...selectedPrices, priceLabel];
+      }
 
       const allIndividualSelected = individualPriceLabels.every((label) =>
         updated.includes(label),
@@ -119,9 +125,8 @@ const Shop = () => {
       if (allIndividualSelected) {
         updated = ["All Price"];
       }
-
-      if (updated.length === 0) updated = ["All Price"];
     }
+
     dispatch(setFilters({ prices: updated }));
   };
 
