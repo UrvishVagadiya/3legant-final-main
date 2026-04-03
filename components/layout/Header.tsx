@@ -11,7 +11,7 @@ const Header = () => {
   };
   return (
     isVisible && (
-      <div className="relative bg-[#F3F5F7] px-4 py-2 flex items-center justify-center w-full">
+      <div className="relative left-1/2 w-screen -translate-x-1/2 bg-[#F3F5F7] px-4 py-2 flex items-center justify-center">
         <div className="flex justify-center items-center gap-2 mr-6 md:mr-0">
           <TicketPercent className="w-5 h-5 md:w-6 md:h-6" />
           <h3 className="text-sm md:text-base font-medium text-[#141718]">

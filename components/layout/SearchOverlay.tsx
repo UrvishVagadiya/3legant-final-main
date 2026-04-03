@@ -2,10 +2,8 @@
 
 import { Search, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { useAppDispatch, useAppSelector, RootState } from "@/store";
-import { useSearchProductsQuery } from "@/store/api/productApi";
-import { setSearchQuery, clearSearch } from "@/store/slices/productSlice";
+import { useEffect, useRef, useState } from "react";
+import { useLazySearchProductsQuery } from "@/store/api/productApi";
 import { colorMap } from "../product/ColorSelector";
 import TintedProductImage from "../product/TintedProductImage";
 import { typography } from "@/constants/typography";
@@ -16,18 +14,11 @@ interface SearchOverlayProps {
 }
 
 const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
-  const dispatch = useAppDispatch();
-  const { searchQuery: query } = useAppSelector(
-    (state: RootState) => state.product,
-  );
-  const hasQuery = query.trim().length > 0;
-
-  const { data: results = [], isFetching: loading } = useSearchProductsQuery(
-    query,
-    {
-      skip: !hasQuery,
-    },
-  );
+  const [query, setQuery] = useState("");
+  const [searchedQuery, setSearchedQuery] = useState("");
+  const [triggerSearch, { data: results = [], isFetching: loading }] =
+    useLazySearchProductsQuery();
+  const lastTriggeredQueryRef = useRef("");
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -35,12 +26,36 @@ const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100);
     } else {
-      dispatch(clearSearch());
+      setQuery("");
+      setSearchedQuery("");
+      lastTriggeredQueryRef.current = "";
     }
-  }, [isOpen, dispatch]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const trimmed = query.trim();
+
+    if (!trimmed) {
+      setSearchedQuery("");
+      lastTriggeredQueryRef.current = "";
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (lastTriggeredQueryRef.current === trimmed) return;
+
+      setSearchedQuery(trimmed);
+      lastTriggeredQueryRef.current = trimmed;
+      triggerSearch(trimmed);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [query, isOpen, triggerSearch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    dispatch(setSearchQuery(e.target.value));
+    setQuery(e.target.value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -52,7 +67,7 @@ const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-9999 flex flex-col">
+    <div className="fixed inset-0 z-10000 flex flex-col">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -92,13 +107,13 @@ const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
               </div>
             )}
 
-            {!loading && hasQuery && results.length === 0 && (
+            {!loading && searchedQuery && results.length === 0 && (
               <p className="text-center text-[#6C7275] py-8 text-sm">
-                No products found for &quot;{query}&quot;
+                No products found for &quot;{searchedQuery}&quot;
               </p>
             )}
 
-            {!loading && hasQuery && results.length > 0 && (
+            {!loading && searchedQuery && results.length > 0 && (
               <div className="flex flex-col divide-y divide-gray-100">
                 {results.map((product) => (
                   <Link
@@ -159,7 +174,7 @@ const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
               </div>
             )}
 
-            {!loading && !hasQuery && (
+            {!loading && !searchedQuery && (
               <p className="text-center text-[#6C7275] py-8 text-sm">
                 Start typing to search products...
               </p>

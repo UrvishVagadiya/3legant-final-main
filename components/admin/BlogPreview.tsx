@@ -42,6 +42,18 @@ interface Props {
 }
 
 export default function BlogPreview({ data, imagePreview, onBack }: Props) {
+  const previewContent = [
+    data.intro,
+    ...(data.sections || []).flatMap((section) => [
+      section.content,
+      section.content1,
+      section.content2,
+    ]),
+  ]
+    .filter((part): part is string => Boolean(part?.trim()))
+    .join("\n\n")
+    .replace(/[#*`]/g, "");
+
   return (
     <div className="bg-white min-h-screen">
       <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between">
@@ -112,7 +124,7 @@ export default function BlogPreview({ data, imagePreview, onBack }: Props) {
             rendered in the live post.
           </div>
           <div className="prose prose-lg max-w-none">
-            {data.content?.substring(0, 160)}...
+            {previewContent.substring(0, 160)}...
           </div>
         </div>
       </div>

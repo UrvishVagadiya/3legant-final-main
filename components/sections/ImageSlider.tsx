@@ -46,7 +46,7 @@ export default function ImageSlider() {
           delay: 3000,
           disableOnInteraction: false,
         }}
-        className="w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] bg-[#F3F5F7]"
+        className="w-full h-75 sm:h-100 md:h-125 lg:h-150 bg-[#F3F5F7]"
       >
         <SwiperSlide>
           <div className="relative w-full h-full">

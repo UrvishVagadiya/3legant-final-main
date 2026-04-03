@@ -3,6 +3,7 @@ export interface Blog {
   title: string;
   img: string;
   date: string;
+  content?: string;
   author?: string;
   category?: string;
   slug?: string;

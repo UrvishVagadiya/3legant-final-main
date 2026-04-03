@@ -1,4 +1,4 @@
-export const config = { runtime: "nodejs" };
+export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/utils/stripe/server";
 import { createAdminClient } from "@/utils/supabase/admin";
