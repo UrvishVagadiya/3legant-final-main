@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { RiArrowDropDownLine } from "react-icons/ri";
 
 interface FilterDropdownProps {
@@ -7,6 +8,7 @@ interface FilterDropdownProps {
   isOpen: boolean;
   onToggle: () => void;
   onSelect: (label: string) => void;
+  onClose?: () => void;
   compact?: boolean;
 }
 
@@ -17,10 +19,32 @@ const FilterDropdown = ({
   isOpen,
   onToggle,
   onSelect,
+  onClose,
   compact = false,
 }: FilterDropdownProps) => {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen || !onClose) return;
+
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
+      if (!dropdownRef.current) return;
+      if (!dropdownRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, [isOpen, onClose]);
+
   return (
-    <div className={`relative ${compact ? "flex-1" : ""}`}>
+    <div ref={dropdownRef} className={`relative ${compact ? "flex-1" : ""}`}>
       <button
         onClick={onToggle}
         className={`flex items-center justify-between gap-2 border border-gray-300 rounded-lg text-sm font-medium text-[#141718] bg-white ${
