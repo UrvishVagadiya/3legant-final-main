@@ -50,22 +50,16 @@ export interface Review {
   replies: ReviewReply[];
 }
 
-const REVIEW_ELIGIBLE_ORDER_STATUSES = [
-  "processing",
-  "shipped",
-  "delivered",
-  "completed",
-  "refunded",
-];
+const REVIEW_ELIGIBLE_PAYMENT_STATUSES = ["completed", "succeeded"];
 
 const hasPurchasedProduct = async (userId: string, productId: string) => {
   const supabase = createClient();
   const { data, error } = await supabase
-    .from("order_items")
-    .select("id, orders!inner(user_id, status)")
-    .eq("product_id", productId)
-    .eq("orders.user_id", userId)
-    .in("orders.status", REVIEW_ELIGIBLE_ORDER_STATUSES)
+    .from("orders")
+    .select("id, order_items!inner(product_id), payments!inner(status)")
+    .eq("user_id", userId)
+    .eq("order_items.product_id", productId)
+    .in("payments.status", REVIEW_ELIGIBLE_PAYMENT_STATUSES)
     .limit(1)
     .maybeSingle();
 
@@ -177,7 +171,7 @@ export const reviewApi = apiService.injectEndpoints({
           return {
             error: {
               status: 403,
-              data: { message: "You can review this product only after purchasing it." },
+              data: { message: "You can review this product after your payment is completed." },
             },
           };
         }

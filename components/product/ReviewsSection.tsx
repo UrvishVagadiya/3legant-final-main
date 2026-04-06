@@ -272,7 +272,7 @@ export default function ReviewsSection({
   });
   const { data: canReview = false } = useCanReviewProductQuery(
     { productId, userId: user?.id },
-    { skip: !user?.id },
+    { skip: !user?.id, refetchOnMountOrArgChange: true },
   );
   const [addReviewMutation, { isLoading: isAdding }] = useAddReviewMutation();
   const [updateReviewMutation, { isLoading: isUpdating }] =
@@ -363,7 +363,7 @@ export default function ReviewsSection({
             if (!user) return toast.error("Please sign in");
             if (!isEditing && !canReview) {
               return toast.error(
-                "You can review this product only after purchasing it.",
+                "You can review this product after your payment is completed.",
               );
             }
             try {
