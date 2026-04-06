@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import ButtonText from "../ui/ButtonText";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import { useIsMounted } from "@/hooks/useIsMounted";
-import { useGetProductsQuery } from "@/store/api/productApi";
+import { useGetNewArrivalProductsQuery } from "@/store/api/productApi";
 import { addToCart } from "@/store/slices/cartSlice";
 import {
   addToWishlist,
@@ -16,26 +16,11 @@ import {
 import { useToggleWishlistMutation } from "@/store/api/wishlistApi";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import ArrivalCard from "./ArrivalCard";
-import { isProductNew } from "@/utils/isProductNew";
 import type { Product } from "@/store/slices/productSlice";
 
 const Arrivals = () => {
   const dispatch = useAppDispatch();
-  const { data: allProducts = [], isLoading } = useGetProductsQuery();
-  const products = useMemo(
-    () =>
-      allProducts
-        .filter(
-          (p: Product) => p.isNew ?? isProductNew(p.created_at || p.createdAt),
-        )
-        .sort(
-          (a: Product, b: Product) =>
-            new Date(b.created_at || b.createdAt || 0).getTime() -
-            new Date(a.created_at || a.createdAt || 0).getTime(),
-        )
-        .slice(0, 10),
-    [allProducts],
-  );
+  const { data: products = [], isLoading } = useGetNewArrivalProductsQuery();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 

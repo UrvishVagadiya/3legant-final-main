@@ -44,6 +44,30 @@ export const productApi = apiService.injectEndpoints({
           ]
           : [{ type: 'Product', id: 'LIST' }],
     }),
+    getNewArrivalProducts: builder.query<Product[], void>({
+      queryFn: async () => {
+        const supabase = createClient();
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 7);
+
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('status', 'active')
+          .gte('created_at', cutoffDate.toISOString())
+          .order('created_at', { ascending: false });
+
+        if (error) return { error };
+        return { data: (data || []).map((product: Product) => normalizeProduct(product)) };
+      },
+      providesTags: (result) =>
+        result
+          ? [
+            ...result.map(({ id }) => ({ type: 'Product' as const, id })),
+            { type: 'Product', id: 'NEW_ARRIVALS' },
+          ]
+          : [{ type: 'Product', id: 'NEW_ARRIVALS' }],
+    }),
     getProductById: builder.query<Product, string | number>({
       queryFn: async (id) => {
         const supabase = createClient();
@@ -146,6 +170,7 @@ export const productApi = apiService.injectEndpoints({
 export const {
   useLazyGetProductsPageQuery,
   useGetProductsQuery,
+  useGetNewArrivalProductsQuery,
   useGetProductByIdQuery,
   useGetAdminProductsQuery,
   useAddProductMutation,

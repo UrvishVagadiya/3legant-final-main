@@ -31,12 +31,6 @@ const Footer = () => {
             >
               Shop
             </Link>
-            {/* <Link
-              className="hover:text-gray-300 transition-all duration-300 ease-in-out"
-              href="/home"
-            >
-              Product
-            </Link> */}
             <Link
               className="hover:text-gray-300 transition-all duration-300 ease-in-out"
               href={"/blogs"}
