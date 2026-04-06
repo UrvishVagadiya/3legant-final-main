@@ -22,17 +22,30 @@ export default function SignInPage() {
   const {
     register,
     handleSubmit,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<FormInputs>();
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
+    clearErrors("password");
+
     const { error } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     });
 
     if (error) {
-      alert(error.message);
+      const message = error.message
+        .toLowerCase()
+        .includes("invalid login credentials")
+        ? "Invalid email or password"
+        : error.message;
+
+      setError("password", {
+        type: "server",
+        message,
+      });
     } else {
       router.push("/");
     }
@@ -154,6 +167,7 @@ export default function SignInPage() {
         >
           {isSubmitting ? "Signing In..." : "Sign In"}
         </button>
+
       </form>
     </AuthLayout>
   );

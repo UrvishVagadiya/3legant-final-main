@@ -136,11 +136,17 @@ export default function SignUpPage() {
             className={`${typography.text14} text-gray-500 leading-snug`}
           >
             I agree with{" "}
-            <Link href="#" className="font-semibold text-black hover:underline">
+            <Link
+              href="/privacy"
+              className="font-semibold text-black hover:underline"
+            >
               Privacy Policy
             </Link>{" "}
             and{" "}
-            <Link href="#" className="font-semibold text-black hover:underline">
+            <Link
+              href="/terms"
+              className="font-semibold text-black hover:underline"
+            >
               Terms of Use
             </Link>
           </label>

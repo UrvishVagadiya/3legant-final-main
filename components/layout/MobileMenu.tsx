@@ -69,7 +69,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
   const menuContent = (
     <>
       <div
-        className={`fixed inset-0 bg-black/40 z-[99998] transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 bg-black/40 z-99998 transition-opacity duration-300 md:hidden ${
           isOpen
             ? "opacity-100 visible"
             : "opacity-0 invisible pointer-events-none"
@@ -79,7 +79,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
       />
 
       <div
-        className={`fixed top-0 left-0 bottom-0 w-70 sm:w-80 bg-white z-[99999] flex flex-col transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed top-0 left-0 bottom-0 w-70 sm:w-80 bg-white z-99999 flex flex-col transition-transform duration-300 ease-in-out md:hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={

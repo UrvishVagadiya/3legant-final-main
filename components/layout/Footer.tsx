@@ -61,16 +61,18 @@ const Footer = () => {
             >
               Copyright © 2023 3legant. All rights reserved
             </h3>
-            <h3
+            <Link
+              href="/privacy"
               className={`${typography.text14Semibold} order-1 md:order-2 cursor-pointer hover:underline transition-all duration-300 ease-in-out`}
             >
               Privacy Policy
-            </h3>
-            <h3
+            </Link>
+            <Link
+              href="/terms"
               className={`${typography.text14Semibold} order-2 md:order-3 cursor-pointer hover:underline transition-all duration-300 ease-in-out`}
             >
               Terms of Use
-            </h3>
+            </Link>
           </div>
 
           <div className="flex gap-6 text-2xl text-white">
