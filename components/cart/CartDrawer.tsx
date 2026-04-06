@@ -40,12 +40,12 @@ export default function CartDrawer() {
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/50 z-9998 transition-opacity duration-300 ${isCartOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 bg-black/50 z-[99996] transition-opacity duration-300 ${isCartOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         onClick={() => dispatch(toggleCart())}
       />
 
       <div
-        className={`fixed top-0 right-0 h-full w-full sm:w-103.5 bg-white z-9999 transform transition-transform duration-300 ease-in-out flex flex-col font-inter ${isCartOpen ? "translate-x-0 shadow-2xl" : "translate-x-full"}`}
+        className={`fixed top-0 right-0 h-full w-full sm:w-103.5 bg-white z-[99997] transform transition-transform duration-300 ease-in-out flex flex-col font-inter ${isCartOpen ? "translate-x-0 shadow-2xl" : "translate-x-full"}`}
       >
         <div className="flex items-center justify-between p-6 pb-4">
           <h2 className={`${typography.h6} text-[#141718]`}>Cart</h2>

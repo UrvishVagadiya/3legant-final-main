@@ -38,6 +38,44 @@ export async function POST(req: NextRequest) {
             couponId,
         } = body;
 
+        const requiredShippingFields = [
+            shippingInfo?.firstName,
+            shippingInfo?.lastName,
+            shippingInfo?.phone,
+            shippingInfo?.streetAddress,
+            shippingInfo?.city,
+            shippingInfo?.state,
+            shippingInfo?.zipCode,
+            shippingInfo?.country,
+        ];
+
+        if (requiredShippingFields.some((field) => !String(field || "").trim())) {
+            return NextResponse.json(
+                { error: "Shipping address is required" },
+                { status: 400 }
+            );
+        }
+
+        if (useDifferentBilling && billingInfo) {
+            const requiredBillingFields = [
+                billingInfo.firstName,
+                billingInfo.lastName,
+                billingInfo.phone,
+                billingInfo.streetAddress,
+                billingInfo.city,
+                billingInfo.state,
+                billingInfo.zipCode,
+                billingInfo.country,
+            ];
+
+            if (requiredBillingFields.some((field) => !String(field || "").trim())) {
+                return NextResponse.json(
+                    { error: "Billing address is required" },
+                    { status: 400 }
+                );
+            }
+        }
+
         if (!items || !Array.isArray(items) || items.length === 0) {
             return NextResponse.json(
                 { error: "Cart items are required" },

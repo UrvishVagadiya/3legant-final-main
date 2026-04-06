@@ -25,7 +25,7 @@ const Arrivals = () => {
   const products = useMemo(
     () =>
       allProducts
-        .filter((p: Product) => isProductNew(p.created_at))
+        .filter((p: Product) => p.isNew ?? isProductNew(p.created_at))
         .sort(
           (a: Product, b: Product) =>
             new Date(b.created_at || b.createdAt || 0).getTime() -

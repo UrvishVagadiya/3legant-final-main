@@ -64,7 +64,7 @@ const ArrivalCard = ({
         />
         <div className="w-full absolute top-0 p-3 md:p-4 flex justify-between items-start">
           <div className="flex flex-col gap-2">
-            {isProductNew(card.created_at) && (
+            {(card.isNew ?? isProductNew(card.created_at)) && (
               <div className="bg-[#FFFFFF] text-[#141718] font-bold text-[11px] md:text-sm py-1 px-3 rounded flex justify-center items-center uppercase shadow-sm">
                 New
               </div>

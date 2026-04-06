@@ -11,6 +11,7 @@ export interface Product {
   description?: string | null;
   discount?: string | null;
   created_at?: string;
+  isNew?: boolean;
   name?: string;
   sku?: string | number | null;
   color?: string | string[];

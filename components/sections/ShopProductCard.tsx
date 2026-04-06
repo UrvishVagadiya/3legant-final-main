@@ -76,7 +76,8 @@ const ShopProductCard = ({
 
         <div className="w-full absolute top-0 p-3 flex justify-between items-start z-10">
           <div className="flex flex-col gap-2">
-            {isProductNew(card.created_at || card.createdAt) && (
+            {(card.isNew ??
+              isProductNew(card.created_at || card.createdAt)) && (
               <div className="bg-[#FFFFFF] text-[#141718] font-bold text-[10px] md:text-xs py-1 px-2.5 rounded flex justify-center items-center shadow-sm">
                 NEW
               </div>

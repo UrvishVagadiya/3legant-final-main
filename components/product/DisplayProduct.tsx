@@ -204,7 +204,8 @@ export const DisplayProduct = ({ p }: { p: Product }) => {
                   <div className="relative w-full aspect-3/4 bg-[#F3F5F7] group">
                     {idx === 0 && (
                       <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-                        {isProductNew(p.created_at || p.createdAt) && (
+                        {(p.isNew ??
+                          isProductNew(p.created_at || p.createdAt)) && (
                           <span className="bg-white text-black text-sm font-bold px-3 py-1 rounded w-fit">
                             NEW
                           </span>
@@ -250,7 +251,7 @@ export const DisplayProduct = ({ p }: { p: Product }) => {
           <div className="hidden sm:grid sm:grid-cols-2 gap-4">
             <div className="relative w-full aspect-3/4 bg-[#F3F5F7] group mb-4 sm:mb-0">
               <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-                {isProductNew(p.created_at || p.createdAt) && (
+                {(p.isNew ?? isProductNew(p.created_at || p.createdAt)) && (
                   <span className="bg-white text-black text-sm font-bold px-3 py-1 rounded w-fit">
                     NEW
                   </span>

@@ -1,6 +1,12 @@
 import { apiService } from '../apiService';
 import { createClient } from '@/utils/supabase/client';
 import { Product } from '../slices/productSlice';
+import { isProductNew } from '@/utils/isProductNew';
+
+const normalizeProduct = (product: Product): Product => ({
+  ...product,
+  isNew: isProductNew(product.created_at || product.createdAt),
+});
 
 export const productApi = apiService.injectEndpoints({
   overrideExisting: true,
@@ -17,7 +23,7 @@ export const productApi = apiService.injectEndpoints({
           .range(offset, to);
 
         if (error) return { error };
-        return { data: data || [] };
+        return { data: (data || []).map((product: Product) => normalizeProduct(product)) };
       },
     }),
     getProducts: builder.query<Product[], void>({
@@ -28,7 +34,7 @@ export const productApi = apiService.injectEndpoints({
           .select('*')
           .eq('status', 'active');
         if (error) return { error };
-        return { data: data || [] };
+        return { data: (data || []).map((product: Product) => normalizeProduct(product)) };
       },
       providesTags: (result) =>
         result
@@ -48,7 +54,7 @@ export const productApi = apiService.injectEndpoints({
           .maybeSingle();
         if (error) return { error };
         if (!data) return { error: { message: 'Product not found' } };
-        return { data };
+        return { data: normalizeProduct(data) };
       },
       providesTags: (result, error, id) => [{ type: 'Product', id }],
     }),
@@ -60,7 +66,7 @@ export const productApi = apiService.injectEndpoints({
           .select('*')
           .order('created_at', { ascending: false });
         if (error) return { error };
-        return { data: data || [] };
+        return { data: (data || []).map((product: Product) => normalizeProduct(product)) };
       },
       providesTags: (result) =>
         result
@@ -73,13 +79,17 @@ export const productApi = apiService.injectEndpoints({
     addProduct: builder.mutation<Product, Partial<Product>>({
       queryFn: async (productData) => {
         const supabase = createClient();
+        const productPayload = {
+          ...productData,
+          created_at: productData.created_at || new Date().toISOString(),
+        };
         const { data, error } = await supabase
           .from('products')
-          .insert([productData])
+          .insert([productPayload])
           .select()
           .single();
         if (error) return { error };
-        return { data };
+        return { data: normalizeProduct(data) };
       },
       invalidatesTags: [{ type: 'Product', id: 'LIST' }, { type: 'Product', id: 'ADMIN_LIST' }],
     }),
@@ -93,7 +103,7 @@ export const productApi = apiService.injectEndpoints({
           .select()
           .single();
         if (error) return { error };
-        return { data };
+        return { data: normalizeProduct(data) };
       },
       invalidatesTags: (result, error, { id }) => [
         { type: 'Product', id },
@@ -127,7 +137,7 @@ export const productApi = apiService.injectEndpoints({
           .ilike('title', `%${query.trim()}%`)
           .limit(8);
         if (error) return { error };
-        return { data: data || [] };
+        return { data: (data || []).map((product: Product) => normalizeProduct(product)) };
       },
     }),
   }),

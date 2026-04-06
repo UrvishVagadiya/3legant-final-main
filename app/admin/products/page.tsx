@@ -115,6 +115,11 @@ export default function AdminProducts() {
           ? new Date(formData.valid_until).toISOString()
           : null,
       };
+
+      if (!editingId) {
+        productData.created_at = new Date().toISOString();
+      }
+
       if (mrpNum) productData.mrp = mrpNum;
 
       if (imageUrls.length > 0) {

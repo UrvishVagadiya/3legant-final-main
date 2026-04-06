@@ -77,7 +77,19 @@ export const addressApi = apiService.injectEndpoints({
     saveAddress: builder.mutation<null, { data: AddressData; userId: string; modalFixedType?: "shipping" | "billing" }>({
       queryFn: async ({ data, userId, modalFixedType }) => {
         const supabase = createClient();
-        const nameParts = data.name.split(" ");
+        const trimmedName = data.name.trim();
+        const trimmedPhone = data.phone.trim();
+        const trimmedStreet = (data.street_address || data.address).trim();
+        const trimmedCity = (data.city || "").trim();
+        const trimmedState = (data.state || "").trim();
+        const trimmedZip = (data.zip_code || "").trim();
+        const trimmedCountry = (data.country || "").trim();
+
+        if (!trimmedName || !trimmedPhone || !trimmedStreet || !trimmedCity || !trimmedState || !trimmedZip || !trimmedCountry) {
+          return { error: { status: 400, data: "Address fields are required" } };
+        }
+
+        const nameParts = trimmedName.split(/\s+/);
         const type = data.type || modalFixedType || "shipping";
 
         const baseRow: Record<string, unknown> = {
@@ -85,13 +97,13 @@ export const addressApi = apiService.injectEndpoints({
           type,
           first_name: nameParts[0] || "",
           last_name: nameParts.slice(1).join(" ") || "",
-          phone: data.phone,
+          phone: trimmedPhone,
           email: data.email || null,
-          street_address: data.street_address || data.address,
-          city: data.city || "",
-          state: data.state || "",
-          zip_code: data.zip_code || "",
-          country: data.country || "",
+          street_address: trimmedStreet,
+          city: trimmedCity,
+          state: trimmedState,
+          zip_code: trimmedZip,
+          country: trimmedCountry,
         };
 
         const tryWithLabel = data.label ? { ...baseRow, label: data.label } : baseRow;
