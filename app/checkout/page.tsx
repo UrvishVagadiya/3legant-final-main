@@ -263,6 +263,16 @@ export default function Checkout() {
         return;
       }
 
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+
+      if (!session?.access_token) {
+        toast.error("Your session has expired. Please sign in again.");
+        setPlacing(false);
+        return;
+      }
+
       try {
         await saveCheckoutAddress("shipping");
         if (useDifferentBilling) {
@@ -294,64 +304,77 @@ export default function Checkout() {
         }),
       );
 
-      // Call the new Supabase Edge Function instead of the Next.js API
-      const { data, error: funcError } = await supabaseClient.functions.invoke(
-        "stripe-checkout",
-        {
-          body: {
-            items: cartItems.map((i) => ({
-              id: i.id,
-              name: i.name,
-              price: i.price,
-              quantity: i.quantity,
-              image: i.image,
-              color: i.color,
-            })),
-            shippingInfo: {
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-              phone: formData.phone,
-              email: formData.email,
-              streetAddress: formData.streetAddress,
-              city: formData.city,
-              state: formData.state,
-              zipCode: formData.zipCode,
-              country: formData.country,
-            },
-            useDifferentBilling,
-            billingInfo: useDifferentBilling
-              ? {
-                  firstName: formData.billingFirstName,
-                  lastName: formData.billingLastName,
-                  phone: formData.billingPhone,
-                  streetAddress: formData.billingStreetAddress,
-                  city: formData.billingCity,
-                  state: formData.billingState,
-                  zipCode: formData.billingZipCode,
-                  country: formData.billingCountry,
-                }
-              : null,
-            shippingMethod,
-            shippingCost,
-            subtotal,
-            discount: couponDiscount,
-            total: finalTotal,
-            couponCode: appliedCoupon?.code || null,
-            couponId: appliedCoupon?.id || null,
-          },
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          items: cartItems.map((i) => ({
+            id: i.id,
+            name: i.name,
+            price: i.price,
+            quantity: i.quantity,
+            image: i.image,
+            color: i.color,
+          })),
+          shippingInfo: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            phone: formData.phone,
+            email: formData.email,
+            streetAddress: formData.streetAddress,
+            city: formData.city,
+            state: formData.state,
+            zipCode: formData.zipCode,
+            country: formData.country,
+          },
+          useDifferentBilling,
+          billingInfo: useDifferentBilling
+            ? {
+                firstName: formData.billingFirstName,
+                lastName: formData.billingLastName,
+                phone: formData.billingPhone,
+                streetAddress: formData.billingStreetAddress,
+                city: formData.billingCity,
+                state: formData.billingState,
+                zipCode: formData.billingZipCode,
+                country: formData.billingCountry,
+              }
+            : null,
+          shippingMethod,
+          shippingCost,
+          subtotal,
+          discount: couponDiscount,
+          total: finalTotal,
+          couponCode: appliedCoupon?.code || null,
+          couponId: appliedCoupon?.id || null,
+        }),
+      });
 
-      if (funcError || !data) {
-        console.error("Supabase function error:", funcError);
+      const responseText = await response.text();
+      let responseData: { url?: string; error?: string; message?: string } = {};
+
+      if (responseText) {
+        try {
+          responseData = JSON.parse(responseText);
+        } catch {
+          responseData = {
+            error: responseText,
+          };
+        }
+      }
+
+      if (!response.ok) {
         toast.error(
-          funcError?.message ||
-            "Failed to create checkout session via Edge Function",
+          responseData.error ||
+            responseData.message ||
+            "Failed to create checkout session",
         );
         return;
       }
 
-      if (data.url) window.location.href = data.url;
+      if (responseData.url) window.location.href = responseData.url;
       else toast.error("Unable to redirect to payment page");
     } catch (err) {
       console.error("Place order error:", err);

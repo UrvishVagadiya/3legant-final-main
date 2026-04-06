@@ -20,22 +20,22 @@ const normalizeContentLayout = (content: string) => {
 const MDXComponents = {
   Link,
   h2: ({ children }: { children?: ReactNode }) => (
-    <h2 className="mt-7 mb-2 text-[30px] leading-[1.15] tracking-[-0.02em] font-medium text-[#141718]">
+    <h2 className="mt-8 mb-3 text-[32px] md:text-[38px] leading-[1.15] tracking-[-0.02em] font-medium text-[#141718]">
       {children}
     </h2>
   ),
   h3: ({ children }: { children?: ReactNode }) => (
-    <h3 className="mt-6 mb-2 text-[28px] leading-[1.2] tracking-[-0.02em] font-medium text-[#141718]">
+    <h3 className="mt-7 mb-3 text-[28px] md:text-[34px] leading-[1.2] tracking-[-0.02em] font-medium text-[#141718]">
       {children}
     </h3>
   ),
   p: ({ children }: { children?: ReactNode }) => (
-    <p className="mb-5 text-[12px] md:text-[13px] text-[#343839] leading-[1.45]">
+    <p className="mb-6 text-[15px] md:text-[17px] text-[#343839] leading-[1.65]">
       {children}
     </p>
   ),
   ul: ({ children }: { children?: ReactNode }) => (
-    <ul className="list-disc ml-6 mb-6 space-y-2 text-[#343839] text-[13px]">
+    <ul className="list-disc ml-6 mb-7 space-y-2.5 text-[#343839] text-[15px] md:text-[17px] leading-[1.65]">
       {children}
     </ul>
   ),
@@ -93,22 +93,22 @@ const MDXComponents = {
       </div>
       <div className="pt-1">
         {title1 ? (
-          <h3 className="text-[30px] leading-[1.12] tracking-[-0.02em] font-medium text-[#141718] mb-2">
+          <h3 className="text-[30px] md:text-[36px] leading-[1.12] tracking-[-0.02em] font-medium text-[#141718] mb-3">
             {title1}
           </h3>
         ) : null}
         {content1 ? (
-          <p className="text-[12px] md:text-[13px] text-[#343839] leading-[1.45] mb-6">
+          <p className="text-[15px] md:text-[17px] text-[#343839] leading-[1.65] mb-7">
             {content1}
           </p>
         ) : null}
         {title2 ? (
-          <h3 className="text-[30px] leading-[1.12] tracking-[-0.02em] font-medium text-[#141718] mb-2">
+          <h3 className="text-[30px] md:text-[36px] leading-[1.12] tracking-[-0.02em] font-medium text-[#141718] mb-3">
             {title2}
           </h3>
         ) : null}
         {content2 ? (
-          <p className="text-[12px] md:text-[13px] text-[#343839] leading-[1.45]">
+          <p className="text-[15px] md:text-[17px] text-[#343839] leading-[1.65]">
             {content2}
           </p>
         ) : null}
@@ -147,9 +147,9 @@ const BlogPost = async ({
   const suggested = suggestedData || [];
 
   return (
-    <div className="max-w-295 mx-auto px-4 sm:px-6 lg:px-8 mb-20 mt-8 text-[#141718]">
-      <div className="max-w-245 mx-auto">
-        <div className="flex flex-wrap items-center gap-3 text-[12px] font-medium mb-7 text-[#6C7275]">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20 pt-5 md:pt-6 text-[#141718]">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-wrap items-center gap-3 text-[13px] md:text-[15px] font-medium mb-8 text-[#6C7275]">
           <Link href="/" className="hover:text-[#141718] transition-colors">
             Home
           </Link>
@@ -164,14 +164,14 @@ const BlogPost = async ({
           <span className="text-[#141718]">{blog.title}</span>
         </div>
 
-        <div className="space-y-3 mb-7">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6C7275]">
+        <div className="space-y-3.5 mb-8">
+          <span className="text-[12px] md:text-[13px] font-semibold uppercase tracking-[0.12em] text-[#6C7275]">
             ARTICLE
           </span>
-          <h1 className="max-w-190 text-[44px] md:text-[58px] leading-[1.04] tracking-[-0.03em] font-medium text-[#141718]">
+          <h1 className="max-w-260 text-[40px] md:text-[56px] lg:text-[64px] leading-[1.06] tracking-[-0.03em] font-medium text-[#141718]">
             {typedBlog.title}
           </h1>
-          <div className="flex items-center gap-5 text-[#6C7275] text-[12px] font-medium pt-1">
+          <div className="flex flex-wrap items-center gap-4 md:gap-5 text-[#6C7275] text-[13px] md:text-[15px] font-medium pt-1">
             <div className="flex items-center gap-1.5">
               <FiUser size={15} className="text-[#6C7275]" />
               <span>{typedBlog.author || "admin"}</span>

@@ -10,10 +10,67 @@ interface CheckoutItem {
   color?: string;
 }
 
+interface CheckoutRequestBody {
+  items: CheckoutItem[];
+  shippingInfo: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email: string;
+    streetAddress: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+  useDifferentBilling?: boolean;
+  billingInfo?: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    streetAddress?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+  } | null;
+  shippingMethod: string;
+  shippingCost: number;
+  subtotal: number;
+  discount: number;
+  total: number;
+  couponCode?: string | null;
+  couponId?: string | null;
+  discountPercent?: number | null;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+async function getOrCreateStripeCoupon(
+  stripe: Stripe,
+  code: string,
+  percent: number,
+): Promise<string> {
+  try {
+    const existing = await stripe.coupons.retrieve(code)
+    if (!('deleted' in existing)) {
+      return existing.id
+    }
+  } catch {
+    // Intentionally ignored; will create below.
+  }
+
+  const coupon = await stripe.coupons.create({
+    id: code,
+    percent_off: percent,
+    duration: 'once',
+    name: code,
+  })
+  return coupon.id
 }
 
 Deno.serve(async (req) => {
@@ -23,20 +80,33 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization')
-    let user = null
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      })
+    }
 
-    if (authHeader) {
-      const supabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-        { global: { headers: { Authorization: authHeader } } }
-      )
-      const { data: { user: authUser } } = await supabaseClient.auth.getUser()
-      user = authUser
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser()
+
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      })
     }
 
     // Parse request body
-    const body = await req.json()
+    const body = await req.json() as CheckoutRequestBody
     const {
       items,
       shippingInfo,
@@ -49,6 +119,7 @@ Deno.serve(async (req) => {
       total,
       couponCode,
       couponId,
+      discountPercent,
     } = body
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -181,13 +252,22 @@ Deno.serve(async (req) => {
 
     const discounts: { coupon: string }[] = []
     if (discount > 0) {
-      const stripeCoupon = await stripe.coupons.create({
-        amount_off: Math.round(Number(discount) * 100),
-        currency: 'usd',
-        duration: 'once',
-        name: couponCode || 'Discount',
-      })
-      discounts.push({ coupon: stripeCoupon.id })
+      if (couponCode && discountPercent && discountPercent > 0) {
+        const reusableCouponId = await getOrCreateStripeCoupon(
+          stripe,
+          couponCode,
+          discountPercent,
+        )
+        discounts.push({ coupon: reusableCouponId })
+      } else {
+        const stripeCoupon = await stripe.coupons.create({
+          amount_off: Math.round(Number(discount) * 100),
+          currency: 'usd',
+          duration: 'once',
+          name: couponCode || 'Discount',
+        })
+        discounts.push({ coupon: stripeCoupon.id })
+      }
     }
 
     // Create Stripe Checkout Session
@@ -197,6 +277,12 @@ Deno.serve(async (req) => {
       line_items: lineItems,
       mode: 'payment',
       client_reference_id: order.id,
+      payment_intent_data: {
+        metadata: {
+          order_id: order.id,
+          user_id: user?.id || '',
+        },
+      },
       expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // Set expiry to 30 minutes from now
       discounts: discounts.length > 0 ? discounts : undefined,
       customer_email: shippingInfo.email || user?.email,

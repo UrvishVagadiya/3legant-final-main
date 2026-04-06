@@ -12,6 +12,10 @@ type ExpirableOrderRow = {
   stock_reduced: boolean | null;
 };
 
+type PaymentOrderLink = {
+  order_id: string;
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
@@ -21,6 +25,16 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  if (req.method === 'GET') {
+    return new Response(
+      JSON.stringify({ status: 'ok', message: 'Stripe webhook is live' }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    )
   }
 
   try {
@@ -58,150 +72,52 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
-
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        const orderId = session.metadata?.order_id
-
-        if (!orderId) {
-          console.error('No order_id in metadata for session:', session.id)
-          break
-        }
-
-        if (session.payment_status === 'paid') {
-          // Update payment status to 'completed'
-          // This fires the 'on_payment_completed' database trigger
-          const { error } = await supabaseAdmin
-            .from('payments')
-            .update({
-              status: 'completed',
-              transaction_id: session.payment_intent as string,
-              payment_date: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .eq('order_id', orderId)
-
-          if (error) {
-            console.error('Failed to update payment status:', error)
-            return new Response(JSON.stringify({ error: error.message }), { status: 500 })
-          }
-
-          console.log(`Successfully confirmed payment for order: ${orderId}`)
-        }
+        console.log(`[Webhook] checkout.session.completed for ${session.id}`)
+        await handleCheckoutSessionCompleted(session, supabaseAdmin)
         break
       }
 
       case 'checkout.session.expired': {
         const session = event.data.object as Stripe.Checkout.Session
-        let orderId = session.metadata?.order_id || session.client_reference_id || null
-        let order: ExpirableOrderRow | null = null
+        console.log(`[Webhook] checkout.session.expired for ${session.id}`)
+        await handleCheckoutSessionExpired(session, supabaseAdmin)
+        break
+      }
 
-        if (!orderId && session.id) {
-          const { data: bySession, error: bySessionError } = await supabaseAdmin
-            .from('orders')
-            .select('id, status, stock_reduced')
-            .eq('stripe_session_id', session.id)
-            .maybeSingle()
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent
+        console.log(`[Webhook] payment_intent.succeeded for ${paymentIntent.id}`)
+        await handlePaymentIntentSucceeded(paymentIntent, supabaseAdmin)
+        break
+      }
 
-          if (bySessionError) {
-            console.error('Failed to resolve order via stripe_session_id:', bySessionError)
-          }
+      case 'payment_intent.payment_failed': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent
+        console.log(`[Webhook] payment_intent.payment_failed for ${paymentIntent.id}`)
+        await handlePaymentIntentFailed(paymentIntent, supabaseAdmin)
+        break
+      }
 
-          if (bySession) {
-            orderId = bySession.id
-            order = bySession as ExpirableOrderRow
-          }
-        }
-
-        if (!orderId) {
-          console.error('No orderId in metadata for expired session:', session.id)
-          break
-        }
-
-        // 1. Fetch order to check status and stock_reduced flag
-        if (!order) {
-          const { data: fetchedOrder, error: orderError } = await supabaseAdmin
-            .from('orders')
-            .select('id, status, stock_reduced')
-            .eq('id', orderId)
-            .maybeSingle()
-
-          if (orderError || !fetchedOrder) {
-            console.error(`Failed to fetch order ${orderId}:`, orderError)
-            break
-          }
-
-          order = fetchedOrder as ExpirableOrderRow
-        }
-
-        // Only cancel if still pending/failed
-        if (order.status !== 'pending' && order.status !== 'failed') {
-          console.log(`Order ${orderId} already in status '${order.status}', skipping automatic cancel.`)
-          break
-        }
-
-        console.log(`Order session expired: ${orderId}. Processing cancellation...`)
-
-        let stockRestoreSucceeded = false
-
-        // 2. Restore stock if needed
-        if (order.stock_reduced) {
-          const { data: items } = await supabaseAdmin
-            .from('order_items')
-            .select('product_id, quantity')
-            .eq('order_id', orderId)
-
-          if (items && items.length > 0) {
-            const { error: rpcError } = await supabaseAdmin.rpc('restore_product_stock', {
-              items: items.map((i: StockItem) => ({
-                product_id: i.product_id,
-                quantity: i.quantity
-              }))
-            })
-            if (rpcError) console.error('Stock restoration failed:', rpcError)
-            else stockRestoreSucceeded = true
-          }
-        }
-
-        // 3. Cancel order & payment
-        const { error: finalError } = await supabaseAdmin.from('orders').update({
-          status: 'cancelled',
-          ...(stockRestoreSucceeded ? { stock_reduced: false } : {}),
-          updated_at: new Date().toISOString()
-        }).eq('id', orderId)
-
-        await supabaseAdmin.from('payments').update({
-          status: 'cancelled',
-          updated_at: new Date().toISOString()
-        }).eq('order_id', orderId).in('status', ['pending', 'processing', 'failed'])
-
-        if (finalError) console.error('Cancellation update failed:', finalError)
-        else console.log(`Successfully cancelled expired order: ${orderId}`)
-
+      case 'payment_intent.canceled': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent
+        console.log(`[Webhook] payment_intent.canceled for ${paymentIntent.id}`)
+        await handlePaymentIntentCanceled(paymentIntent, supabaseAdmin)
         break
       }
 
       case 'charge.refunded': {
         const charge = event.data.object as Stripe.Charge
-        // Stripe usually sends the order/session info in metadata if you set it
-        const orderId = charge.metadata?.order_id
-
-        if (!orderId) break
-
-        console.log(`Charge refunded for order: ${orderId}. Updating status...`)
-
-        // Mark as refunded
-        await supabaseAdmin.from('orders').update({ status: 'refunded' }).eq('id', orderId)
-        await supabaseAdmin.from('payments').update({ status: 'refunded' }).eq('order_id', orderId)
-
+        console.log(`[Webhook] charge.refunded for ${charge.id}`)
+        await handleChargeRefunded(charge, supabaseAdmin)
         break
       }
 
       default:
         console.log(`Unhandled event type: ${event.type}`)
     }
-
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
@@ -216,3 +132,364 @@ Deno.serve(async (req) => {
     })
   }
 })
+
+async function handleCheckoutSessionCompleted(
+  session: Stripe.Checkout.Session,
+  supabaseAdmin: ReturnType<typeof createClient>
+) {
+  if (session.payment_status !== 'paid') {
+    console.log(`[Webhook] Session ${session.id} not paid yet (${session.payment_status})`)
+    return
+  }
+
+  let orderId = session.metadata?.order_id || session.client_reference_id
+
+  if (!orderId && session.id) {
+    const { data: bySession, error: bySessionError } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('stripe_session_id', session.id)
+      .maybeSingle()
+
+    if (bySessionError) {
+      console.error(`[Webhook] Failed to resolve order for completed session ${session.id}:`, bySessionError)
+    }
+
+    if (bySession?.id) {
+      orderId = bySession.id
+    }
+  }
+
+  if (!orderId) {
+    console.error(`[Webhook] Missing order id in completed session ${session.id}`)
+    return
+  }
+
+  const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id
+
+  const { error } = await supabaseAdmin
+    .from('payments')
+    .update({
+      status: 'completed',
+      transaction_id: paymentIntentId || null,
+      payment_date: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('order_id', orderId)
+
+  if (error) {
+    console.error(`[Webhook] Failed to mark payment completed for order ${orderId}:`, error)
+  }
+
+  const { error: orderStatusError } = await supabaseAdmin
+    .from('orders')
+    .update({
+      status: 'processing',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', orderId)
+    .in('status', ['pending', 'failed'])
+
+  if (orderStatusError) {
+    console.error(`[Webhook] Failed to move order ${orderId} to processing:`, orderStatusError)
+  }
+}
+
+async function handleCheckoutSessionExpired(
+  session: Stripe.Checkout.Session,
+  supabaseAdmin: ReturnType<typeof createClient>
+) {
+  let orderId = session.metadata?.order_id || session.client_reference_id || null
+  let order: ExpirableOrderRow | null = null
+
+  if (!orderId && session.id) {
+    const { data: bySession, error: bySessionError } = await supabaseAdmin
+      .from('orders')
+      .select('id, status, stock_reduced')
+      .eq('stripe_session_id', session.id)
+      .maybeSingle()
+
+    if (bySessionError) {
+      console.error('Failed to resolve order via stripe_session_id:', bySessionError)
+    }
+
+    if (bySession) {
+      orderId = bySession.id
+      order = bySession as ExpirableOrderRow
+    }
+  }
+
+  if (!orderId) {
+    console.error('No orderId found for expired session:', session.id)
+    return
+  }
+
+  if (!order) {
+    const { data: fetchedOrder, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .select('id, status, stock_reduced')
+      .eq('id', orderId)
+      .maybeSingle()
+
+    if (orderError || !fetchedOrder) {
+      console.error(`Failed to fetch order ${orderId}:`, orderError)
+      return
+    }
+
+    order = fetchedOrder as ExpirableOrderRow
+  }
+
+  if (order.status !== 'pending' && order.status !== 'failed' && order.status !== 'processing') {
+    console.log(`Order ${orderId} already in status '${order.status}', skipping auto-cancel.`)
+    return
+  }
+
+  let stockRestoreSucceeded = false
+
+  if (order.stock_reduced) {
+    const { data: items } = await supabaseAdmin
+      .from('order_items')
+      .select('product_id, quantity')
+      .eq('order_id', orderId)
+
+    if (items && items.length > 0) {
+      const { error: rpcError } = await supabaseAdmin.rpc('restore_product_stock', {
+        items: items.map((i: StockItem) => ({
+          product_id: i.product_id,
+          quantity: i.quantity,
+        })),
+      })
+
+      if (rpcError) {
+        console.error('Stock restoration failed:', rpcError)
+      } else {
+        stockRestoreSucceeded = true
+      }
+    }
+  }
+
+  const { error: orderError } = await supabaseAdmin
+    .from('orders')
+    .update({
+      status: 'cancelled',
+      ...(stockRestoreSucceeded ? { stock_reduced: false } : {}),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', orderId)
+
+  if (orderError) {
+    console.error(`Cancellation update failed for order ${orderId}:`, orderError)
+    return
+  }
+
+  const { error: paymentUpdateError } = await supabaseAdmin
+    .from('payments')
+    .update({
+      status: 'cancelled',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('order_id', orderId)
+    .in('status', ['pending', 'processing', 'failed'])
+
+  if (paymentUpdateError) {
+    console.error(`Payment cancellation failed for order ${orderId}:`, paymentUpdateError)
+  }
+}
+
+async function handlePaymentIntentSucceeded(
+  paymentIntent: Stripe.PaymentIntent,
+  supabaseAdmin: ReturnType<typeof createClient>
+) {
+  await updatePaymentIntentStatus(
+    paymentIntent.id,
+    'completed',
+    supabaseAdmin,
+    paymentIntent.metadata?.order_id,
+  )
+}
+
+async function handlePaymentIntentFailed(
+  paymentIntent: Stripe.PaymentIntent,
+  supabaseAdmin: ReturnType<typeof createClient>
+) {
+  await updatePaymentIntentStatus(
+    paymentIntent.id,
+    'failed',
+    supabaseAdmin,
+    paymentIntent.metadata?.order_id,
+  )
+}
+
+async function handlePaymentIntentCanceled(
+  paymentIntent: Stripe.PaymentIntent,
+  supabaseAdmin: ReturnType<typeof createClient>
+) {
+  await updatePaymentIntentStatus(
+    paymentIntent.id,
+    'cancelled',
+    supabaseAdmin,
+    paymentIntent.metadata?.order_id,
+  )
+}
+
+async function handleChargeRefunded(
+  charge: Stripe.Charge,
+  supabaseAdmin: ReturnType<typeof createClient>
+) {
+  const paymentIntentId = typeof charge.payment_intent === 'string'
+    ? charge.payment_intent
+    : charge.payment_intent?.id
+
+  if (!paymentIntentId) return
+
+  const { data: paymentLink } = await supabaseAdmin
+    .from('payments')
+    .select('order_id')
+    .eq('transaction_id', paymentIntentId)
+    .maybeSingle()
+
+  const linkedOrderId = (paymentLink as PaymentOrderLink | null)?.order_id || null
+  const orderId = linkedOrderId || charge.metadata?.order_id
+
+  if (!orderId) {
+    console.error(`[Webhook] Could not resolve order for refunded charge ${charge.id}`)
+    return
+  }
+
+  await supabaseAdmin
+    .from('payments')
+    .update({
+      status: 'refunded',
+      refund_amount: charge.amount_refunded / 100,
+      refund_date: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('order_id', orderId)
+
+  await supabaseAdmin
+    .from('orders')
+    .update({
+      status: 'refunded',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', orderId)
+}
+
+async function updatePaymentIntentStatus(
+  paymentIntentId: string,
+  status: 'completed' | 'failed' | 'cancelled',
+  supabaseAdmin: ReturnType<typeof createClient>,
+  metadataOrderId?: string,
+) {
+  const now = new Date().toISOString()
+
+  let payment: PaymentOrderLink | null = null
+
+  const byTransaction = await supabaseAdmin
+    .from('payments')
+    .update({
+      status,
+      transaction_id: paymentIntentId,
+      ...(status === 'completed' ? { payment_date: now } : {}),
+      updated_at: now,
+    })
+    .eq('transaction_id', paymentIntentId)
+    .select('order_id')
+    .maybeSingle()
+
+  if (byTransaction.data) {
+    payment = byTransaction.data as PaymentOrderLink
+  }
+
+  if (!payment && metadataOrderId) {
+    const byOrder = await supabaseAdmin
+      .from('payments')
+      .update({
+        status,
+        transaction_id: paymentIntentId,
+        ...(status === 'completed' ? { payment_date: now } : {}),
+        updated_at: now,
+      })
+      .eq('order_id', metadataOrderId)
+      .in('status', ['pending', 'processing', 'failed'])
+      .select('order_id')
+      .maybeSingle()
+
+    if (byOrder.data) {
+      payment = byOrder.data as PaymentOrderLink
+    }
+  }
+
+  const orderId = payment?.order_id
+  if (!orderId) {
+    console.log(`[Webhook] No payment row found for payment_intent ${paymentIntentId}`)
+    return
+  }
+
+  if (status === 'completed') {
+    await supabaseAdmin
+      .from('orders')
+      .update({
+        status: 'processing',
+        updated_at: now,
+      })
+      .eq('id', orderId)
+      .in('status', ['pending', 'failed'])
+    return
+  }
+
+  await supabaseAdmin
+    .from('orders')
+    .update({
+      status: 'cancelled',
+      updated_at: now,
+    })
+    .eq('id', orderId)
+    .in('status', ['pending', 'processing', 'failed'])
+
+  await restockOrder(orderId, supabaseAdmin)
+}
+
+async function restockOrder(
+  orderId: string,
+  supabaseAdmin: ReturnType<typeof createClient>
+) {
+  const { data: order } = await supabaseAdmin
+    .from('orders')
+    .select('stock_reduced')
+    .eq('id', orderId)
+    .maybeSingle()
+
+  if (!order?.stock_reduced) {
+    return
+  }
+
+  const { data: items } = await supabaseAdmin
+    .from('order_items')
+    .select('product_id, quantity')
+    .eq('order_id', orderId)
+
+  if (!items?.length) {
+    return
+  }
+
+  const { error: restoreError } = await supabaseAdmin.rpc('restore_product_stock', {
+    items: items.map((i: StockItem) => ({
+      product_id: i.product_id,
+      quantity: i.quantity,
+    })),
+  })
+
+  if (restoreError) {
+    console.error(`[Webhook] Failed to restore stock for order ${orderId}:`, restoreError)
+    return
+  }
+
+  await supabaseAdmin
+    .from('orders')
+    .update({
+      stock_reduced: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', orderId)
+}

@@ -3,6 +3,7 @@
 import { X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import MobileSearch from "./MobileSearch";
 import MobileMenuFooter from "./MobileMenuFooter";
@@ -16,6 +17,7 @@ interface MobileMenuProps {
 const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
   const { user, role } = useAppSelector((state: RootState) => state.auth);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname() || "";
 
   const navItems = [
@@ -29,13 +31,17 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
         { label: "Kitchen", href: "/shop?category=Kitchen" },
       ],
     },
-    {label: "Blogs", href: "/blogs" },
+    { label: "Blogs", href: "/blogs" },
     { label: "Contact Us", href: "/contact" },
   ];
 
   if (role === "admin") {
     navItems.push({ label: "Admin", href: "/admin" });
   }
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -60,10 +66,10 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     };
   }, [isOpen]);
 
-  return (
+  const menuContent = (
     <>
       <div
-        className={`fixed inset-0 bg-black/40 z-9998 transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 bg-black/40 z-12000 transition-opacity duration-300 md:hidden ${
           isOpen
             ? "opacity-100 visible"
             : "opacity-0 invisible pointer-events-none"
@@ -73,7 +79,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
       />
 
       <div
-        className={`fixed top-0 left-0 bottom-0 w-70 sm:w-80 bg-white z-9999 flex flex-col transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed top-0 left-0 bottom-0 w-70 sm:w-80 bg-white z-12001 flex flex-col transition-transform duration-300 ease-in-out md:hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={
@@ -110,7 +116,9 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                       )
                     }
                     className={`flex items-center justify-between w-full py-3.5 text-sm ${
-                      item.children.some(c => pathname.startsWith(c.href.split('?')[0]))
+                      item.children.some((c) =>
+                        pathname.startsWith(c.href.split("?")[0]),
+                      )
                         ? "text-[#141718] font-bold"
                         : "text-[#141718] font-medium"
                     }`}
@@ -125,15 +133,20 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                   {openDropdown === item.label && (
                     <div className="pb-3 pl-4 flex flex-col gap-2">
                       {item.children.map((child) => {
-                        const baseHref = child.href.split('?')[0];
-                        const isActive = baseHref === "/" ? pathname === "/" : pathname.startsWith(baseHref);
+                        const baseHref = child.href.split("?")[0];
+                        const isActive =
+                          baseHref === "/"
+                            ? pathname === "/"
+                            : pathname.startsWith(baseHref);
                         return (
                           <Link
                             key={child.href}
                             href={child.href}
                             onClick={onClose}
                             className={`text-sm py-1 transition-colors ${
-                              isActive ? "text-[#141718] font-bold" : "text-[#6C7275] hover:text-[#141718]"
+                              isActive
+                                ? "text-[#141718] font-bold"
+                                : "text-[#6C7275] hover:text-[#141718]"
                             }`}
                           >
                             {child.label}
@@ -148,7 +161,11 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                   href={item.href!}
                   onClick={onClose}
                   className={`block py-3.5 text-sm ${
-                    (item.href === "/" ? pathname === "/" : pathname.startsWith(item.href!))
+                    (
+                      item.href === "/"
+                        ? pathname === "/"
+                        : pathname.startsWith(item.href!)
+                    )
                       ? "text-[#141718] font-bold"
                       : "text-[#141718] font-medium"
                   }`}
@@ -164,6 +181,10 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
       </div>
     </>
   );
+
+  if (!isMounted) return null;
+
+  return createPortal(menuContent, document.body);
 };
 
 export default MobileMenu;

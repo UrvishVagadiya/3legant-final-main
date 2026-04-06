@@ -3,12 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/utils/stripe/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import Stripe from "stripe";
-
-type ExpirableOrderRow = {
-    id: string;
-    status: string;
-    stock_reduced: boolean | null;
-};
+import { cancelExpiredStripeOrders } from "@/utils/stripe/cancelExpiredOrders";
 
 export async function POST(req: NextRequest) {
     const body = await req.text();
@@ -146,112 +141,17 @@ export async function POST(req: NextRequest) {
         }
         case "checkout.session.expired": {
             const session = event.data.object as Stripe.Checkout.Session;
-            let orderId = session.metadata?.order_id || session.client_reference_id || null;
-            let order: ExpirableOrderRow | null = null;
+            const orderId = session.metadata?.order_id || session.client_reference_id || session.id;
+            const result = await cancelExpiredStripeOrders({
+                orderId,
+                stripeSessionId: session.id,
+                force: true,
+            });
 
-            // Fallback: derive order by Stripe session id when metadata/reference id is missing.
-            if (!orderId && session.id) {
-                const { data: orderBySession, error: orderBySessionError } = await admin
-                    .from("orders")
-                    .select("id, status, stock_reduced")
-                    .eq("stripe_session_id", session.id)
-                    .maybeSingle();
-
-                if (orderBySessionError) {
-                    console.error("Failed to resolve order by stripe_session_id:", orderBySessionError);
-                }
-
-                if (orderBySession) {
-                    orderId = orderBySession.id;
-                    order = orderBySession;
-                }
-            }
-
-            if (!orderId) {
-                console.error("No orderId found for expired session", { sessionId: session.id });
-                break;
-            }
-
-            if (!order) {
-                const { data: fetchedOrder, error: fetchError } = await admin
-                    .from("orders")
-                    .select("id, status, stock_reduced")
-                    .eq("id", orderId)
-                    .maybeSingle();
-
-                if (fetchError || !fetchedOrder) {
-                    console.error(`Failed to fetch order ${orderId} for cancellation:`, fetchError);
-                    break;
-                }
-
-                order = fetchedOrder;
-            }
-
-            // Only cancel order if it's still unpaid workflow state.
-            const canAutoCancelOrder = order.status === "pending" || order.status === "failed";
-            if (canAutoCancelOrder) {
-                console.log(`Session expired -> Cancelling order ${orderId} in status '${order.status}'.`);
+            if (result.errors.length > 0) {
+                console.error("Failed to synchronize expired order/payment state:", result);
             } else {
-                console.log(`Order ${orderId} is in status '${order.status}', skipping order status change.`);
-            }
-
-            let stockRestoreSucceeded = false;
-
-            // 2. Restore stock if it was previously reduced
-            if (canAutoCancelOrder && order.stock_reduced) {
-                const { data: items, error: itemsError } = await admin
-                    .from("order_items")
-                    .select("product_id, quantity")
-                    .eq("order_id", orderId);
-
-                if (!itemsError && items?.length) {
-                    const { error: rpcError } = await admin.rpc("restore_product_stock", {
-                        items: items.map(i => ({
-                            product_id: i.product_id,
-                            quantity: i.quantity
-                        }))
-                    });
-
-                    if (rpcError) {
-                        console.error(`Failed to restore stock for order ${orderId}:`, rpcError);
-                    } else {
-                        stockRestoreSucceeded = true;
-                        console.log(`Successfully restored stock for expired order ${orderId}`);
-                    }
-                }
-            }
-
-            // 3. Mark order as cancelled when eligible
-            let orderUpdateError: { message?: string } | null = null;
-            if (canAutoCancelOrder) {
-                const orderUpdate = await admin
-                    .from("orders")
-                    .update({
-                        status: "cancelled",
-                        ...(stockRestoreSucceeded ? { stock_reduced: false } : {}),
-                        updated_at: new Date().toISOString(),
-                    })
-                    .eq("id", orderId);
-                orderUpdateError = orderUpdate.error;
-            }
-
-            // 4. Always sync pending-like payment rows on expired session.
-            const { error: paymentUpdateError } = await admin
-                .from("payments")
-                .update({
-                    status: "cancelled",
-                    updated_at: new Date().toISOString(),
-                })
-                .eq("order_id", orderId)
-                .in("status", ["pending", "processing", "failed"]);
-
-            if (orderUpdateError || paymentUpdateError) {
-                console.error(`Update failed for expired order ${orderId}:`, {
-                    order: orderUpdateError?.message,
-                    payment: paymentUpdateError?.message
-                });
-            } else {
-                console.log(`Successfully synchronized expired order/payment state for order ${orderId}.`);
+                console.log("Successfully synchronized expired order/payment state:", result.cancelledOrderIds);
             }
             break;
         }

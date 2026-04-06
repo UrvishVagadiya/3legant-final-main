@@ -2,6 +2,12 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
+    const pathname = request.nextUrl.pathname;
+
+    if (pathname.startsWith("/api/stripe/webhook") || pathname.startsWith("/api/cron")) {
+        return NextResponse.next();
+    }
+
     let supabaseResponse = NextResponse.next({
         request: {
             headers: request.headers,
@@ -30,7 +36,7 @@ export async function middleware(request: NextRequest) {
     );
 
     try {
-        const isAdminPath = request.nextUrl.pathname.startsWith("/admin");
+        const isAdminPath = pathname.startsWith("/admin");
 
         if (isAdminPath) {
             const { data: { user } } = await supabase.auth.getUser();
@@ -54,7 +60,7 @@ export async function middleware(request: NextRequest) {
         }
     } catch (error) {
         console.error("Middleware Supabase fetch failed:", error);
-        if (request.nextUrl.pathname.startsWith("/admin")) {
+        if (pathname.startsWith("/admin")) {
             return NextResponse.redirect(new URL("/signin", request.url));
         }
     }
