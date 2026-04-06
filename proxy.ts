@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 export async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
-    if (pathname.startsWith("/api/stripe/webhook") || pathname.startsWith("/api/cron")) {
+    if (pathname.startsWith("/api/stripe/webhook")) {
         return NextResponse.next();
     }
 
