@@ -76,9 +76,15 @@ const Footer = () => {
           </div>
 
           <div className="flex gap-6 text-2xl text-white">
+            <Link href="#">
             <IoLogoInstagram className="cursor-pointer hover:text-gray-300 transition-all duration-300 ease-in-out" />
+            </Link>
+            <Link href="#">
             <FiFacebook className="cursor-pointer hover:text-gray-300 transition-all duration-300 ease-in-out" />
+            </Link>
+             <Link href="#">
             <GoVideo className="cursor-pointer hover:text-gray-300 transition-all duration-300 ease-in-out" />
+              </Link>
           </div>
         </div>
       </div>

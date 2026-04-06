@@ -291,7 +291,7 @@ export async function POST(req: NextRequest) {
                 ),
             },
             success_url: `${origin}/complete?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin}/checkout?cancelled=true&order_id=${order.id}`,
+            cancel_url: `${origin}/checkout?cancelled=true`,
         });
 
         // Update order with Stripe session details

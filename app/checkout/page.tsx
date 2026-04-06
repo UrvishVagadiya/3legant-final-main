@@ -95,15 +95,8 @@ export default function Checkout() {
   useEffect(() => {
     // Check if user returned from cancelled checkout
     const cancelled = searchParams.get("cancelled");
-    const orderId = searchParams.get("order_id");
-    if (cancelled && orderId) {
-      fetch("/api/cancel-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId }),
-      }).then(() => {
-        toast.error("Payment was cancelled or failed. You can try again.");
-      });
+    if (cancelled) {
+      toast.error("Payment not completed yet. You can continue checkout.");
     }
 
     if (!user) return;
@@ -181,7 +174,7 @@ export default function Checkout() {
         }));
       }
     })();
-  }, [user]);
+  }, [user, searchParams]);
 
   const handleSelect = (id: string, type: "shipping" | "billing") => {
     const b = type === "billing";

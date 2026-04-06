@@ -141,12 +141,12 @@ export async function POST(req: NextRequest) {
         }
         case "checkout.session.expired": {
             const session = event.data.object as Stripe.Checkout.Session;
-            const orderId = session.metadata?.order_id || session.client_reference_id || session.id;
-            const result = await cancelExpiredStripeOrders({
-                orderId,
-                stripeSessionId: session.id,
-                force: true,
-            });
+            const orderId = session.metadata?.order_id || session.client_reference_id || null;
+            const result = await cancelExpiredStripeOrders(
+                orderId
+                    ? { orderId, stripeSessionId: session.id, force: true }
+                    : { stripeSessionId: session.id, force: true },
+            );
 
             if (result.errors.length > 0) {
                 console.error("Failed to synchronize expired order/payment state:", result);
