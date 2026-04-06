@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import {
   useGetReviewsQuery,
+  useCanReviewProductQuery,
   useAddReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,
@@ -14,6 +15,8 @@ import { IoMdStar, IoMdStarOutline } from "react-icons/io";
 import { X, Edit2, Trash2 } from "lucide-react";
 import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 import { BsReply } from "react-icons/bs";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import DeleteReviewModal from "@/components/product/DeleteReviewModal";
 import type { Review } from "@/store/api/reviewApi";
 
 interface ReviewFormProps {
@@ -267,6 +270,10 @@ export default function ReviewsSection({
     productId,
     userId: user?.id,
   });
+  const { data: canReview = false } = useCanReviewProductQuery(
+    { productId, userId: user?.id },
+    { skip: !user?.id },
+  );
   const [addReviewMutation, { isLoading: isAdding }] = useAddReviewMutation();
   const [updateReviewMutation, { isLoading: isUpdating }] =
     useUpdateReviewMutation();
@@ -282,6 +289,16 @@ export default function ReviewsSection({
   const [text, setText] = useState("");
   const [rating, setRating] = useState(5);
   const [sortOption, setSortOption] = useState("Newest");
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    reviewId: string | null;
+    reviewText: string;
+  }>({
+    isOpen: false,
+    reviewId: null,
+    reviewText: "",
+  });
+  const [isDeletingReview, setIsDeletingReview] = useState(false);
 
   const handleEdit = () => {
     if (!userReview) return;
@@ -301,6 +318,8 @@ export default function ReviewsSection({
     reviews.length > 0
       ? reviews.reduce((sum: number, r) => sum + r.rating, 0) / reviews.length
       : 0;
+  const canShowReviewWriteSection =
+    !!userReview || (Boolean(user) && canReview);
 
   return (
     <div className="flex flex-col gap-8 mt-10">
@@ -312,15 +331,23 @@ export default function ReviewsSection({
             {reviews.length} Reviews
           </span>
         </div>
-        <div className="flex justify-between items-center border rounded-full px-6 py-3 mt-4">
-          <span className="text-sm text-[#6C7275]">{productName}</span>
-          <button
-            onClick={userReview ? handleEdit : () => setShowForm(true)}
-            className="bg-black cursor-pointer text-white px-6 py-2 rounded-full text-sm font-medium hover:opacity-90 transition"
-          >
-            {userReview ? "Edit Review" : "Write Review"}
-          </button>
-        </div>
+        {canShowReviewWriteSection && (
+          <div className="flex justify-between items-center border rounded-full px-6 py-3 mt-4">
+            <span className="text-sm text-[#6C7275]">{productName}</span>
+            <button
+              onClick={() => {
+                if (userReview) {
+                  handleEdit();
+                } else {
+                  setShowForm(true);
+                }
+              }}
+              className="bg-black cursor-pointer text-white px-6 py-2 rounded-full text-sm font-medium hover:opacity-90 transition"
+            >
+              {userReview ? "Edit Review" : "Write Review"}
+            </button>
+          </div>
+        )}
       </div>
 
       {showForm && (
@@ -334,6 +361,11 @@ export default function ReviewsSection({
           onClose={() => setShowForm(false)}
           onSubmit={async () => {
             if (!user) return toast.error("Please sign in");
+            if (!isEditing && !canReview) {
+              return toast.error(
+                "You can review this product only after purchasing it.",
+              );
+            }
             try {
               if (isEditing && userReview) {
                 await updateReviewMutation({
@@ -407,20 +439,12 @@ export default function ReviewsSection({
                   : toast.error("Please sign in")
               }
               onEdit={handleEdit}
-              onDelete={async () => {
-                if (!user) return;
-                if (confirm("Are you sure you want to delete this review?")) {
-                  try {
-                    await deleteReviewMutation({
-                      productId,
-                      reviewId: review.id,
-                      userId: user.id,
-                    }).unwrap();
-                    toast.success("Review deleted");
-                  } catch (err) {
-                    toast.error("Failed to delete review");
-                  }
-                }
+              onDelete={() => {
+                setDeleteConfirmModal({
+                  isOpen: true,
+                  reviewId: review.id,
+                  reviewText: review.review,
+                });
               }}
               onSubmitReply={async (reply: string) => {
                 if (!user) return toast.error("Please sign in");
@@ -447,6 +471,40 @@ export default function ReviewsSection({
           ))
         )}
       </div>
+
+      <DeleteReviewModal
+        isOpen={deleteConfirmModal.isOpen}
+        isLoading={isDeletingReview}
+        onConfirm={async () => {
+          if (!user || !deleteConfirmModal.reviewId) return;
+          setIsDeletingReview(true);
+          try {
+            await deleteReviewMutation({
+              productId,
+              reviewId: deleteConfirmModal.reviewId,
+              userId: user.id,
+            }).unwrap();
+            toast.success("Review deleted");
+            setDeleteConfirmModal({
+              isOpen: false,
+              reviewId: null,
+              reviewText: "",
+            });
+          } catch (err) {
+            toast.error("Failed to delete review");
+          } finally {
+            setIsDeletingReview(false);
+          }
+        }}
+        onCancel={() =>
+          setDeleteConfirmModal({
+            isOpen: false,
+            reviewId: null,
+            reviewText: "",
+          })
+        }
+        reviewText={deleteConfirmModal.reviewText}
+      />
     </div>
   );
 }

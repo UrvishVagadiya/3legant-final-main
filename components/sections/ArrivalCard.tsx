@@ -65,12 +65,12 @@ const ArrivalCard = ({
         <div className="w-full absolute top-0 p-3 md:p-4 flex justify-between items-start">
           <div className="flex flex-col gap-2">
             {(card.isNew ?? isProductNew(card.created_at)) && (
-              <div className="bg-[#FFFFFF] text-[#141718] font-bold text-[11px] md:text-sm py-1 px-3 rounded flex justify-center items-center uppercase shadow-sm">
+              <div className="bg-[#FFFFFF] text-[#141718] font-bold text-[9px] sm:text-[11px] md:text-sm py-0.5 sm:py-1 px-2 sm:px-3 rounded flex justify-center items-center uppercase shadow-sm">
                 New
               </div>
             )}
             {discount(displayPrice, displayMrp) > 0 && (
-              <div className="bg-[#38CB89] text-white font-bold text-[11px] md:text-sm py-1 px-3 rounded flex justify-center items-center shadow-sm">
+              <div className="bg-[#38CB89] text-white font-bold text-[9px] sm:text-[11px] md:text-sm py-0.5 sm:py-1 px-2 sm:px-3 rounded flex justify-center items-center shadow-sm">
                 -{discount(displayPrice, displayMrp)}%
               </div>
             )}

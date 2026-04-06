@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import { useUpdateProfileMutation } from "@/store/api/authApi";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 type Tab = "account" | "address" | "orders" | "wishlist";
 
@@ -37,6 +38,8 @@ const AccountSidebar = ({
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const supabase = createClient();
@@ -73,10 +76,21 @@ const AccountSidebar = ({
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+  const handleLogoutConfirmed = async () => {
+    setIsLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLogoutModalOpen(true);
   };
 
   const getTabClass = (tab: Tab) =>
@@ -155,6 +169,17 @@ const AccountSidebar = ({
           Log Out
         </h2>
       </div>
+
+      <ConfirmModal
+        isOpen={isLogoutModalOpen}
+        title="Confirm Logout"
+        message="Are you sure you want to log out? You will need to sign in again to access your account."
+        confirmText="Yes, Log Out"
+        cancelText="Cancel"
+        isLoading={isLoggingOut}
+        onConfirm={handleLogoutConfirmed}
+        onCancel={() => setIsLogoutModalOpen(false)}
+      />
     </div>
   );
 };

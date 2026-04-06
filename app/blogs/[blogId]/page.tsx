@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FiUser, FiCalendar } from "react-icons/fi";
+import { ArrowLeft } from "lucide-react";
 import SuggestedArticles from "@/components/sections/SuggestedArticles";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
@@ -149,19 +150,14 @@ const BlogPost = async ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20 pt-5 md:pt-6 text-[#141718]">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-wrap items-center gap-3 text-[13px] md:text-[15px] font-medium mb-8 text-[#6C7275]">
-          <Link href="/" className="hover:text-[#141718] transition-colors">
-            Home
-          </Link>
-          <span className="text-[10px]">{">"}</span>
+        <div className="mb-8">
           <Link
             href="/blogs"
-            className="hover:text-[#141718] transition-colors"
+            className="inline-flex items-center gap-2 text-[13px] md:text-[15px] font-medium text-[#6C7275] hover:text-[#141718] transition-colors"
           >
-            Blog
+            <ArrowLeft size={16} />
+            back
           </Link>
-          <span className="text-[10px]">{">"}</span>
-          <span className="text-[#141718]">{blog.title}</span>
         </div>
 
         <div className="space-y-3.5 mb-8">
@@ -205,7 +201,7 @@ const BlogPost = async ({
         </article>
       </div>
 
-      <div className="max-w-245 mx-auto">
+      <div className="max-w-7xl">
         <SuggestedArticles articles={suggested} />
       </div>
     </div>

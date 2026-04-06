@@ -137,18 +137,22 @@ const ContactUs = () => {
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 ">
-        {cards.map((value, index) => (
-          <div key={index} className="bg-[#F3F5F7] w-full p-4 sm:p-6 lg:p-12">
-            <div className="text-3xl sm:text-4xl lg:text-5xl">{value.icon}</div>
-            <p className="font-medium mt-2 sm:mt-4 text-sm sm:text-base lg:text-xl">
-              {value.title}
-            </p>
-            <p className="mt-1 sm:mt-2 text-[#6C7275] text-xs sm:text-sm md:text-base">
-              {value.desc}
-            </p>
+      <div className="w-full border-t border-[#E8ECEF] bg-[#F3F5F7] mt-10 md:mt-14">
+        <div className="mx-4 sm:mx-8 md:mx-16 lg:mx-40 ">
+          <div className="grid grid-cols-2 lg:grid-cols-4 py-4 gap-4 sm:gap-6 lg:gap-8">
+            {cards.map((value, index) => (
+              <div key={index} className="w-full p-4 sm:p-6 lg:p-12">
+                <div className="text-3xl sm:text-4xl lg:text-5xl">{value.icon}</div>
+                <p className="font-medium mt-2 sm:mt-4 text-sm sm:text-base lg:text-xl">
+                  {value.title}
+                </p>
+                <p className="mt-1 sm:mt-2 text-[#6C7275] text-xs sm:text-sm md:text-sm">
+                  {value.desc}
+                </p>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );

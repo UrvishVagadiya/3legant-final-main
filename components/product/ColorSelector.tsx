@@ -47,7 +47,7 @@ export default function ColorSelector({
           <MdKeyboardArrowRight className="text-xl ml-1 text-[#6C7275]" />
         </div>
         <p className="text-[#141718] text-[20px]">{selected}</p>
-        <div className="flex gap-4">
+        <div className="flex gap-3 sm:gap-4 overflow-x-auto overflow-y-visible py-2 px-1 scrollbar-hide">
           {colors.map((color) => {
             const bg = colorMap[color] || "#6B7280";
             const isSelected = selected === color;
@@ -56,7 +56,7 @@ export default function ColorSelector({
                 key={color}
                 onClick={() => onSelect(color)}
                 title={color}
-                className={`w-10 h-10 rounded-full cursor-pointer transition-all flex items-center justify-center border-2 border-black ${isSelected ? "ring-2 ring-offset-2 ring-black" : "hover:ring-2 hover:ring-offset-1 hover:ring-gray-300"}`}
+                className={`w-10 h-10 sm:w-11 sm:h-11 shrink-0 rounded-full cursor-pointer transition-all flex items-center justify-center border border-black/20 ${isSelected ? "shadow-[inset_0_0_0_2px_#141718]" : "hover:shadow-[inset_0_0_0_2px_#d1d5db]"}`}
                 style={{ backgroundColor: bg }}
               >
                 {isSelected && (

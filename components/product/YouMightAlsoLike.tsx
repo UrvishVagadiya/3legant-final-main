@@ -13,7 +13,6 @@ import { useGetRatingsByProductsQuery } from "@/store/api/reviewApi";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import ProductCard from "@/components/ui/ProductCard";
-import { typography } from "@/constants/typography";
 import type { Product } from "@/store/slices/productSlice";
 
 export default function YouMightAlsoLike() {
@@ -100,21 +99,26 @@ export default function YouMightAlsoLike() {
   };
 
   return (
-    <div className="w-full mt-10 md:mt-20">
-      <div className="flex justify-between items-end mb-8">
-        <h2 className={`${typography.h5}`}>You might also like</h2>
+    <section className="mt-10 md:mt-16">
+      <div className="mb-5 flex items-center justify-between gap-3 md:mb-6">
+        <h2 className="text-xl font-semibold text-[#141718] sm:text-2xl">
+          You might also like
+        </h2>
         <Link
           href="/shop"
-          className={`group flex items-center gap-1 ${typography.buttonSmall} hover:text-gray-600 transition-colors border-b-2 border-black pb-0.5`}
+          className="group inline-flex items-center gap-1 text-sm font-medium text-[#141718] transition hover:opacity-70"
         >
-          More Products{" "}
-          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          More products
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </Link>
       </div>
 
-      <div className="flex overflow-x-auto gap-4 md:gap-6 pb-4">
+      <div className="flex gap-4 overflow-x-auto pb-3">
         {products.map((card: Product) => (
-          <div key={card.id} className="w-62.5 md:w-70 shrink-0">
+          <div
+            key={card.id}
+            className="w-60 shrink-0 sm:w-65 md:w-70"
+          >
             <ProductCard
               product={card}
               isMounted={isMounted}
@@ -129,6 +133,6 @@ export default function YouMightAlsoLike() {
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

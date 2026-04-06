@@ -231,7 +231,7 @@ const Blogs = () => {
       </div>
 
       {hasMore && !loading && (
-        <div className="flex justify-center items-center mt-12 md:mt-20">
+        <div className="flex justify-center items-center mt-8 md:mt-8">
           <button
             onClick={handleShowMore}
             disabled={isLoadingMore}

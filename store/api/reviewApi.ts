@@ -50,9 +50,48 @@ export interface Review {
   replies: ReviewReply[];
 }
 
+const REVIEW_ELIGIBLE_ORDER_STATUSES = [
+  "processing",
+  "shipped",
+  "delivered",
+  "completed",
+  "refunded",
+];
+
+const hasPurchasedProduct = async (userId: string, productId: string) => {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("order_items")
+    .select("id, orders!inner(user_id, status)")
+    .eq("product_id", productId)
+    .eq("orders.user_id", userId)
+    .in("orders.status", REVIEW_ELIGIBLE_ORDER_STATUSES)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return { allowed: false, error };
+  }
+
+  return { allowed: !!data, error: null as null };
+};
+
 export const reviewApi = apiService.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
+    canReviewProduct: builder.query<boolean, { productId: string; userId?: string }>({
+      queryFn: async ({ productId, userId }) => {
+        if (!userId) return { data: false };
+
+        const eligibility = await hasPurchasedProduct(userId, productId);
+        if (eligibility.error) return { error: eligibility.error };
+
+        return { data: eligibility.allowed };
+      },
+      providesTags: (result, error, { productId, userId }) => [
+        { type: "Review", id: `CAN_REVIEW_${productId}_${userId || "anon"}` },
+      ],
+    }),
     getReviews: builder.query<Review[], { productId: string; userId?: string }>({
       queryFn: async ({ productId, userId }) => {
         const supabase = createClient();
@@ -132,6 +171,17 @@ export const reviewApi = apiService.injectEndpoints({
     }),
     addReview: builder.mutation<Review, { productId: string; userId: string; userName: string; rating: number; review: string }>({
       queryFn: async (payload) => {
+        const eligibility = await hasPurchasedProduct(payload.userId, payload.productId);
+        if (eligibility.error) return { error: eligibility.error };
+        if (!eligibility.allowed) {
+          return {
+            error: {
+              status: 403,
+              data: { message: "You can review this product only after purchasing it." },
+            },
+          };
+        }
+
         const supabase = createClient();
         const { data, error } = await supabase
           .from("product_reviews")
@@ -222,6 +272,7 @@ export const reviewApi = apiService.injectEndpoints({
 });
 
 export const {
+  useCanReviewProductQuery,
   useGetReviewsQuery,
   useGetRatingsByProductsQuery,
   useAddReviewMutation,

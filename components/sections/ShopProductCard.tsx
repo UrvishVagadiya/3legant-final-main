@@ -78,12 +78,12 @@ const ShopProductCard = ({
           <div className="flex flex-col gap-2">
             {(card.isNew ??
               isProductNew(card.created_at || card.createdAt)) && (
-              <div className="bg-[#FFFFFF] text-[#141718] font-bold text-[10px] md:text-xs py-1 px-2.5 rounded flex justify-center items-center shadow-sm">
+              <div className="bg-[#FFFFFF] text-[#141718] font-bold text-[9px] sm:text-[10px] md:text-xs py-0.5 sm:py-1 px-2 sm:px-2.5 rounded flex justify-center items-center shadow-sm">
                 NEW
               </div>
             )}
             {displayMrp > displayPrice && (
-              <div className="bg-[#38CB89] text-white font-bold text-[10px] md:text-xs py-1 px-2.5 rounded flex justify-center items-center shadow-sm">
+              <div className="bg-[#38CB89] text-white font-bold text-[9px] sm:text-[10px] md:text-xs py-0.5 sm:py-1 px-2 sm:px-2.5 rounded flex justify-center items-center shadow-sm">
                 -{Math.round(((displayMrp - displayPrice) / displayMrp) * 100)}%
               </div>
             )}
