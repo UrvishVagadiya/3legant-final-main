@@ -1,7 +1,7 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
     if (pathname.startsWith("/api/stripe/webhook") || pathname.startsWith("/api/cron")) {
@@ -39,7 +39,9 @@ export async function middleware(request: NextRequest) {
         const isAdminPath = pathname.startsWith("/admin");
 
         if (isAdminPath) {
-            const { data: { user } } = await supabase.auth.getUser();
+            const {
+                data: { user },
+            } = await supabase.auth.getUser();
 
             if (!user) {
                 return NextResponse.redirect(new URL("/signin", request.url));
