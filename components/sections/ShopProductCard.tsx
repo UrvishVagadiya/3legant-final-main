@@ -74,16 +74,16 @@ const ShopProductCard = ({
           colorHex={shouldTint ? colorHex : null}
         />
 
-        <div className="w-full absolute top-0 p-3 flex justify-between items-start z-10">
-          <div className="flex flex-col gap-2">
+        <div className="w-full absolute top-0 p-2 min-[400px]:p-3 flex justify-between items-start z-10">
+          <div className="flex flex-col gap-1 min-[400px]:gap-2">
             {(card.isNew ??
               isProductNew(card.created_at || card.createdAt)) && (
-              <div className="bg-[#FFFFFF] text-[#141718] font-bold text-[9px] sm:text-[10px] md:text-xs py-0.5 sm:py-1 px-2 sm:px-2.5 rounded flex justify-center items-center shadow-sm">
+              <div className="bg-[#FFFFFF] text-[#141718] font-bold text-[8px] min-[400px]:text-[9px] sm:text-[10px] md:text-xs py-0.5 min-[400px]:py-1 px-1.5 min-[400px]:px-2 sm:px-2.5 rounded-sm min-[400px]:rounded flex justify-center items-center shadow-sm leading-none">
                 NEW
               </div>
             )}
             {displayMrp > displayPrice && (
-              <div className="bg-[#38CB89] text-white font-bold text-[9px] sm:text-[10px] md:text-xs py-0.5 sm:py-1 px-2 sm:px-2.5 rounded flex justify-center items-center shadow-sm">
+              <div className="bg-[#38CB89] text-white font-bold text-[8px] min-[400px]:text-[9px] sm:text-[10px] md:text-xs py-0.5 min-[400px]:py-1 px-1.5 min-[400px]:px-2 sm:px-2.5 rounded-sm min-[400px]:rounded flex justify-center items-center shadow-sm leading-none whitespace-nowrap">
                 -{Math.round(((displayMrp - displayPrice) / displayMrp) * 100)}%
               </div>
             )}

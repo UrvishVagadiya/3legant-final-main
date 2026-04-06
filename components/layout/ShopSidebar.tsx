@@ -68,7 +68,6 @@ const ShopSidebar = ({
         </h1>
         <div className="flex flex-col gap-3">
           {priceRanges.map((price, index) => {
-            // Show as checked if "All Price" is selected OR if the specific price is in selectedPrices
             const isChecked =
               isAllPricesSelected || selectedPrices.includes(price.label);
             return (

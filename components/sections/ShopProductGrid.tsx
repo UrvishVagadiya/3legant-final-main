@@ -27,7 +27,7 @@ interface ShopProductGridProps {
 
 const mobileGridClasses: Record<number, string> = {
   1: "grid-cols-1",
-  2: "grid-cols-1 min-[400px]:grid-cols-2",
+  2: "grid-cols-2",
 };
 const desktopGridClasses: Record<number, string> = {
   1: "lg:grid-cols-1",

@@ -78,7 +78,7 @@ const MobileShopFilters = ({
               setIsMobileFilterOpen(!isMobileFilterOpen);
               setOpenDropdown(null);
             }}
-            className="flex items-center gap-2 text-[#141718]"
+            className="flex cursor-pointer items-center gap-2 text-[#141718]"
           >
             <IoOptionsOutline className="text-xl" />
             <span className="font-semibold text-sm">Filter</span>
