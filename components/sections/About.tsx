@@ -28,14 +28,14 @@ const About = () => {
   ];
   return (
     <div className="px-3 sm:px-5 md:px-10 lg:px-40 my-7 lg:my-10">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-[16px]">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-4">
         {infos.map((value, index) => (
           <div
             key={index}
             className="bg-[#F3F5F7] w-full p-5 sm:p-6 lg:p-12 min-w-0"
           >
             <div className="text-2xl sm:text-3xl lg:text-4xl">{value.icon}</div>
-            <p className="font-medium mt-4 text-sm lg:text-xl break-words">
+            <p className="font-medium mt-4 text-sm lg:text-xl wrap-break-words">
               {value.title}
             </p>
             <p className="mt-2 text-[#6C7275] text-xs sm:text-sm">
