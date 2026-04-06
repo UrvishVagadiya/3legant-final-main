@@ -21,7 +21,7 @@ interface MobileShopFiltersProps {
   priceItems: FilterItem[];
   priceDisplayValue: string;
   onCategorySelect: (cat: string) => void;
-  onPriceSelect: (label: string) => void;
+  onPriceSelectDirect: (label: string) => void;
   onToggleDropdown: (name: string) => void;
   onSort: (option: string) => void;
   sortOption: string;
@@ -40,12 +40,17 @@ const MobileShopFilters = ({
   priceItems,
   priceDisplayValue,
   onCategorySelect,
-  onPriceSelect,
+  onPriceSelectDirect,
   onToggleDropdown,
   onSort,
   sortOption,
   mobileIcons,
 }: MobileShopFiltersProps) => {
+  const mobilePriceItems = priceItems.map((item) => ({
+    ...item,
+    active: item.label === priceDisplayValue,
+  }));
+
   const renderFilters = (compact: boolean) => (
     <>
       <FilterDropdown
@@ -55,15 +60,16 @@ const MobileShopFilters = ({
         isOpen={openDropdown === "category"}
         onToggle={() => onToggleDropdown("category")}
         onSelect={onCategorySelect}
+        onClose={() => setOpenDropdown(null)}
         compact={compact}
       />
       <FilterDropdown
         label="PRICE"
         displayValue={priceDisplayValue}
-        items={priceItems}
+        items={mobilePriceItems}
         isOpen={openDropdown === "price"}
         onToggle={() => onToggleDropdown("price")}
-        onSelect={onPriceSelect}
+        onSelect={onPriceSelectDirect}
         compact={compact}
       />
     </>
@@ -90,7 +96,7 @@ const MobileShopFilters = ({
           />
         </div>
         {isMobileFilterOpen && (
-          <div className="flex flex-row gap-3 py-3 border-b border-gray-200">
+          <div className="flex flex-col gap-3 py-3 border-b border-gray-200">
             {renderFilters(true)}
           </div>
         )}
@@ -106,7 +112,7 @@ const MobileShopFilters = ({
 
   return (
     <>
-      <div className="flex flex-row gap-3">{renderFilters(true)}</div>
+      <div className="flex flex-col gap-3">{renderFilters(true)}</div>
       <div className="flex items-center justify-between">
         <SortByMenu onSort={onSort} align="left" currentSort={sortOption} />
         <GridIconBar

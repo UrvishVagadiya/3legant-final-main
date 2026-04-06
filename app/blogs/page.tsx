@@ -124,15 +124,15 @@ const Blogs = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20 space-y-8 md:space-y-12">
       <div
-        className="w-full min-h-75 md:min-h-98 flex items-center justify-center rounded-lg mt-6"
+        className="w-full min-h-72 sm:min-h-80 md:min-h-98 flex items-center justify-center rounded-lg mt-4 sm:mt-6"
         style={{
           backgroundImage: 'url("/blog.png")',
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        <div className="flex flex-col justify-center items-center text-center px-4">
-          <div className="flex gap-3 text-sm md:text-base font-medium">
+        <div className="flex flex-col justify-center items-center text-center px-4 sm:px-6">
+          <div className="font-inter text-xs sm:text-sm md:text-base font-semibold flex gap-2 sm:gap-3">
             <Link
               href="/"
               className="text-gray-500 hover:text-gray-900 transition-colors"
@@ -144,8 +144,10 @@ const Blogs = () => {
               Blog
             </Link>
           </div>
-          <h1 className={`${typography.h3} my-5`}>Our Blog</h1>
-          <p className={`${typography.text20} text-[#121212]`}>
+          <h1 className="font-poppins text-[32px] leading-9.5 tracking-[-0.4px] sm:text-[42px] sm:leading-12 md:text-[54px] md:leading-14.5 md:tracking-[-1px] font-medium my-3 sm:my-4 md:my-5">
+            Our Blog
+          </h1>
+          <p className="font-inter text-[14px] leading-5.5 sm:text-[16px] sm:leading-6.5 md:text-[20px] md:leading-8 text-[#121212] max-w-[320px] sm:max-w-105 md:max-w-none">
             Home ideas and design inspiration
           </p>
         </div>

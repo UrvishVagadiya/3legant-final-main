@@ -141,6 +141,14 @@ const Shop = () => {
     handlePriceChange(label);
     if (label === "All Price") setOpenDropdown(null);
   };
+  const handleDesktopPriceSelect = (label: string) => {
+    dispatch(setFilters({ prices: [label] }));
+    setOpenDropdown(null);
+  };
+  const handleMobilePriceSelect = (label: string) => {
+    dispatch(setFilters({ prices: [label] }));
+    setOpenDropdown(null);
+  };
   const handleSortChange = (sort: string) => dispatch(setFilters({ sort }));
 
   const filtered = useMemo(() => {
@@ -183,6 +191,10 @@ const Shop = () => {
   const priceDisplay = selectedPrices.includes("All Price")
     ? "All Price"
     : selectedPrices[0];
+  const desktopPriceItems = priceRanges.map((r) => ({
+    label: r.label,
+    active: priceDisplay === r.label,
+  }));
   const isSidebarOpen = viewGrid === 3;
 
   return (
@@ -220,7 +232,7 @@ const Shop = () => {
               priceItems={priceItems}
               priceDisplayValue={priceDisplay}
               onCategorySelect={handleCategorySelect}
-              onPriceSelect={handlePriceSelect}
+              onPriceSelectDirect={handleMobilePriceSelect}
               onToggleDropdown={toggleDropdown}
               onSort={handleSortChange}
               sortOption={sortOption}
@@ -248,10 +260,10 @@ const Shop = () => {
                 <FilterDropdown
                   label="PRICE"
                   displayValue={priceDisplay}
-                  items={priceItems}
+                  items={desktopPriceItems}
                   isOpen={openDropdown === "price"}
                   onToggle={() => toggleDropdown("price")}
-                  onSelect={handlePriceSelect}
+                  onSelect={handleDesktopPriceSelect}
                   compact={false}
                 />
               </div>
