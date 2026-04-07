@@ -10,6 +10,7 @@ interface CartItem {
   image: string;
   color: string;
   quantity: number;
+  stock?: number;
 }
 
 interface OrderSummaryProps {
@@ -33,7 +34,12 @@ interface OrderSummaryProps {
 
 const shippingOptions = [
   { value: "free", label: "Free shipping", price: 0, priceLabel: "$0.00" },
-  { value: "express", label: "Express shipping", price: 15, priceLabel: "+$15.00" },
+  {
+    value: "express",
+    label: "Express shipping",
+    price: 15,
+    priceLabel: "+$15.00",
+  },
   { value: "pickup", label: "Pick Up", price: 21, priceLabel: "$21.00" },
 ];
 
@@ -54,6 +60,17 @@ export default function OrderSummary({
   placing,
   onPlaceOrder,
 }: OrderSummaryProps) {
+  const handleDecrease = (item: CartItem) => {
+    if (item.quantity <= 1) return;
+    updateQuantity(item.id, item.color, item.quantity - 1);
+  };
+
+  const handleIncrease = (item: CartItem) => {
+    const stock = item.stock ?? 0;
+    if (stock <= 0 || item.quantity >= stock) return;
+    updateQuantity(item.id, item.color, item.quantity + 1);
+  };
+
   return (
     <div className="border border-gray-300 rounded-lg p-6">
       <h2 className="text-xl font-semibold mb-6">Order summary</h2>
@@ -63,7 +80,12 @@ export default function OrderSummary({
           <div key={item.id} className="flex gap-4 items-center">
             <div
               className="relative w-16 h-20 bg-[#F3F5F7] rounded shrink-0 flex items-center justify-center"
-              style={{ backgroundColor: (item.color?.toLowerCase() !== 'white' && colorMap[item.color]) ? colorMap[item.color] : undefined }}
+              style={{
+                backgroundColor:
+                  item.color?.toLowerCase() !== "white" && colorMap[item.color]
+                    ? colorMap[item.color]
+                    : undefined,
+              }}
             >
               <Image
                 src={item.image}
@@ -71,7 +93,13 @@ export default function OrderSummary({
                 fill
                 unoptimized
                 className="object-contain p-2 transition-all duration-300"
-                style={{ mixBlendMode: (item.color?.toLowerCase() !== 'white' && colorMap[item.color]) ? 'multiply' : 'normal' }}
+                style={{
+                  mixBlendMode:
+                    item.color?.toLowerCase() !== "white" &&
+                    colorMap[item.color]
+                      ? "multiply"
+                      : "normal",
+                }}
               />
             </div>
             <div className="flex-1">
@@ -88,19 +116,21 @@ export default function OrderSummary({
               </div>
               <div className="flex items-center border border-gray-300 rounded px-2 py-0.5 mt-2 w-fit gap-3">
                 <button
-                  onClick={() =>
-                    updateQuantity(item.id, item.color, item.quantity - 1)
-                  }
-                  className="text-gray-500 text-sm"
+                  type="button"
+                  onClick={() => handleDecrease(item)}
+                  disabled={item.quantity <= 1}
+                  className={`text-sm ${item.quantity <= 1 ? "text-gray-300 " : "text-gray-500 hover:text-black"} cursor-pointer`}
                 >
                   -
                 </button>
                 <span className="font-semibold text-sm">{item.quantity}</span>
                 <button
-                  onClick={() =>
-                    updateQuantity(item.id, item.color, item.quantity + 1)
+                  type="button"
+                  onClick={() => handleIncrease(item)}
+                  disabled={
+                    (item.stock ?? 0) <= 0 || item.quantity >= (item.stock ?? 0)
                   }
-                  className="text-gray-500 text-sm"
+                  className={`text-sm ${(item.stock ?? 0) <= 0 || item.quantity >= (item.stock ?? 0) ? "text-gray-300 " : "text-gray-500 hover:text-black"} cursor-pointer`}
                 >
                   +
                 </button>
@@ -120,7 +150,7 @@ export default function OrderSummary({
         />
         <button
           onClick={onApplyCoupon}
-          className="px-6 py-3 font-semibold text-sm bg-[#141718] text-white hover:bg-black transition-colors"
+          className="px-6 cursor-pointer py-3 font-semibold text-sm bg-[#141718] text-white hover:bg-black transition-colors"
         >
           {couponLoading ? "..." : "Apply"}
         </button>
@@ -141,10 +171,11 @@ export default function OrderSummary({
         {shippingOptions.map((opt) => (
           <label
             key={opt.value}
-            className={`flex items-center justify-between border rounded p-3 cursor-pointer transition-colors ${shippingMethod === opt.value
+            className={`flex items-center justify-between border rounded p-3 cursor-pointer transition-colors ${
+              shippingMethod === opt.value
                 ? "border-black bg-gray-50"
                 : "border-gray-200 hover:border-gray-400"
-              }`}
+            }`}
           >
             <div className="flex items-center gap-3">
               <input
@@ -203,7 +234,7 @@ export default function OrderSummary({
         <button
           onClick={onPlaceOrder}
           disabled={placing}
-          className="w-full bg-[#141718] text-white py-4 rounded font-semibold hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-[#141718] cursor-pointer text-white py-4 rounded font-semibold hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {placing ? "Redirecting to Payment..." : "Pay with Stripe"}
         </button>

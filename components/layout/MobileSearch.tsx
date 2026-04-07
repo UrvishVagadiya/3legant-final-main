@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import { useSearchProductsQuery } from "@/store/api/productApi";
@@ -18,18 +18,30 @@ const MobileSearch = ({ onResultClick }: MobileSearchProps) => {
   const dispatch = useAppDispatch();
   const { searchQuery } = useAppSelector((state: RootState) => state.product);
 
+  const [inputValue, setInputValue] = useState(searchQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery.trim());
   const [showResults, setShowResults] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const { data: searchResults = [], isFetching: searchLoading } =
-    useSearchProductsQuery(searchQuery, {
-      skip: !searchQuery.trim(),
+    useSearchProductsQuery(debouncedQuery, {
+      skip: !debouncedQuery,
     });
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const trimmed = inputValue.trim();
+      setDebouncedQuery(trimmed);
+      dispatch(setSearchQuery(trimmed));
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [inputValue, dispatch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    dispatch(setSearchQuery(value));
+    setInputValue(value);
     setShowResults(!!value.trim());
   };
 
@@ -45,7 +57,7 @@ const MobileSearch = ({ onResultClick }: MobileSearchProps) => {
         <input
           ref={inputRef}
           type="text"
-          value={searchQuery}
+          value={inputValue}
           onChange={handleInputChange}
           placeholder="Search"
           className="flex-1 text-sm text-[#141718] placeholder:text-[#6C7275] outline-none bg-transparent"
@@ -59,13 +71,11 @@ const MobileSearch = ({ onResultClick }: MobileSearchProps) => {
               <div className="w-5 h-5 border-2 border-[#141718] border-t-transparent rounded-full animate-spin" />
             </div>
           )}
-          {!searchLoading &&
-            searchResults.length === 0 &&
-            searchQuery.trim() && (
-              <p className="text-center text-[#6C7275] py-4 text-xs">
-                No products found
-              </p>
-            )}
+          {!searchLoading && searchResults.length === 0 && debouncedQuery && (
+            <p className="text-center text-[#6C7275] py-4 text-xs">
+              No products found
+            </p>
+          )}
           {!searchLoading &&
             searchResults.map((product: Product) => (
               <button

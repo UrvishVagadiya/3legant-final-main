@@ -37,21 +37,47 @@ export default function CartDrawer() {
     0,
   );
 
+  const handleDecrease = (item: (typeof items)[number]) => {
+    if (item.quantity <= 1) return;
+    dispatch(
+      updateQuantity({
+        id: item.id,
+        color: item.color,
+        quantity: item.quantity - 1,
+      }),
+    );
+  };
+
+  const handleIncrease = (item: (typeof items)[number]) => {
+    if (item.stock <= 0 || item.quantity >= item.stock) return;
+    dispatch(
+      updateQuantity({
+        id: item.id,
+        color: item.color,
+        quantity: item.quantity + 1,
+      }),
+    );
+  };
+
+  const handleRemove = (item: (typeof items)[number]) => {
+    dispatch(removeFromCart({ id: item.id, color: item.color }));
+  };
+
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/50 z-[99996] transition-opacity duration-300 ${isCartOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed inset-0 bg-black/50 z-99996 transition-opacity duration-300 ${isCartOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         onClick={() => dispatch(toggleCart())}
       />
 
       <div
-        className={`fixed top-0 right-0 h-full w-full sm:w-103.5 bg-white z-[99997] transform transition-transform duration-300 ease-in-out flex flex-col font-inter ${isCartOpen ? "translate-x-0 shadow-2xl" : "translate-x-full"}`}
+        className={`fixed top-0 right-0 h-full w-full sm:w-103.5 bg-white z-99997 transform transition-transform duration-300 ease-in-out flex flex-col font-inter ${isCartOpen ? "translate-x-0 shadow-2xl" : "translate-x-full"}`}
       >
         <div className="flex items-center justify-between p-6 pb-4">
           <h2 className={`${typography.h6} text-[#141718]`}>Cart</h2>
           <button
             onClick={() => dispatch(toggleCart())}
-            className="p-2 -mr-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 -mr-2 hover:bg-gray-100 rounded-full cursor-pointer transition-colors"
           >
             <X className="w-6 h-6 text-[#141718]" />
           </button>
@@ -105,29 +131,21 @@ export default function CartDrawer() {
                       ${Number(item.price).toFixed(2)}
                     </span>
                     <button
-                      onClick={() =>
-                        dispatch(
-                          removeFromCart({ id: item.id, color: item.color }),
-                        )
-                      }
-                      className="text-[#6C7275] hover:text-[#141718] transition-colors p-1 mt-1 -mr-1"
+                      type="button"
+                      onClick={() => handleRemove(item)}
+                      className="text-[#6C7275] hover:text-[#141718] cursor-pointer transition-colors p-1 mt-1 -mr-1"
                     >
                       <X className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
                 <div className="flex items-center justify-between border border-[#6C7275] rounded w-20 h-8 px-2">
+                  {/** Disable decrement at 1 and increment when stock limit is reached */}
                   <button
-                    onClick={() =>
-                      dispatch(
-                        updateQuantity({
-                          id: item.id,
-                          color: item.color,
-                          quantity: item.quantity - 1,
-                        }),
-                      )
-                    }
-                    className="text-[#141718]"
+                    type="button"
+                    onClick={() => handleDecrease(item)}
+                    disabled={item.quantity <= 1}
+                    className={`${item.quantity <= 1 ? "text-gray-300 " : "text-[#141718] hover:text-black"} cursor-pointer transition-colors`}
                   >
                     <Minus className="w-3 h-3" />
                   </button>
@@ -135,17 +153,10 @@ export default function CartDrawer() {
                     {item.quantity}
                   </span>
                   <button
-                    onClick={() =>
-                      dispatch(
-                        updateQuantity({
-                          id: item.id,
-                          color: item.color,
-                          quantity: item.quantity + 1,
-                        }),
-                      )
-                    }
-                    disabled={item.quantity >= item.stock}
-                    className={`${item.quantity >= item.stock ? "text-gray-300 cursor-not-allowed" : "text-[#141718] hover:text-black"} transition-colors`}
+                    type="button"
+                    onClick={() => handleIncrease(item)}
+                    disabled={item.stock <= 0 || item.quantity >= item.stock}
+                    className={`${item.stock <= 0 || item.quantity >= item.stock ? "text-gray-300 " : "text-[#141718] hover:text-black"} cursor-pointer transition-colors`}
                   >
                     <Plus className="w-3 h-3" />
                   </button>
@@ -176,13 +187,13 @@ export default function CartDrawer() {
           {items.length === 0 ? (
             <button
               disabled
-              className="w-full bg-gray-300 text-gray-500 cursor-not-allowed py-3.5 rounded-lg font-medium text-[16px] mb-4"
+              className="w-full bg-gray-300 cursor-pointer text-gray-500  py-3.5 rounded-lg font-medium text-[16px] mb-4"
             >
               Checkout
             </button>
           ) : (
             <Link href="/checkout" onClick={() => dispatch(toggleCart())}>
-              <button className="w-full bg-[#141718] text-white py-3.5 rounded-lg font-medium text-[16px] mb-4 hover:bg-black transition-colors">
+              <button className="w-full cursor-pointer bg-[#141718] text-white py-3.5 rounded-lg font-medium text-[16px] mb-4 hover:bg-black transition-colors">
                 Checkout
               </button>
             </Link>

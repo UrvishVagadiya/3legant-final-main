@@ -183,7 +183,7 @@ const ShopProductGrid = ({
           <button
             onClick={onShowMore}
             disabled={isLoadingMore}
-            className="px-10 py-2 border border-[#141718] text-[#141718] rounded-[80px] font-medium hover:bg-[#141718] hover:text-white transition-all duration-300"
+            className="px-10 py-2 cursor-pointer border border-[#141718] text-[#141718] rounded-[80px] font-medium hover:bg-[#141718] hover:text-white transition-all duration-300"
           >
             {isLoadingMore ? "Loading..." : "Show more"}
           </button>

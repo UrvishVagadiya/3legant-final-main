@@ -2,13 +2,15 @@ import { typography } from "@/constants/typography";
 
 export default function TermsPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 mb-10 text-[#141718]">
-      <h1 className={`${typography.h4} mb-4`}>Terms of Use</h1>
-      <p className={`${typography.text14} text-[#6C7275] mb-8`}>
-        Last updated: April 6, 2026
-      </p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 mb-10 text-[#141718]">
+      <div className="text-center">
+        <h1 className={`${typography.h4} mb-4`}>Terms of Use</h1>
+        <p className={`${typography.text14} text-[#6C7275]`}>
+          Last updated: April 6, 2026
+        </p>
+      </div>
 
-      <div className="space-y-8">
+      <div className="space-y-8 mt-10 max-w-5xl">
         <section>
           <h2 className={`${typography.text20Semibold} mb-3`}>
             Acceptance of Terms

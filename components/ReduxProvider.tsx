@@ -2,7 +2,7 @@
 
 import { Provider } from "react-redux";
 import { store, useAppDispatch } from "@/store";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { setAuth } from "@/store/slices/authSlice";
 import { clearCart, setCartItems } from "@/store/slices/cartSlice";
@@ -17,6 +17,7 @@ import type { Session } from "@supabase/supabase-js";
 function AuthInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const hasHydratedCartRef = useRef(false);
 
   const { data: remoteCart } = useGetCartItemsQuery(user?.id ?? "", {
     skip: !user?.id,
@@ -33,10 +34,16 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
   }, [profile, dispatch]);
 
   useEffect(() => {
-    if (remoteCart && remoteCart.length > 0) {
-      dispatch(setCartItems(remoteCart));
+    if (!user) {
+      hasHydratedCartRef.current = false;
+      return;
     }
-  }, [remoteCart, dispatch]);
+
+    if (remoteCart && remoteCart.length > 0 && !hasHydratedCartRef.current) {
+      dispatch(setCartItems(remoteCart));
+      hasHydratedCartRef.current = true;
+    }
+  }, [remoteCart, dispatch, user]);
 
   useEffect(() => {
     if (remoteWishlist && remoteWishlist.length > 0) {

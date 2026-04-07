@@ -237,7 +237,7 @@ const Blogs = () => {
           <button
             onClick={handleShowMore}
             disabled={isLoadingMore}
-            className="border border-[#141718] text-[#141718] py-2 md:py-2.5 px-8 md:px-10 rounded-[80px] font-medium hover:bg-[#141718] hover:text-white transition-all duration-300"
+            className="border cursor-pointer border-[#141718] text-[#141718] py-2 md:py-2.5 px-8 md:px-10 rounded-[80px] font-medium hover:bg-[#141718] hover:text-white transition-all duration-300"
           >
             {isLoadingMore ? "Loading..." : "Show more"}
           </button>

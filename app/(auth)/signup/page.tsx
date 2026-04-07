@@ -6,6 +6,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { createClient } from "../../../utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { typography } from "@/constants/typography";
+import toast from "react-hot-toast";
 const supabase = createClient();
 
 type FormInputs = {
@@ -27,7 +28,7 @@ export default function SignUpPage() {
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     if (!data.terms) {
-      alert("You must accept terms");
+      toast.error("You must accept terms");
       return;
     }
 
@@ -45,11 +46,11 @@ export default function SignUpPage() {
     });
     if (error) {
       console.error("Signup error details:", error);
-      alert(
+      toast.error(
         `Signup failed: ${error.message}${error.status ? ` (Status: ${error.status})` : ""}`,
       );
     } else {
-      alert(
+      toast.success(
         "Signup successful! Please check your email for a confirmation link.",
       );
       router.push("/signin");

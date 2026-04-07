@@ -96,7 +96,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
           </Link>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-1 hover:bg-gray-100 cursor-pointer rounded-full transition-colors"
           >
             <X className="w-5 h-5 text-[#141718]" />
           </button>
@@ -115,7 +115,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
                         openDropdown === item.label ? null : item.label,
                       )
                     }
-                    className={`flex items-center justify-between w-full py-3.5 text-sm ${
+                    className={`flex items-center cursor-pointer justify-between w-full py-3.5 text-sm ${
                       item.children.some((c) =>
                         pathname.startsWith(c.href.split("?")[0]),
                       )

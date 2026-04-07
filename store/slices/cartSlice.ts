@@ -59,7 +59,14 @@ const cartSlice = createSlice({
       const { item } = action.payload;
       const safeItem = { ...item, price: Number(item.price) };
       const existingItem = state.items.find(i => i.id === safeItem.id && i.color === safeItem.color);
-      
+
+      if (safeItem.stock <= 0) {
+        toast.error('This item is out of stock', {
+          id: 'out-of-stock-error',
+        });
+        return;
+      }
+
       if (existingItem) {
         if (existingItem.quantity >= safeItem.stock) {
           toast.error(`Only ${safeItem.stock} items available in stock`, {
@@ -71,7 +78,7 @@ const cartSlice = createSlice({
       } else {
         state.items.push({ ...safeItem, quantity: 1 });
       }
-      
+
       toast.success(`${item.name} added to cart!`, {
         style: { borderRadius: '8px', background: '#141718', color: '#fff' },
         id: 'add-to-cart-success',
@@ -86,7 +93,11 @@ const cartSlice = createSlice({
       const { id, color, quantity } = action.payload;
       const item = state.items.find(i => i.id === id && i.color === color);
       if (item) {
-        item.quantity = Math.min(item.stock, Math.max(1, quantity));
+        if (item.stock <= 0) {
+          item.quantity = 1;
+        } else {
+          item.quantity = Math.min(item.stock, Math.max(1, quantity));
+        }
       }
       localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod }));
     },

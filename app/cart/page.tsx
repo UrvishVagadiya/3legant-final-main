@@ -39,6 +39,12 @@ const Cart = () => {
     color: string,
     quantity: number,
   ) => {
+    const item = items.find((i) => i.id === id && i.color === color);
+    if (!item) return;
+
+    if (item.stock <= 0) return;
+    if (quantity < 1 || quantity > item.stock) return;
+
     dispatch(updateQuantity({ id, color, quantity }));
   };
 

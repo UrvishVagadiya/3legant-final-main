@@ -22,22 +22,24 @@ export default function ProductActions({
   stock = 0,
 }: Props) {
   const isOutOfStock = stock <= 0;
+  const isMinQuantity = quantity <= 1;
+  const isMaxQuantity = stock > 0 && quantity >= stock;
   return (
     <div className="flex flex-col gap-4 py-6 border-b border-[#E8ECEF] w-full">
       <div className="flex gap-4 h-13">
         <div className="flex items-center justify-between bg-[#F3F5F7] rounded-lg w-30 px-4 font-medium">
           <button
             onClick={onDecrease}
-            disabled={isOutOfStock}
-            className={`p-1 ${isOutOfStock ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-gray-200"} rounded text-[#141718] transition-colors`}
+            disabled={isOutOfStock || isMinQuantity}
+            className={`p-1 ${isOutOfStock || isMinQuantity ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-gray-200"} rounded text-[#141718] transition-colors`}
           >
             <Minus className="w-4 h-4" />
           </button>
           <span>{quantity}</span>
           <button
             onClick={onIncrease}
-            disabled={isOutOfStock}
-            className={`p-1 ${isOutOfStock ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-gray-200"} rounded text-[#141718] transition-colors`}
+            disabled={isOutOfStock || isMaxQuantity}
+            className={`p-1 ${isOutOfStock || isMaxQuantity ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:bg-gray-200"} rounded text-[#141718] transition-colors`}
           >
             <Plus className="w-4 h-4" />
           </button>
