@@ -38,10 +38,12 @@ const ShopProductCard = ({
   handleAddToCart,
   getRating,
 }: ShopProductCardProps) => {
-  const expired = isOfferExpired(card.valid_until);
-  const rawMrp = card.mrp || card.old_price || card.oldprice || 0;
-  const displayPrice = expired && rawMrp > card.price ? rawMrp : card.price;
-  const displayMrp = expired ? 0 : rawMrp;
+  const expired = isOfferExpired(card.valid_until || card.validUntil);
+  const basePrice = Number(card.price || 0);
+  const rawMrp = Number(card.mrp || card.old_price || card.oldprice || 0);
+  const hasDiscount = rawMrp > basePrice;
+  const displayPrice = expired && hasDiscount ? rawMrp : basePrice;
+  const displayMrp = !expired && hasDiscount ? rawMrp : 0;
   const isHorizontal = viewGrid <= 2;
   const isMobileExtended = mobileViewGrid === 1;
   const overlayClass = `${isMobileExtended ? "hidden" : "block"} ${isHorizontal ? "lg:!hidden" : "lg:!block"}`;

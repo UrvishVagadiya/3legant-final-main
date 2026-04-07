@@ -16,6 +16,7 @@ import GridIconBar from "@/components/shop/GridIconBar";
 import MobileShopFilters from "@/components/shop/MobileShopFilters";
 import { categories, priceRanges } from "@/constants/shopFilters";
 import { typography } from "@/constants/typography";
+import { isOfferExpired } from "@/utils/isOfferExpired";
 import type { Product } from "@/store/slices/productSlice";
 
 const desktopIcons = [
@@ -28,6 +29,21 @@ const mobileIcons = [
   { icon: <PiColumnsFill />, grid: 2 },
   { icon: <PiRowsFill />, grid: 1 },
 ];
+
+const getEffectivePrice = (product: Product) => {
+  const rawMrp = Number(
+    product.mrp || product.old_price || product.oldprice || 0,
+  );
+  const basePrice = Number(product.price || 0);
+  const offerEndsAt = product.valid_until || product.validUntil;
+  const expired = isOfferExpired(offerEndsAt);
+
+  if (expired && rawMrp > basePrice) {
+    return rawMrp;
+  }
+
+  return basePrice;
+};
 
 const Shop = () => {
   const PAGE_SIZE = 9;
@@ -144,16 +160,19 @@ const Shop = () => {
         selectedPrices.includes(rr.label),
       );
       r = r.filter((p) =>
-        ranges.some((rr) => p.price >= rr.min && p.price <= rr.max),
+        ranges.some((rr) => {
+          const effectivePrice = getEffectivePrice(p);
+          return effectivePrice >= rr.min && effectivePrice <= rr.max;
+        }),
       );
     }
     if (sortOption === "az") r.sort((a, b) => a.title.localeCompare(b.title));
     else if (sortOption === "za")
       r.sort((a, b) => b.title.localeCompare(a.title));
     else if (sortOption === "price-low-high")
-      r.sort((a, b) => a.price - b.price);
+      r.sort((a, b) => getEffectivePrice(a) - getEffectivePrice(b));
     else if (sortOption === "price-high-low")
-      r.sort((a, b) => b.price - a.price);
+      r.sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a));
     return r;
   }, [products, selectedCategory, selectedPrices, sortOption]);
 
