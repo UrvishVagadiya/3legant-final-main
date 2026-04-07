@@ -67,7 +67,7 @@ const CartSummary = ({
         </button>
       ) : (
         <Link href="/checkout" className="block">
-          <button className="w-full bg-[#141718] text-white py-4 rounded font-semibold hover:bg-black transition-colors">
+          <button className="w-full cursor-pointer bg-[#141718] text-white py-4 rounded font-semibold hover:bg-black transition-colors">
             Checkout
           </button>
         </Link>

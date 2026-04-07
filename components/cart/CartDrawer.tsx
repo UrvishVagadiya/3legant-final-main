@@ -38,7 +38,7 @@ export default function CartDrawer() {
   );
 
   const handleDecrease = (item: (typeof items)[number]) => {
-    if (item.quantity <= 1) return;
+    if (item.quantity <= 0) return;
     dispatch(
       updateQuantity({
         id: item.id,
@@ -144,8 +144,8 @@ export default function CartDrawer() {
                   <button
                     type="button"
                     onClick={() => handleDecrease(item)}
-                    disabled={item.quantity <= 1}
-                    className={`${item.quantity <= 1 ? "text-gray-300 " : "text-[#141718] hover:text-black"} cursor-pointer transition-colors`}
+                    disabled={item.quantity <= 0}
+                    className={`${item.quantity <= 0 ? "text-gray-300 " : "text-[#141718] hover:text-black"} cursor-pointer transition-colors`}
                   >
                     <Minus className="w-3 h-3" />
                   </button>

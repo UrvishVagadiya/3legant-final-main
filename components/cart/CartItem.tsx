@@ -14,7 +14,7 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => {
   const shouldTint = item.color && item.color.toLowerCase() !== "white";
 
   const handleDecrease = () => {
-    if (item.quantity <= 1) return;
+    if (item.quantity <= 0) return;
     onUpdateQuantity(item.id, item.color, item.quantity - 1);
   };
 
@@ -41,7 +41,7 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => {
           <p className="text-sm text-gray-500 mt-1">Color: {item.color}</p>
           <button
             onClick={() => onRemove(item.id, item.color)}
-            className="flex items-center gap-1 text-sm text-gray-500 mt-2 hover:text-black transition-colors"
+            className="flex cursor-pointer items-center gap-1 text-sm text-gray-500 mt-2 hover:text-black transition-colors"
           >
             <X size={16} /> Remove
           </button>
@@ -56,8 +56,8 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => {
           <button
             type="button"
             onClick={handleDecrease}
-            disabled={item.quantity <= 1}
-            className={`text-lg transition-colors ${item.quantity <= 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-black"}`}
+            disabled={item.quantity <= 0}
+            className={`text-lg cursor-pointer transition-colors ${item.quantity <= 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-black"}`}
           >
             -
           </button>
@@ -66,7 +66,7 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => {
             type="button"
             onClick={handleIncrease}
             disabled={item.stock <= 0 || item.quantity >= item.stock}
-            className={`text-lg transition-colors ${item.stock <= 0 || item.quantity >= item.stock ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-black"}`}
+            className={`text-lg cursor-pointer transition-colors ${item.stock <= 0 || item.quantity >= item.stock ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-black"}`}
           >
             +
           </button>

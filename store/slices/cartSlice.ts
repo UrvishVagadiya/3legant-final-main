@@ -91,8 +91,15 @@ const cartSlice = createSlice({
     },
     updateQuantity: (state, action: PayloadAction<{ id: string; color: string; quantity: number }>) => {
       const { id, color, quantity } = action.payload;
-      const item = state.items.find(i => i.id === id && i.color === color);
+      const itemIndex = state.items.findIndex(i => i.id === id && i.color === color);
+      const item = itemIndex >= 0 ? state.items[itemIndex] : undefined;
       if (item) {
+        if (quantity <= 0) {
+          state.items.splice(itemIndex, 1);
+          localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod }));
+          return;
+        }
+
         if (item.stock <= 0) {
           item.quantity = 1;
         } else {

@@ -61,7 +61,7 @@ export default function OrderSummary({
   onPlaceOrder,
 }: OrderSummaryProps) {
   const handleDecrease = (item: CartItem) => {
-    if (item.quantity <= 1) return;
+    if (item.quantity <= 0) return;
     updateQuantity(item.id, item.color, item.quantity - 1);
   };
 
@@ -118,8 +118,8 @@ export default function OrderSummary({
                 <button
                   type="button"
                   onClick={() => handleDecrease(item)}
-                  disabled={item.quantity <= 1}
-                  className={`text-sm ${item.quantity <= 1 ? "text-gray-300 " : "text-gray-500 hover:text-black"} cursor-pointer`}
+                  disabled={item.quantity <= 0}
+                  className={`text-sm ${item.quantity <= 0 ? "text-gray-300 " : "text-gray-500 hover:text-black"} cursor-pointer`}
                 >
                   -
                 </button>
@@ -233,10 +233,14 @@ export default function OrderSummary({
       <div className="hidden lg:block">
         <button
           onClick={onPlaceOrder}
-          disabled={placing}
+          disabled={placing || cartItems.length === 0}
           className="w-full bg-[#141718] cursor-pointer text-white py-4 rounded font-semibold hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {placing ? "Redirecting to Payment..." : "Pay with Stripe"}
+          {cartItems.length === 0
+            ? "No items in cart"
+            : placing
+              ? "Redirecting to Payment..."
+              : "Pay with Stripe"}
         </button>
       </div>
     </div>

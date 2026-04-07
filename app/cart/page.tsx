@@ -42,8 +42,13 @@ const Cart = () => {
     const item = items.find((i) => i.id === id && i.color === color);
     if (!item) return;
 
-    if (item.stock <= 0) return;
-    if (quantity < 1 || quantity > item.stock) return;
+    if (quantity < 0) return;
+    if (quantity === 0) {
+      dispatch(updateQuantity({ id, color, quantity }));
+      return;
+    }
+
+    if (item.stock <= 0 || quantity > item.stock) return;
 
     dispatch(updateQuantity({ id, color, quantity }));
   };
@@ -117,7 +122,7 @@ const Cart = () => {
                     setAppliedCoupon(null);
                     setDiscount(0);
                   }}
-                  className="text-gray-400 hover:text-black ml-1"
+                  className="cursor-pointer text-gray-400 hover:text-black ml-1"
                 >
                   <X size={14} />
                 </button>
@@ -136,7 +141,7 @@ const Cart = () => {
               />
               <button
                 onClick={handleApplyCoupon}
-                className="px-4 py-2 font-semibold text-sm hover:bg-gray-100 transition-colors"
+                className="px-4 py-2 cursor-pointer font-semibold text-sm hover:bg-gray-100 transition-colors"
               >
                 {couponLoading ? "..." : "Apply"}
               </button>

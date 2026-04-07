@@ -88,8 +88,13 @@ export default function Checkout() {
     const item = cartItems.find((i) => i.id === id && i.color === color);
     if (!item) return;
 
-    if (item.stock <= 0) return;
-    if (quantity < 1 || quantity > item.stock) return;
+    if (quantity < 0) return;
+    if (quantity === 0) {
+      dispatch(updateQuantity({ id, color, quantity }));
+      return;
+    }
+
+    if (item.stock <= 0 || quantity > item.stock) return;
 
     dispatch(updateQuantity({ id, color, quantity }));
   };
@@ -244,6 +249,11 @@ export default function Checkout() {
   };
 
   const handlePlaceOrder = async () => {
+    if (cartItems.length === 0) {
+      toast.error("Your cart is empty");
+      return;
+    }
+
     const newErrors = validateCheckoutForm(formData, useDifferentBilling);
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -418,7 +428,11 @@ export default function Checkout() {
               onChange={handleInputChange}
             />
           )}
-          <PaymentSection placing={placing} onPlaceOrder={handlePlaceOrder} />
+          <PaymentSection
+            placing={placing}
+            hasItems={cartItems.length > 0}
+            onPlaceOrder={handlePlaceOrder}
+          />
         </div>
         <div className="w-full lg:w-[35%]">
           <OrderSummary

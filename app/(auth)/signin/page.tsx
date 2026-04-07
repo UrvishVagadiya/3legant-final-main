@@ -91,7 +91,7 @@ export default function SignInPage() {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-0 top-3 text-gray-400 hover:text-black transition-colors"
+            className="absolute cursor-pointer right-0 top-3 text-gray-400 hover:text-black transition-colors"
           >
             {showPassword ? (
               <svg
@@ -142,7 +142,7 @@ export default function SignInPage() {
             <input
               type="checkbox"
               id="remember"
-              className="w-5 h-5 border-gray-300 rounded text-black focus:ring-black accent-black"
+              className="w-5 h-5 cursor-pointer border-gray-300 rounded text-black focus:ring-black accent-black"
             />
             <label
               htmlFor="remember"
@@ -163,7 +163,7 @@ export default function SignInPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className={`w-full bg-black text-white rounded-lg py-3 ${typography.buttonSmall} hover:bg-gray-800 transition-colors`}
+          className={`w-full bg-black cursor-pointer text-white rounded-lg py-3 ${typography.buttonSmall} hover:bg-gray-800 transition-colors`}
         >
           {isSubmitting ? "Signing In..." : "Sign In"}
         </button>
