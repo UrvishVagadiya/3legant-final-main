@@ -71,7 +71,7 @@ export async function GET() {
 
     const recentOrders = (recent || []).map((order: RecentOrderRow) => {
         const payments = Array.isArray(order.payments) ? order.payments : (order.payments ? [order.payments] : []);
-        const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'completed' || p.status === 'succeeded');
+        const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'success' || p.status === 'completed' || p.status === 'succeeded');
 
         return {
             ...order,

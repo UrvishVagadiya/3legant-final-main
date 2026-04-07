@@ -5,6 +5,132 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import Stripe from "stripe";
 import { cancelExpiredStripeOrders } from "@/utils/stripe/cancelExpiredOrders";
 
+type PaymentStatus = "pending" | "success" | "cancelled";
+
+type ResolveOrderInput = {
+    orderId?: string | null;
+    stripeSessionId?: string | null;
+    paymentIntentId?: string | null;
+};
+
+async function resolveOrderId(
+    admin: ReturnType<typeof createAdminClient>,
+    input: ResolveOrderInput,
+): Promise<string | null> {
+    if (input.orderId) return input.orderId;
+
+    if (input.stripeSessionId) {
+        const { data: orderBySession } = await admin
+            .from("orders")
+            .select("id")
+            .eq("stripe_session_id", input.stripeSessionId)
+            .maybeSingle();
+
+        if (orderBySession?.id) return orderBySession.id;
+    }
+
+    if (input.paymentIntentId) {
+        const { data: paymentByIntent } = await admin
+            .from("payments")
+            .select("order_id")
+            .eq("transaction_id", input.paymentIntentId)
+            .maybeSingle();
+
+        if (paymentByIntent?.order_id) return paymentByIntent.order_id;
+    }
+
+    return null;
+}
+
+async function updatePaymentStatus(
+    admin: ReturnType<typeof createAdminClient>,
+    params: {
+        orderId?: string | null;
+        paymentIntentId?: string | null;
+        status: PaymentStatus;
+    },
+) {
+    const nowIso = new Date().toISOString();
+
+    if (params.paymentIntentId) {
+        const { data: paymentByIntent, error: intentUpdateError } = await admin
+            .from("payments")
+            .update({
+                status: params.status,
+                ...(params.status === "success" ? { payment_date: nowIso } : {}),
+                updated_at: nowIso,
+            })
+            .eq("transaction_id", params.paymentIntentId)
+            .select("id")
+            .maybeSingle();
+
+        if (intentUpdateError) {
+            console.error("Failed to update payment by transaction_id:", intentUpdateError);
+        }
+
+        if (paymentByIntent?.id) {
+            return;
+        }
+    }
+
+    if (params.orderId) {
+        const { error: orderUpdateError } = await admin
+            .from("payments")
+            .update({
+                status: params.status,
+                ...(params.paymentIntentId ? { transaction_id: params.paymentIntentId } : {}),
+                ...(params.status === "success" ? { payment_date: nowIso } : {}),
+                updated_at: nowIso,
+            })
+            .eq("order_id", params.orderId)
+            .in("status", ["pending", "processing", "failed", "completed", "succeeded", "success"]);
+
+        if (orderUpdateError) {
+            console.error("Failed to update payment by order_id:", orderUpdateError);
+        }
+    }
+}
+
+async function syncOrderStatusFromPayment(
+    admin: ReturnType<typeof createAdminClient>,
+    orderId: string,
+    paymentStatus: PaymentStatus,
+) {
+    const nowIso = new Date().toISOString();
+
+    if (paymentStatus === "success") {
+        const { error } = await admin
+            .from("orders")
+            .update({
+                status: "processing",
+                updated_at: nowIso,
+            })
+            .eq("id", orderId)
+            .in("status", ["pending", "failed"]);
+
+        if (error) {
+            console.error(`Failed to mark order ${orderId} as processing:`, error);
+        }
+
+        return;
+    }
+
+    if (paymentStatus === "cancelled") {
+        const { error } = await admin
+            .from("orders")
+            .update({
+                status: "cancelled",
+                updated_at: nowIso,
+            })
+            .eq("id", orderId)
+            .in("status", ["pending", "processing", "failed"]);
+
+        if (error) {
+            console.error(`Failed to mark order ${orderId} as cancelled:`, error);
+        }
+    }
+}
+
 export async function POST(req: NextRequest) {
     const body = await req.text();
     const signature = req.headers.get("stripe-signature");
@@ -43,35 +169,164 @@ export async function POST(req: NextRequest) {
         case "checkout.session.completed": {
             const session = event.data.object as Stripe.Checkout.Session;
 
-            if (session.payment_status !== "paid") break;
+            const paymentIntentId =
+                typeof session.payment_intent === "string"
+                    ? session.payment_intent
+                    : session.payment_intent?.id || null;
 
-            const meta = session.metadata || {};
-            const orderIdFromMeta = meta.order_id;
+            const orderId = await resolveOrderId(admin, {
+                orderId: session.metadata?.order_id || session.client_reference_id || null,
+                stripeSessionId: session.id,
+                paymentIntentId,
+            });
 
-            if (!orderIdFromMeta) {
-                console.error("No order_id in session metadata");
-                break;
+            const nextStatus: PaymentStatus =
+                session.payment_status === "paid" ? "success" : "pending";
+
+            await updatePaymentStatus(admin, {
+                orderId,
+                paymentIntentId,
+                status: nextStatus,
+            });
+
+            if (orderId) {
+                await syncOrderStatusFromPayment(admin, orderId, nextStatus);
+            } else {
+                console.error("Unable to resolve order id for checkout.session.completed", {
+                    sessionId: session.id,
+                    paymentIntentId,
+                });
             }
 
-            // The main action: Update the payment status to 'completed'
-            // This will fire the 'on_payment_completed' database trigger in Supabase
-            const { error: paymentError } = await admin
-                .from("payments")
-                .update({
-                    status: "completed",
-                    transaction_id: session.payment_intent as string,
-                    payment_date: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                })
-                .eq("order_id", orderIdFromMeta);
+            console.log(`checkout.session.completed synced for session ${session.id} with payment status '${nextStatus}'`);
+            break;
+        }
 
-            if (paymentError) {
-                console.error("Failed to update payment status in webhook:", paymentError);
-                // If update failed, maybe it doesn't exist yet? Fallback to insert if needed
-                // But normally checkout/route.ts creates it.
+        case "checkout.session.async_payment_succeeded": {
+            const session = event.data.object as Stripe.Checkout.Session;
+            const paymentIntentId =
+                typeof session.payment_intent === "string"
+                    ? session.payment_intent
+                    : session.payment_intent?.id || null;
+
+            const orderId = await resolveOrderId(admin, {
+                orderId: session.metadata?.order_id || session.client_reference_id || null,
+                stripeSessionId: session.id,
+                paymentIntentId,
+            });
+
+            await updatePaymentStatus(admin, {
+                orderId,
+                paymentIntentId,
+                status: "success",
+            });
+
+            if (orderId) {
+                await syncOrderStatusFromPayment(admin, orderId, "success");
+            }
+            break;
+        }
+
+        case "checkout.session.async_payment_failed": {
+            const session = event.data.object as Stripe.Checkout.Session;
+            const paymentIntentId =
+                typeof session.payment_intent === "string"
+                    ? session.payment_intent
+                    : session.payment_intent?.id || null;
+
+            const orderId = await resolveOrderId(admin, {
+                orderId: session.metadata?.order_id || session.client_reference_id || null,
+                stripeSessionId: session.id,
+                paymentIntentId,
+            });
+
+            await updatePaymentStatus(admin, {
+                orderId,
+                paymentIntentId,
+                status: "cancelled",
+            });
+
+            if (orderId) {
+                await syncOrderStatusFromPayment(admin, orderId, "cancelled");
+            }
+            break;
+        }
+
+        case "payment_intent.processing": {
+            const paymentIntent = event.data.object as Stripe.PaymentIntent;
+            const orderId = await resolveOrderId(admin, {
+                orderId: paymentIntent.metadata?.order_id || null,
+                paymentIntentId: paymentIntent.id,
+            });
+
+            await updatePaymentStatus(admin, {
+                orderId,
+                paymentIntentId: paymentIntent.id,
+                status: "pending",
+            });
+            break;
+        }
+
+        case "payment_intent.succeeded": {
+            const paymentIntent = event.data.object as Stripe.PaymentIntent;
+            const orderId = await resolveOrderId(admin, {
+                orderId: paymentIntent.metadata?.order_id || null,
+                paymentIntentId: paymentIntent.id,
+            });
+
+            await updatePaymentStatus(admin, {
+                orderId,
+                paymentIntentId: paymentIntent.id,
+                status: "success",
+            });
+
+            if (orderId) {
+                await syncOrderStatusFromPayment(admin, orderId, "success");
+            }
+            break;
+        }
+
+        case "payment_intent.payment_failed": {
+            const paymentIntent = event.data.object as Stripe.PaymentIntent;
+            const orderId = await resolveOrderId(admin, {
+                orderId: paymentIntent.metadata?.order_id || null,
+                paymentIntentId: paymentIntent.id,
+            });
+
+            await updatePaymentStatus(admin, {
+                orderId,
+                paymentIntentId: paymentIntent.id,
+                status: "cancelled",
+            });
+
+            if (orderId) {
+                await syncOrderStatusFromPayment(admin, orderId, "cancelled");
             }
 
-            console.log(`Payment confirmed via webhook for Order: ${orderIdFromMeta}. Database triggers will handle status ripple.`);
+            console.error(
+                "Payment failed:",
+                paymentIntent.id,
+                paymentIntent.last_payment_error?.message,
+            );
+            break;
+        }
+
+        case "payment_intent.canceled": {
+            const paymentIntent = event.data.object as Stripe.PaymentIntent;
+            const orderId = await resolveOrderId(admin, {
+                orderId: paymentIntent.metadata?.order_id || null,
+                paymentIntentId: paymentIntent.id,
+            });
+
+            await updatePaymentStatus(admin, {
+                orderId,
+                paymentIntentId: paymentIntent.id,
+                status: "cancelled",
+            });
+
+            if (orderId) {
+                await syncOrderStatusFromPayment(admin, orderId, "cancelled");
+            }
             break;
         }
 
@@ -104,7 +359,7 @@ export async function POST(req: NextRequest) {
             await admin
                 .from("payments")
                 .update({
-                    status: isFullRefund ? "refunded" : "completed",
+                    status: isFullRefund ? "refunded" : "success",
                     refund_amount: refundedAmount,
                     refund_date: new Date().toISOString(),
                     refund_reason:
@@ -130,18 +385,31 @@ export async function POST(req: NextRequest) {
             break;
         }
 
-        case "payment_intent.payment_failed": {
-            const paymentIntent = event.data.object as Stripe.PaymentIntent;
-            console.error(
-                "Payment failed:",
-                paymentIntent.id,
-                paymentIntent.last_payment_error?.message
-            );
-            break;
-        }
         case "checkout.session.expired": {
             const session = event.data.object as Stripe.Checkout.Session;
             const orderId = session.metadata?.order_id || session.client_reference_id || null;
+
+            const paymentIntentId =
+                typeof session.payment_intent === "string"
+                    ? session.payment_intent
+                    : session.payment_intent?.id || null;
+
+            const resolvedOrderId = await resolveOrderId(admin, {
+                orderId,
+                stripeSessionId: session.id,
+                paymentIntentId,
+            });
+
+            await updatePaymentStatus(admin, {
+                orderId: resolvedOrderId,
+                paymentIntentId,
+                status: "cancelled",
+            });
+
+            if (resolvedOrderId) {
+                await syncOrderStatusFromPayment(admin, resolvedOrderId, "cancelled");
+            }
+
             const result = await cancelExpiredStripeOrders(
                 orderId
                     ? { orderId, stripeSessionId: session.id, force: true }

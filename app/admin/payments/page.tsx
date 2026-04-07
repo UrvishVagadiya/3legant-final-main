@@ -36,6 +36,7 @@ interface PaymentRow extends Payment {
 const statusBadge = (s: string) =>
   ({
     pending: "bg-yellow-100 text-yellow-700",
+    success: "bg-green-100 text-green-700",
     completed: "bg-green-100 text-green-700",
     succeeded: "bg-green-100 text-green-700",
     confirmed: "bg-green-100 text-green-700",
@@ -121,7 +122,12 @@ export default function AdminPayments() {
   });
 
   const totalRevenue = payments
-    .filter((p) => p.status === "completed" || p.status === "refunded")
+    .filter(
+      (p) =>
+        p.status === "success" ||
+        p.status === "completed" ||
+        p.status === "refunded",
+    )
     .reduce((s, p) => s + Number(p.amount), 0);
   const totalRefunded = payments
     .filter((p) => p.refund_amount)
@@ -180,6 +186,7 @@ export default function AdminPayments() {
         >
           <option value="all">All Statuses</option>
           <option value="pending">Pending</option>
+          <option value="success">Success</option>
           <option value="completed">Completed</option>
           <option value="failed">Failed</option>
           <option value="cancelled">Cancelled</option>

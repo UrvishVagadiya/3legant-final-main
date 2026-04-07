@@ -225,7 +225,7 @@ export async function GET(req: NextRequest) {
             }
 
             const paymentData = {
-                status: "completed",
+                status: "success",
                 transaction_id: paymentIntentId,
                 card_last_four: cardLast4,
                 card_brand: cardBrand,

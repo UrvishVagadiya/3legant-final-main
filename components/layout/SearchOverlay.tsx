@@ -155,7 +155,9 @@ const SearchOverlay = ({ isOpen, onClose }: SearchOverlayProps) => {
                       </h4>
                       {product.category && (
                         <p className="text-xs text-[#6C7275] mt-0.5">
-                          {product.category}
+                          {Array.isArray(product.category)
+                            ? product.category.join(", ")
+                            : product.category}
                         </p>
                       )}
                     </div>

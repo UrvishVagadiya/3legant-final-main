@@ -170,7 +170,7 @@ async function handleCheckoutSessionCompleted(
   const { error } = await supabaseAdmin
     .from('payments')
     .update({
-      status: 'completed',
+      status: 'success',
       transaction_id: paymentIntentId || null,
       payment_date: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -302,7 +302,7 @@ async function handlePaymentIntentSucceeded(
 ) {
   await updatePaymentIntentStatus(
     paymentIntent.id,
-    'completed',
+    'success',
     supabaseAdmin,
     paymentIntent.metadata?.order_id,
   )
@@ -377,7 +377,7 @@ async function handleChargeRefunded(
 
 async function updatePaymentIntentStatus(
   paymentIntentId: string,
-  status: 'completed' | 'failed' | 'cancelled',
+  status: 'success' | 'failed' | 'cancelled',
   supabaseAdmin: ReturnType<typeof createClient>,
   metadataOrderId?: string,
 ) {
@@ -390,7 +390,7 @@ async function updatePaymentIntentStatus(
     .update({
       status,
       transaction_id: paymentIntentId,
-      ...(status === 'completed' ? { payment_date: now } : {}),
+      ...(status === 'success' ? { payment_date: now } : {}),
       updated_at: now,
     })
     .eq('transaction_id', paymentIntentId)
@@ -407,7 +407,7 @@ async function updatePaymentIntentStatus(
       .update({
         status,
         transaction_id: paymentIntentId,
-        ...(status === 'completed' ? { payment_date: now } : {}),
+        ...(status === 'success' ? { payment_date: now } : {}),
         updated_at: now,
       })
       .eq('order_id', metadataOrderId)
@@ -426,7 +426,7 @@ async function updatePaymentIntentStatus(
     return
   }
 
-  if (status === 'completed') {
+  if (status === 'success') {
     await supabaseAdmin
       .from('orders')
       .update({

@@ -156,11 +156,6 @@ export function ReviewCard({
         <div>
           <div className="flex items-center gap-2">
             <span className="font-medium">{review.user_name}</span>
-            {isOwner && (
-              <span className="text-[10px] bg-black text-white px-2 py-0.5 rounded-full">
-                You
-              </span>
-            )}
           </div>
           <Stars count={review.rating} size="text-[12px]" />
         </div>
@@ -363,7 +358,7 @@ export default function ReviewsSection({
             if (!user) return toast.error("Please sign in");
             if (!isEditing && !canReview) {
               return toast.error(
-                "You can review this product after your payment is completed.",
+                "Review is available after payment is completed.",
               );
             }
             try {

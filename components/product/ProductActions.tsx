@@ -57,7 +57,7 @@ export default function ProductActions({
       <button
         onClick={onAddToCart}
         disabled={isOutOfStock}
-        className={`w-full ${isOutOfStock ? "bg-gray-400 cursor-not-allowed" : "cursor-pointer bg-[#141718] hover:bg-black"} scale-95 text-white rounded-lg h-13 font-medium text-[16px] tracking-tight transition-colors`}
+        className={`w-full ${isOutOfStock ? "bg-gray-400 cursor-not-allowed" : "cursor-pointer bg-[#141718] hover:bg-black"} active:scale-99 text-white rounded-lg h-13 font-medium text-[16px] tracking-tight transition-colors`}
       >
         {isOutOfStock ? "Out of Stock" : "Add to Cart"}
       </button>

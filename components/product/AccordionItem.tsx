@@ -12,6 +12,7 @@ interface Props {
   maxHeight?: string;
   children: React.ReactNode;
   borderClass?: string;
+  scrollOnOpen?: boolean;
 }
 
 export default function AccordionItem({
@@ -22,6 +23,7 @@ export default function AccordionItem({
   maxHeight = "max-h-125",
   children,
   borderClass = "border-t border-[#E8ECEF]",
+  scrollOnOpen = false,
 }: Props) {
   return (
     <div className={borderClass}>
@@ -37,7 +39,7 @@ export default function AccordionItem({
         )}
       </button>
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? `${maxHeight} pb-6` : "max-h-0"}`}
+        className={`${isOpen && scrollOnOpen ? "overflow-y-auto overflow-x-hidden scrollbar-hide" : "overflow-hidden"} transition-all duration-300 ease-in-out ${isOpen ? `${maxHeight} pb-6` : "max-h-0"}`}
       >
         {children}
       </div>

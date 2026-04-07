@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, RefreshCcw } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import OrderExpandedDetails from "./OrderExpandedDetails";
 import { useAppSelector, RootState } from "@/store";
 
@@ -130,7 +130,6 @@ const OrdersHistory = () => {
   const {
     data,
     isLoading: loading,
-    refetch,
     isFetching,
   } = useGetOrdersQuery(
     {
@@ -190,14 +189,6 @@ const OrdersHistory = () => {
             </p>
           )}
         </div>
-        <button
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className={`text-sm flex items-center gap-2 text-[#6C7275] hover:text-[#141718] transition-colors self-start sm:self-auto ${isFetching ? "opacity-50 cursor-not-allowed" : ""}`}
-        >
-          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
-          {isFetching ? "Updating..." : "Refresh"}
-        </button>
       </div>
 
       <div className="space-y-4">

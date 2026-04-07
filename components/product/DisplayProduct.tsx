@@ -142,6 +142,12 @@ export const DisplayProduct = ({ p }: { p: Product }) => {
       ? p.images
       : [img, ...refImages.slice(1)];
 
+  const primaryCategory = Array.isArray(p.category)
+    ? p.category[0]
+    : String(p.category || "")
+        .split(",")[0]
+        .trim();
+
   return (
     <div className="w-full max-w-full overflow-x-hidden px-4 md:px-8 xl:px-40 py-4 md:py-10">
       <div className="flex flex-wrap items-center gap-3 text-[14px] font-medium mb-8 text-[#6C7275]">
@@ -152,14 +158,14 @@ export const DisplayProduct = ({ p }: { p: Product }) => {
         <Link href="/shop" className="hover:text-[#141718] transition-colors">
           Shop
         </Link>
-        {p.category && (
+        {primaryCategory && (
           <>
             <MdKeyboardArrowRight className="text-xl" />
-            <Link href="/shop">
+            <Link
+              href={`/shop?category=${encodeURIComponent(primaryCategory)}`}
+            >
               <span className="hover:text-[#141718] transition-colors cursor-pointer capitalize">
-                {Array.isArray(p.category)
-                  ? p.category[0]
-                  : String(p.category).split(",")[0].trim()}
+                {primaryCategory}
               </span>
             </Link>
           </>
@@ -397,6 +403,7 @@ export const DisplayProduct = ({ p }: { p: Product }) => {
                 setOpenAccordion(openAccordion === id ? null : id)
               }
               maxHeight="max-h-[800px]"
+              scrollOnOpen
               borderClass="border-y border-[#E8ECEF]"
             >
               <ReviewsSection

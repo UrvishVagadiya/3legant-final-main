@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { createClient } from "../../utils/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { ChevronLeft } from "lucide-react";
 
 import AccountDetails from "../../components/account/AccountDetails";
 import Address from "../../components/account/Address";
@@ -51,7 +52,8 @@ const AccountContent = () => {
 
   useEffect(() => {
     if (user) {
-      const name = user.user_metadata?.name || user.user_metadata?.full_name || "";
+      const name =
+        user.user_metadata?.name || user.user_metadata?.full_name || "";
       const userDisplayName =
         user.user_metadata?.displayName || user.user_metadata?.username || "";
       setFullName(name);
@@ -99,7 +101,7 @@ const AccountContent = () => {
       .update({
         full_name: `${data.firstName} ${data.lastName}`,
         display_name: data.displayName,
-        email: data.email
+        email: data.email,
       })
       .eq("id", user?.id);
 
@@ -110,7 +112,7 @@ const AccountContent = () => {
     import("react-hot-toast").then((m) => {
       m.default.success("Profile updated successfully!");
     });
-    
+
     setFullName(`${data.firstName} ${data.lastName}`);
     setDisplayName(data.displayName || "");
     router.refresh();
@@ -121,13 +123,26 @@ const AccountContent = () => {
     router.push(`?tab=${tab}`, { scroll: false });
   };
 
+  const handleBack = () => {
+    router.push("/");
+  };
+
   return (
-    <div className="w-full px-5 md:px-10 lg:px-40 py-10 md:py-20">
+    <div className="w-full max-w-350 mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 2xl:px-12 py-8 md:py-14 lg:py-16">
+      <button
+        type="button"
+        onClick={handleBack}
+        className="md:hidden inline-flex items-center gap-1 text-sm font-medium text-[#141718] mb-4"
+      >
+        <ChevronLeft size={18} />
+        Back
+      </button>
+
       <h1 className="text-center text-4xl md:text-[54px] font-medium mb-10 md:mb-20">
         My Account
       </h1>
 
-      <div className="flex flex-col md:flex-row gap-8 md:gap-18 mb-22">
+      <div className="flex flex-col lg:flex-row gap-6 md:gap-8 lg:gap-10 xl:gap-18 mb-16 md:mb-20">
         <AccountSidebar
           fullName={fullName}
           displayName={displayName}
@@ -137,7 +152,7 @@ const AccountContent = () => {
           onAvatarChange={setAvatarUrl}
         />
 
-        <div className="flex-1 w-full">
+        <div className="flex-1 w-full min-w-0">
           {activeTab === "account" && (
             <AccountDetails
               register={register}

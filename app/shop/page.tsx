@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import { setFilters } from "@/store/slices/productSlice";
-import { useLazyGetProductsPageQuery } from "@/store/api/productApi";
+import { useGetProductsQuery } from "@/store/api/productApi";
 import { BsGrid3X3GapFill, BsGridFill } from "react-icons/bs";
 import { PiColumnsFill, PiRowsFill } from "react-icons/pi";
 import ShopHeader from "@/components/layout/ShopHeader";
@@ -30,73 +31,51 @@ const mobileIcons = [
 
 const Shop = () => {
   const PAGE_SIZE = 9;
+  const searchParams = useSearchParams();
   const dispatch = useAppDispatch();
   const { selectedCategory, selectedPrices, sortOption } = useAppSelector(
     (state: RootState) => state.product,
   );
-  const [fetchProductsPage] = useLazyGetProductsPageQuery();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const { data: products = [], isLoading } = useGetProductsQuery();
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [viewGrid, setViewGrid] = useState(3);
   const [mobileViewGrid, setMobileViewGrid] = useState(2);
-  const [loadedCount, setLoadedCount] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [hasMounted, setHasMounted] = useState(false);
+  const lastAppliedQueryCategory = useRef<string>("");
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
   useEffect(() => {
-    let isActive = true;
+    const categoryFromQuery = searchParams.get("category")?.trim() || "";
+    const normalizedQuery = categoryFromQuery.toLowerCase();
 
-    const loadInitialProducts = async () => {
-      setIsLoading(true);
-      const result = await fetchProductsPage({ offset: 0, limit: PAGE_SIZE });
-      if (!isActive) return;
-
-      if ("data" in result && result.data) {
-        setProducts(result.data);
-        setLoadedCount(result.data.length);
-        setHasMore(result.data.length === PAGE_SIZE);
-      } else {
-        setProducts([]);
-        setLoadedCount(0);
-        setHasMore(false);
-      }
-      setIsLoading(false);
-    };
-
-    loadInitialProducts();
-
-    return () => {
-      isActive = false;
-    };
-  }, [fetchProductsPage]);
-
-  const handleShowMore = async () => {
-    if (isLoadingMore || !hasMore) return;
-
-    setIsLoadingMore(true);
-    const result = await fetchProductsPage({
-      offset: loadedCount,
-      limit: PAGE_SIZE,
-    });
-
-    if ("data" in result && result.data) {
-      const nextBatch = result.data;
-      setProducts((prev) => [...prev, ...nextBatch]);
-      setLoadedCount((prev) => prev + nextBatch.length);
-      setHasMore(nextBatch.length === PAGE_SIZE);
-    } else {
-      setHasMore(false);
+    if (!categoryFromQuery) {
+      lastAppliedQueryCategory.current = "";
+      return;
     }
 
-    setIsLoadingMore(false);
+    // Apply query category once per unique query value; do not override manual filter changes.
+    if (lastAppliedQueryCategory.current === normalizedQuery) {
+      return;
+    }
+
+    const matchedCategory = categories.find(
+      (category) => category.toLowerCase() === normalizedQuery,
+    );
+
+    if (matchedCategory) {
+      dispatch(setFilters({ category: matchedCategory }));
+      lastAppliedQueryCategory.current = normalizedQuery;
+    }
+  }, [searchParams, dispatch]);
+
+  const handleShowMore = () => {
+    setVisibleCount((prev) => prev + PAGE_SIZE);
   };
 
   const handlePriceChange = (priceLabel: string) => {
@@ -177,6 +156,18 @@ const Shop = () => {
       r.sort((a, b) => b.price - a.price);
     return r;
   }, [products, selectedCategory, selectedPrices, sortOption]);
+
+  useEffect(() => {
+    // Reset pagination when filters or sorting change.
+    setVisibleCount(PAGE_SIZE);
+  }, [selectedCategory, selectedPrices, sortOption]);
+
+  const visibleProducts = useMemo(
+    () => filtered.slice(0, visibleCount),
+    [filtered, visibleCount],
+  );
+
+  const hasMore = filtered.length > visibleCount;
 
   const categoryItems = categories.map((c) => ({
     label: c,
@@ -278,12 +269,12 @@ const Shop = () => {
             </div>
           </div>
           <ShopProductGrid
-            products={filtered}
+            products={visibleProducts}
             isLoading={isLoading}
             viewGrid={viewGrid}
             mobileViewGrid={mobileViewGrid}
             hasMore={hasMore}
-            isLoadingMore={isLoadingMore}
+            isLoadingMore={false}
             onShowMore={handleShowMore}
             isSidebarOpen={isSidebarOpen}
           />

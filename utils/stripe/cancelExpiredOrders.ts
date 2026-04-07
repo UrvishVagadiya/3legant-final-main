@@ -78,7 +78,7 @@ export async function cancelExpiredStripeOrders(
 
         const paymentRows = (payments || []) as PaymentRow[];
         const hasSuccessfulPayment = paymentRows.some(
-            (payment) => payment.status === "completed" || payment.status === "succeeded",
+            (payment) => payment.status === "success" || payment.status === "completed" || payment.status === "succeeded",
         );
 
         if (hasSuccessfulPayment || order.status === "cancelled" || order.status === "refunded") {

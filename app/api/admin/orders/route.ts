@@ -42,7 +42,7 @@ export async function GET() {
 
     const ordersWithPaymentStatus = (data || []).map((order: AdminOrderRow) => {
         const payments = Array.isArray(order.payments) ? order.payments : (order.payments ? [order.payments] : []);
-        const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'completed' || p.status === 'succeeded');
+        const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'success' || p.status === 'completed' || p.status === 'succeeded');
 
         return {
             ...order,
@@ -110,7 +110,7 @@ export async function PUT(req: NextRequest) {
                     .single();
                 if (updatedData) {
                     const payments = Array.isArray(updatedData.payments) ? updatedData.payments : (updatedData.payments ? [updatedData.payments] : []);
-                    const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'completed' || p.status === 'succeeded');
+                    const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'success' || p.status === 'completed' || p.status === 'succeeded');
 
                     return NextResponse.json({
                         ...updatedData,
@@ -127,7 +127,7 @@ export async function PUT(req: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     const payments = Array.isArray(data.payments) ? data.payments : (data.payments ? [data.payments] : []);
-    const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'completed' || p.status === 'succeeded');
+    const successfulPayment = payments.find((p: OrderPaymentRow) => p.status === 'success' || p.status === 'completed' || p.status === 'succeeded');
 
     const orderWithPaymentStatus = {
         ...data,

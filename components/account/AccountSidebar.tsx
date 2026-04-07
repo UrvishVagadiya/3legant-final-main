@@ -10,6 +10,7 @@ import { useUpdateProfileMutation } from "@/store/api/authApi";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
 type Tab = "account" | "address" | "orders" | "wishlist";
+type TabSelectValue = Tab | "logout";
 
 interface AccountSidebarProps {
   fullName: string;
@@ -99,7 +100,7 @@ const AccountSidebar = ({
       : "text-gray-500 hover:text-gray-900 font-semibold cursor-pointer transition-colors";
 
   return (
-    <div className="w-full md:w-1/3 lg:w-65 bg-[#F3F5F7] p-6 rounded-xl h-fit shrink-0">
+    <div className="w-full lg:w-60 xl:w-65 bg-[#F3F5F7] p-5 md:p-6 rounded-xl h-fit shrink-0">
       <div className="flex flex-col items-center mb-8">
         <div className="relative">
           <div className="w-20 h-20 rounded-full bg-gray-300 overflow-hidden mb-2 flex items-center justify-center">
@@ -142,13 +143,21 @@ const AccountSidebar = ({
         <select
           className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none font-semibold text-gray-900 bg-white shadow-sm"
           value={activeTab}
-          onChange={(e) => onTabChange(e.target.value as Tab)}
+          onChange={(e) => {
+            const value = e.target.value as TabSelectValue;
+            if (value === "logout") {
+              handleLogout();
+              return;
+            }
+            onTabChange(value);
+          }}
         >
           {tabs.map((t) => (
             <option key={t.value} value={t.value}>
               {t.label}
             </option>
           ))}
+          <option value="logout">Log Out</option>
         </select>
       </div>
 
