@@ -5,7 +5,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import Stripe from "stripe";
 import { cancelExpiredStripeOrders } from "@/utils/stripe/cancelExpiredOrders";
 
-type PaymentStatus = "pending" | "success" | "cancelled";
+type PaymentStatus = "pending" | "processing" | "completed" | "cancelled" | "failed";
 
 type ResolveOrderInput = {
     orderId?: string | null;
@@ -57,7 +57,7 @@ async function updatePaymentStatus(
             .from("payments")
             .update({
                 status: params.status,
-                ...(params.status === "success" ? { payment_date: nowIso } : {}),
+                ...(params.status === "completed" ? { payment_date: nowIso } : {}),
                 updated_at: nowIso,
             })
             .eq("transaction_id", params.paymentIntentId)
@@ -79,11 +79,11 @@ async function updatePaymentStatus(
             .update({
                 status: params.status,
                 ...(params.paymentIntentId ? { transaction_id: params.paymentIntentId } : {}),
-                ...(params.status === "success" ? { payment_date: nowIso } : {}),
+                ...(params.status === "completed" ? { payment_date: nowIso } : {}),
                 updated_at: nowIso,
             })
             .eq("order_id", params.orderId)
-            .in("status", ["pending", "processing", "failed", "completed", "succeeded", "success"]);
+            .in("status", ["pending", "processing", "failed", "completed", "cancelled"]);
 
         if (orderUpdateError) {
             console.error("Failed to update payment by order_id:", orderUpdateError);
@@ -98,18 +98,18 @@ async function syncOrderStatusFromPayment(
 ) {
     const nowIso = new Date().toISOString();
 
-    if (paymentStatus === "success") {
+    if (paymentStatus === "completed") {
         const { error } = await admin
             .from("orders")
             .update({
-                status: "processing",
+                status: "confirmed",
                 updated_at: nowIso,
             })
             .eq("id", orderId)
             .in("status", ["pending", "failed"]);
 
         if (error) {
-            console.error(`Failed to mark order ${orderId} as processing:`, error);
+            console.error(`Failed to mark order ${orderId} as confirmed:`, error);
         }
 
         return;
@@ -181,7 +181,10 @@ export async function POST(req: NextRequest) {
             });
 
             const nextStatus: PaymentStatus =
-                session.payment_status === "paid" ? "success" : "pending";
+                session.payment_status === "paid" ||
+                    session.payment_status === "no_payment_required"
+                    ? "completed"
+                    : "pending";
 
             await updatePaymentStatus(admin, {
                 orderId,
@@ -192,6 +195,22 @@ export async function POST(req: NextRequest) {
             if (orderId) {
                 await syncOrderStatusFromPayment(admin, orderId, nextStatus);
             } else {
+                // Final fallback: try direct lookup by stripe session id.
+                const { data: orderBySession } = await admin
+                    .from("orders")
+                    .select("id")
+                    .eq("stripe_session_id", session.id)
+                    .maybeSingle();
+
+                if (orderBySession?.id) {
+                    await updatePaymentStatus(admin, {
+                        orderId: orderBySession.id,
+                        paymentIntentId,
+                        status: nextStatus,
+                    });
+                    await syncOrderStatusFromPayment(admin, orderBySession.id, nextStatus);
+                }
+
                 console.error("Unable to resolve order id for checkout.session.completed", {
                     sessionId: session.id,
                     paymentIntentId,
@@ -218,11 +237,11 @@ export async function POST(req: NextRequest) {
             await updatePaymentStatus(admin, {
                 orderId,
                 paymentIntentId,
-                status: "success",
+                status: "completed",
             });
 
             if (orderId) {
-                await syncOrderStatusFromPayment(admin, orderId, "success");
+                await syncOrderStatusFromPayment(admin, orderId, "completed");
             }
             break;
         }
@@ -277,11 +296,11 @@ export async function POST(req: NextRequest) {
             await updatePaymentStatus(admin, {
                 orderId,
                 paymentIntentId: paymentIntent.id,
-                status: "success",
+                status: "completed",
             });
 
             if (orderId) {
-                await syncOrderStatusFromPayment(admin, orderId, "success");
+                await syncOrderStatusFromPayment(admin, orderId, "completed");
             }
             break;
         }
@@ -296,7 +315,7 @@ export async function POST(req: NextRequest) {
             await updatePaymentStatus(admin, {
                 orderId,
                 paymentIntentId: paymentIntent.id,
-                status: "cancelled",
+                status: "failed",
             });
 
             if (orderId) {
@@ -359,7 +378,7 @@ export async function POST(req: NextRequest) {
             await admin
                 .from("payments")
                 .update({
-                    status: isFullRefund ? "refunded" : "success",
+                    status: isFullRefund ? "refunded" : "completed",
                     refund_amount: refundedAmount,
                     refund_date: new Date().toISOString(),
                     refund_reason:
@@ -400,19 +419,9 @@ export async function POST(req: NextRequest) {
                 paymentIntentId,
             });
 
-            await updatePaymentStatus(admin, {
-                orderId: resolvedOrderId,
-                paymentIntentId,
-                status: "cancelled",
-            });
-
-            if (resolvedOrderId) {
-                await syncOrderStatusFromPayment(admin, resolvedOrderId, "cancelled");
-            }
-
             const result = await cancelExpiredStripeOrders(
-                orderId
-                    ? { orderId, stripeSessionId: session.id, force: true }
+                resolvedOrderId
+                    ? { orderId: resolvedOrderId, stripeSessionId: session.id, force: true }
                     : { stripeSessionId: session.id, force: true },
             );
 
@@ -420,6 +429,16 @@ export async function POST(req: NextRequest) {
                 console.error("Failed to synchronize expired order/payment state:", result);
             } else {
                 console.log("Successfully synchronized expired order/payment state:", result.cancelledOrderIds);
+            }
+
+            // If cleanup skipped because of lookup mismatch, still try direct status update by resolved order.
+            if (resolvedOrderId && result.cancelledOrderIds.length === 0) {
+                await updatePaymentStatus(admin, {
+                    orderId: resolvedOrderId,
+                    paymentIntentId,
+                    status: "cancelled",
+                });
+                await syncOrderStatusFromPayment(admin, resolvedOrderId, "cancelled");
             }
             break;
         }

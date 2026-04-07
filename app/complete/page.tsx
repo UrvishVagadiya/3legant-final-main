@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -8,6 +8,7 @@ import CheckoutStepper from "@/components/sections/CheckoutStepper";
 import { useAppDispatch } from "@/store";
 import { clearCart } from "@/store/slices/cartSlice";
 import { typography } from "@/constants/typography";
+import { createClient } from "@/utils/supabase/client";
 
 interface OrderItem {
   id: string;
@@ -15,7 +16,7 @@ interface OrderItem {
   color: string;
   quantity: number;
   price: number;
-  image: string;
+  image?: string;
 }
 
 interface OrderData {
@@ -28,6 +29,12 @@ interface OrderData {
   date: string;
 }
 
+type ProductRow = {
+  id: string;
+  img?: string | null;
+  images?: string[] | null;
+};
+
 const Complete = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,39 +42,114 @@ const Complete = () => {
   const [orderData, setOrderData] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const sessionId = searchParams.get("session_id");
+  const normalizeImage = (image?: string) => {
+    const value = String(image || "").trim();
+    if (!value || value === "null" || value === "undefined") {
+      return "/image-1.png";
+    }
+    return value;
+  };
 
-    if (sessionId) {
-      const fetchOrderData = async () => {
-        try {
+  const fetchProductImages = async (items: OrderItem[]) => {
+    const supabase = createClient();
+    const productIds = Array.from(
+      new Set(items.map((item) => item.id).filter(Boolean)),
+    );
+
+    if (productIds.length === 0) {
+      return items.map((item) => ({
+        ...item,
+        image: normalizeImage(item.image),
+      }));
+    }
+
+    const { data } = await supabase
+      .from("products")
+      .select("id, img, images")
+      .in("id", productIds);
+
+    const productMap = new Map<string, ProductRow>(
+      (data || []).map((product: ProductRow) => [product.id, product]),
+    );
+
+    return items.map((item) => {
+      const product = productMap.get(item.id);
+      const productImage =
+        product?.img ||
+        (Array.isArray(product?.images) ? product.images?.[0] : undefined) ||
+        item.image;
+
+      return {
+        ...item,
+        image: normalizeImage(productImage),
+      };
+    });
+  };
+
+  useEffect(() => {
+    const loadOrder = async () => {
+      const sessionId = searchParams.get("session_id");
+
+      try {
+        if (sessionId) {
           const res = await fetch(
             `/api/stripe/session?session_id=${encodeURIComponent(sessionId)}`,
           );
-          if (res.ok) {
-            const data = await res.json();
-            setOrderData(data);
-            dispatch(clearCart());
-            sessionStorage.removeItem("pendingOrder");
-          } else {
+
+          if (!res.ok) {
             router.push("/");
+            return;
           }
-        } catch (err) {
-          router.push("/");
-        } finally {
-          setLoading(false);
+
+          const data = await res.json();
+          const itemsWithImages = await fetchProductImages(
+            (data.items || []) as OrderItem[],
+          );
+
+          setOrderData({
+            ...data,
+            items: itemsWithImages,
+          });
+          dispatch(clearCart());
+          sessionStorage.removeItem("pendingOrder");
+          return;
         }
-      };
-      fetchOrderData();
-    } else {
-      const stored = sessionStorage.getItem("lastOrder");
-      if (stored) {
-        setOrderData(JSON.parse(stored));
-        setLoading(false);
-      } else {
+
+        const stored = sessionStorage.getItem("pendingOrder");
+        if (!stored) {
+          router.push("/");
+          return;
+        }
+
+        const parsed = JSON.parse(stored);
+        const itemsWithImages = await fetchProductImages(
+          (parsed.items || []).map((item: OrderItem) => ({
+            ...item,
+            image: normalizeImage(item.image),
+          })),
+        );
+
+        setOrderData({
+          ...parsed,
+          items: itemsWithImages,
+          paymentMethod: parsed.paymentMethod || "Credit Card (Stripe)",
+          orderCode: parsed.orderCode || "Pending Confirmation",
+          date:
+            parsed.date ||
+            new Date().toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+        });
+      } catch {
         router.push("/");
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    loadOrder();
   }, [searchParams, router, dispatch]);
 
   if (loading || !orderData) {
@@ -108,20 +190,20 @@ const Complete = () => {
         </h2>
 
         <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 mb-12">
-          {orderData.items.map((item) => (
+          {orderData.items.map((item, index) => (
             <div
-              key={item.id}
+              key={`${item.id}-${item.color}-${index}`}
               className="relative w-20 h-24 bg-[#F3F5F7] rounded shrink-0 flex items-center justify-center"
             >
               <Image
-                src={item.image || "/image-1.png"}
+                src={normalizeImage(item.image)}
                 alt={item.name}
                 fill
                 unoptimized
                 className="object-cover p-2"
               />
-              <div className="absolute -top-3 -right-3 bg-[#141718] text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 border-white shadow-sm">
-                {item.quantity}
+              <div className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 bg-[#141718] text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 border-white shadow-sm">
+                {Number(item.quantity) || 1}
               </div>
             </div>
           ))}
@@ -155,7 +237,7 @@ const Complete = () => {
 
         <Link href="/account?tab=orders">
           <button
-            className={`bg-[#141718] text-white px-10 py-3 md:py-4 rounded-full ${typography.buttonSmall} hover:bg-black transition-colors min-w-50 flex items-center justify-center mt-4`}
+            className={`bg-[#141718] cursor-pointer text-white px-10 py-3 md:py-4 rounded-full ${typography.buttonSmall} hover:bg-black transition-colors min-w-50 flex items-center justify-center mt-4`}
           >
             Purchase history
           </button>

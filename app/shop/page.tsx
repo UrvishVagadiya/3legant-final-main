@@ -90,6 +90,11 @@ const Shop = () => {
     }
   }, [searchParams, dispatch]);
 
+  useEffect(() => {
+    // Close any open selection dropdown when search params update.
+    setOpenDropdown(null);
+  }, [searchParams]);
+
   const handleShowMore = () => {
     setVisibleCount((prev) => prev + PAGE_SIZE);
   };
@@ -265,6 +270,7 @@ const Shop = () => {
                   isOpen={openDropdown === "category"}
                   onToggle={() => toggleDropdown("category")}
                   onSelect={handleCategorySelect}
+                  onClose={() => setOpenDropdown(null)}
                   compact={false}
                 />
                 <FilterDropdown
@@ -274,6 +280,7 @@ const Shop = () => {
                   isOpen={openDropdown === "price"}
                   onToggle={() => toggleDropdown("price")}
                   onSelect={handleDesktopPriceSelect}
+                  onClose={() => setOpenDropdown(null)}
                   compact={false}
                 />
               </div>

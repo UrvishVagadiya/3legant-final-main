@@ -25,6 +25,8 @@ import toast from "react-hot-toast";
 import { typography } from "@/constants/typography";
 import { useSaveAddressMutation } from "@/store/api/addressApi";
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+
 export default function Checkout() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
@@ -43,7 +45,6 @@ export default function Checkout() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveAddress] = useSaveAddressMutation();
 
-  // Checkout specific state (previously in useCheckout)
   const [placing, setPlacing] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -60,6 +61,7 @@ export default function Checkout() {
   const shippingCost = getShippingCost(shippingMethod);
   const total = subtotal + shippingCost - couponDiscount;
 
+  // ── Coupon ──────────────────────────────────────────────────────────────
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
     setCouponLoading(true);
@@ -80,22 +82,13 @@ export default function Checkout() {
     setCouponDiscount(0);
   };
 
-  const handleUpdateQuantity = (
-    id: string,
-    color: string,
-    quantity: number,
-  ) => {
+  // ── Cart ─────────────────────────────────────────────────────────────────
+  const handleUpdateQuantity = (id: string, color: string, quantity: number) => {
     const item = cartItems.find((i) => i.id === id && i.color === color);
     if (!item) return;
-
     if (quantity < 0) return;
-    if (quantity === 0) {
-      dispatch(updateQuantity({ id, color, quantity }));
-      return;
-    }
-
+    if (quantity === 0) { dispatch(updateQuantity({ id, color, quantity })); return; }
     if (item.stock <= 0 || quantity > item.stock) return;
-
     dispatch(updateQuantity({ id, color, quantity }));
   };
 
@@ -103,8 +96,8 @@ export default function Checkout() {
     dispatch(setShippingMethod(method));
   };
 
+  // ── Load user data & saved addresses ────────────────────────────────────
   useEffect(() => {
-    // Check if user returned from cancelled checkout
     const cancelled = searchParams.get("cancelled");
     if (cancelled) {
       toast.error("Payment not completed yet. You can continue checkout.");
@@ -187,6 +180,7 @@ export default function Checkout() {
     })();
   }, [user, searchParams]);
 
+  // ── Address selector ─────────────────────────────────────────────────────
   const handleSelect = (id: string, type: "shipping" | "billing") => {
     const b = type === "billing";
     (b ? setSelBillingId : setSelShippingId)(id);
@@ -208,16 +202,12 @@ export default function Checkout() {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
     if (errors[name])
-      setErrors((p) => {
-        const n = { ...p };
-        delete n[name];
-        return n;
-      });
+      setErrors((p) => { const n = { ...p }; delete n[name]; return n; });
   };
 
+  // ── Save address helper ──────────────────────────────────────────────────
   const saveCheckoutAddress = async (type: "shipping" | "billing") => {
     if (!user?.id) return;
-
     const selectedId = type === "shipping" ? selShippingId : selBillingId;
     if (selectedId !== "new") return;
 
@@ -234,12 +224,8 @@ export default function Checkout() {
         name,
         phone: isBilling ? formData.billingPhone : formData.phone,
         email: isBilling ? undefined : formData.email,
-        address: isBilling
-          ? formData.billingStreetAddress
-          : formData.streetAddress,
-        street_address: isBilling
-          ? formData.billingStreetAddress
-          : formData.streetAddress,
+        address: isBilling ? formData.billingStreetAddress : formData.streetAddress,
+        street_address: isBilling ? formData.billingStreetAddress : formData.streetAddress,
         city: isBilling ? formData.billingCity : formData.city,
         state: isBilling ? formData.billingState : formData.state,
         zip_code: isBilling ? formData.billingZipCode : formData.zipCode,
@@ -248,6 +234,7 @@ export default function Checkout() {
     }).unwrap();
   };
 
+  // ── Place order → calls Supabase edge function directly ─────────────────
   const handlePlaceOrder = async () => {
     if (cartItems.length === 0) {
       toast.error("Your cart is empty");
@@ -263,128 +250,99 @@ export default function Checkout() {
       return;
     }
 
+    if (!user) {
+      toast.error("Please sign in to place an order");
+      return;
+    }
+
     setPlacing(true);
     try {
       const supabaseClient = createClient();
-      if (!user) {
-        toast.error("Please sign in to place an order");
-        setPlacing(false);
-        return;
-      }
-
-      const {
-        data: { session },
-      } = await supabaseClient.auth.getSession();
+      const { data: { session } } = await supabaseClient.auth.getSession();
 
       if (!session?.access_token) {
         toast.error("Your session has expired. Please sign in again.");
-        setPlacing(false);
         return;
       }
 
+      // Save new addresses
       try {
         await saveCheckoutAddress("shipping");
-        if (useDifferentBilling) {
-          await saveCheckoutAddress("billing");
-        }
+        if (useDifferentBilling) await saveCheckoutAddress("billing");
       } catch (saveError) {
-        console.error("Save checkout address error:", saveError);
+        console.error("Save address error:", saveError);
         toast.error("Unable to save your address. Please try again.");
         return;
       }
 
       const finalTotal = subtotal + shippingCost - couponDiscount;
 
-      sessionStorage.setItem(
-        "pendingOrder",
-        JSON.stringify({
-          items: cartItems.map((i) => ({
-            id: i.id,
-            name: i.name,
-            color: i.color,
-            quantity: i.quantity,
-            price: i.price,
-            image: i.image,
-          })),
-          subtotal,
-          shipping: shippingCost,
-          discount: couponDiscount,
-          total: finalTotal,
-        }),
+      // Call Supabase edge function directly (no Next.js API route needed)
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/create-checkout-session`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Pass the user's JWT so the edge function can verify auth
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            cart_items: cartItems.map((i) => ({
+              product_id: i.id,
+              title: i.name,
+              img: i.image,
+              quantity: i.quantity,
+              unit_price: i.price,
+              color: i.color ?? null,
+            })),
+            shipping_data: {
+              first_name: formData.firstName,
+              last_name: formData.lastName,
+              email: formData.email,
+              phone: formData.phone,
+              street_address: formData.streetAddress,
+              city: formData.city,
+              state: formData.state,
+              zip_code: formData.zipCode,
+              country: formData.country,
+            },
+            billing_data: useDifferentBilling
+              ? {
+                  first_name: formData.billingFirstName,
+                  last_name: formData.billingLastName,
+                  phone: formData.billingPhone,
+                  street_address: formData.billingStreetAddress,
+                  city: formData.billingCity,
+                  state: formData.billingState,
+                  zip_code: formData.billingZipCode,
+                  country: formData.billingCountry,
+                }
+              : null,
+            has_different_billing: useDifferentBilling,
+            shipping_method: shippingMethod,
+            shipping_cost: shippingCost,
+            coupon_code: appliedCoupon?.code ?? null,
+            coupon_id: appliedCoupon?.id ?? null,
+            discount: couponDiscount,
+            subtotal,
+            total: finalTotal,
+          }),
+        },
       );
 
-      const response = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          items: cartItems.map((i) => ({
-            id: i.id,
-            name: i.name,
-            price: i.price,
-            quantity: i.quantity,
-            image: i.image,
-            color: i.color,
-          })),
-          shippingInfo: {
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            phone: formData.phone,
-            email: formData.email,
-            streetAddress: formData.streetAddress,
-            city: formData.city,
-            state: formData.state,
-            zipCode: formData.zipCode,
-            country: formData.country,
-          },
-          useDifferentBilling,
-          billingInfo: useDifferentBilling
-            ? {
-                firstName: formData.billingFirstName,
-                lastName: formData.billingLastName,
-                phone: formData.billingPhone,
-                streetAddress: formData.billingStreetAddress,
-                city: formData.billingCity,
-                state: formData.billingState,
-                zipCode: formData.billingZipCode,
-                country: formData.billingCountry,
-              }
-            : null,
-          shippingMethod,
-          shippingCost,
-          subtotal,
-          discount: couponDiscount,
-          total: finalTotal,
-          couponCode: appliedCoupon?.code || null,
-          couponId: appliedCoupon?.id || null,
-        }),
-      });
+      const data = await response.json();
 
-      const responseText = await response.text();
-      let responseData: { url?: string; error?: string; message?: string } = {};
-
-      if (responseText) {
-        try {
-          responseData = JSON.parse(responseText);
-        } catch {
-          responseData = {
-            error: responseText,
-          };
-        }
-      }
-
-      if (!response.ok) {
-        toast.error(
-          responseData.error ||
-            responseData.message ||
-            "Failed to create checkout session",
-        );
+      if (!response.ok || data.error) {
+        toast.error(data.error || "Failed to create checkout session");
         return;
       }
 
-      if (responseData.url) window.location.href = responseData.url;
-      else toast.error("Unable to redirect to payment page");
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error("Unable to redirect to payment page");
+      }
     } catch (err) {
       console.error("Place order error:", err);
       toast.error("Something went wrong. Please try again.");

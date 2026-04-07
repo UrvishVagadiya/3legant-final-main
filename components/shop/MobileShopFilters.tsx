@@ -70,6 +70,7 @@ const MobileShopFilters = ({
         isOpen={openDropdown === "price"}
         onToggle={() => onToggleDropdown("price")}
         onSelect={onPriceSelectDirect}
+        onClose={() => setOpenDropdown(null)}
         compact={compact}
       />
     </>

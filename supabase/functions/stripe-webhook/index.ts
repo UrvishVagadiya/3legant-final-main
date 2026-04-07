@@ -1,495 +1,807 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7"
-import Stripe from "npm:stripe@^14.16.0"
+/**
+ * stripe-webhook
+ * ──────────────
+ * Handles all Stripe events and keeps your Supabase DB in sync.
+ *
+ * Events handled:
+ *  • checkout.session.completed        → payment succeeded
+ *  • checkout.session.expired          → session timed-out
+ *  • payment_intent.payment_failed     → payment failed
+ *  • charge.refunded                   → full / partial refund issued from Stripe dashboard
+ *  • charge.refund.updated             → refund status change (e.g. pending → succeeded)
+ */
 
-interface StockItem {
-  product_id: string;
-  quantity: number;
-}
+import Stripe from "https://esm.sh/stripe@14.21.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-type ExpirableOrderRow = {
-  id: string;
-  status: string;
-  stock_reduced: boolean | null;
-};
+// ── Clients ────────────────────────────────────────────────────────────────
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
+  apiVersion: "2024-04-10",
+});
 
-type PaymentOrderLink = {
-  order_id: string;
-};
+// Use service-role key so RLS is bypassed (webhook has no user JWT)
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+);
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
-
+// ── Entry point ─────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  const body = await req.text();
+  const sig = req.headers.get("stripe-signature");
+
+  if (!sig) {
+    return respond(400, { error: "Missing stripe-signature header" });
   }
 
-  if (req.method === 'GET') {
-    return new Response(
-      JSON.stringify({ status: 'ok', message: 'Stripe webhook is live' }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    )
-  }
-
+  // ── Verify webhook signature ─────────────────────────────────────────────
+  let event: Stripe.Event;
   try {
-    const signature = req.headers.get('stripe-signature')
-    if (!signature) throw new Error('Missing stripe-signature header')
+    event = stripe.webhooks.constructEvent(
+      body,
+      sig,
+      Deno.env.get("STRIPE_WEBHOOK_SECRET")!
+    );
+  } catch (err: any) {
+    console.error("[webhook] Signature verification failed:", err.message);
+    return respond(400, { error: `Webhook signature error: ${err.message}` });
+  }
 
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
-    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
+  console.log(`[webhook] Received event: ${event.type} (${event.id})`);
 
-    if (!stripeKey || !webhookSecret) {
-      console.error('Missing STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET')
-      return new Response(JSON.stringify({ error: 'Server configuration missing' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      })
-    }
-
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: '2023-10-16',
-      httpClient: Stripe.createFetchHttpClient(),
-    })
-
-    const body = await req.text()
-
-    let event: Stripe.Event
-    try {
-      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Webhook signature verification failed'
-      console.error(`Webhook signature verification failed: ${message}`)
-      return new Response(`Webhook Error: ${message}`, { status: 400 })
-    }
-
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+  // ── Route events ─────────────────────────────────────────────────────────
+  try {
     switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session
-        console.log(`[Webhook] checkout.session.completed for ${session.id}`)
-        await handleCheckoutSessionCompleted(session, supabaseAdmin)
-        break
+      case "checkout.session.completed":
+        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
+
+      case "checkout.session.async_payment_succeeded": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const paymentIntentId =
+          typeof session.payment_intent === "string" ? session.payment_intent : null;
+        if (paymentIntentId) {
+          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+          await handlePaymentSucceeded(paymentIntent);
+        }
+        break;
       }
 
-      case 'checkout.session.expired': {
-        const session = event.data.object as Stripe.Checkout.Session
-        console.log(`[Webhook] checkout.session.expired for ${session.id}`)
-        await handleCheckoutSessionExpired(session, supabaseAdmin)
-        break
+      case "checkout.session.async_payment_failed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const paymentIntentId =
+          typeof session.payment_intent === "string" ? session.payment_intent : null;
+        if (paymentIntentId) {
+          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+          await handlePaymentFailed(paymentIntent);
+        }
+        break;
       }
 
-      case 'payment_intent.succeeded': {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent
-        console.log(`[Webhook] payment_intent.succeeded for ${paymentIntent.id}`)
-        await handlePaymentIntentSucceeded(paymentIntent, supabaseAdmin)
-        break
-      }
+      case "checkout.session.expired":
+        await handleCheckoutExpired(event.data.object as Stripe.Checkout.Session);
+        break;
 
-      case 'payment_intent.payment_failed': {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent
-        console.log(`[Webhook] payment_intent.payment_failed for ${paymentIntent.id}`)
-        await handlePaymentIntentFailed(paymentIntent, supabaseAdmin)
-        break
-      }
+      case "payment_intent.processing":
+        await handlePaymentProcessing(event.data.object as Stripe.PaymentIntent);
+        break;
 
-      case 'payment_intent.canceled': {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent
-        console.log(`[Webhook] payment_intent.canceled for ${paymentIntent.id}`)
-        await handlePaymentIntentCanceled(paymentIntent, supabaseAdmin)
-        break
-      }
+      case "payment_intent.succeeded":
+        await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);
+        break;
 
-      case 'charge.refunded': {
-        const charge = event.data.object as Stripe.Charge
-        console.log(`[Webhook] charge.refunded for ${charge.id}`)
-        await handleChargeRefunded(charge, supabaseAdmin)
-        break
-      }
+      case "payment_intent.payment_failed":
+        await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
+        break;
+
+      case "payment_intent.canceled":
+        await handlePaymentCanceled(event.data.object as Stripe.PaymentIntent);
+        break;
+
+      case "charge.refunded":
+        await handleChargeRefunded(event.data.object as Stripe.Charge);
+        break;
+
+      case "charge.refund.updated":
+        await handleRefundUpdated(event.data.object as Stripe.Refund);
+        break;
 
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        console.log(`[webhook] Unhandled event type: ${event.type}`);
     }
-    return new Response(JSON.stringify({ received: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    })
-
-  } catch (error: unknown) {
-    console.error('Webhook processing error:', error)
-    const message = error instanceof Error ? error.message : 'Internal Server Error'
-    return new Response(JSON.stringify({ error: message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    })
-  }
-})
-
-async function handleCheckoutSessionCompleted(
-  session: Stripe.Checkout.Session,
-  supabaseAdmin: ReturnType<typeof createClient>
-) {
-  if (session.payment_status !== 'paid') {
-    console.log(`[Webhook] Session ${session.id} not paid yet (${session.payment_status})`)
-    return
+  } catch (err: any) {
+    console.error(`[webhook] Handler error for ${event.type}:`, err.message);
+    // Return 500 so Stripe retries transient failures automatically.
+    return respond(500, { received: false, error: err.message });
   }
 
-  let orderId = session.metadata?.order_id || session.client_reference_id
+  return respond(200, { received: true });
+});
 
-  if (!orderId && session.id) {
-    const { data: bySession, error: bySessionError } = await supabaseAdmin
-      .from('orders')
-      .select('id')
-      .eq('stripe_session_id', session.id)
-      .maybeSingle()
+// ═══════════════════════════════════════════════════════════════════════════
+// EVENT HANDLERS
+// ═══════════════════════════════════════════════════════════════════════════
 
-    if (bySessionError) {
-      console.error(`[Webhook] Failed to resolve order for completed session ${session.id}:`, bySessionError)
-    }
+/**
+ * checkout.session.completed
+ * Payment succeeded — call the DB function that atomically:
+ *   1. Sets order status → "confirmed"
+ *   2. Creates/updates the payments row
+ *   3. Decrements product stock
+ *   4. Marks coupon as used (if any)
+ *   5. Clears the user's cart
+ */
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const meta = session.metadata ?? {};
+  let order_id = meta.order_id ?? session.client_reference_id;
 
-    if (bySession?.id) {
-      orderId = bySession.id
+  if (!order_id && session.id) {
+    const { data: orderBySession } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("stripe_session_id", session.id)
+      .maybeSingle();
+    order_id = orderBySession?.id ?? null;
+  }
+
+  if (!order_id) {
+    throw new Error("checkout.session.completed: missing order_id in metadata");
+  }
+
+  // Retrieve payment intent to get card details
+  let paymentIntent: Stripe.PaymentIntent | null = null;
+  let charge: Stripe.Charge | null = null;
+
+  if (session.payment_intent) {
+    paymentIntent = await stripe.paymentIntents.retrieve(
+      session.payment_intent as string,
+      { expand: ["latest_charge"] }
+    );
+    charge = paymentIntent.latest_charge as Stripe.Charge | null;
+  }
+
+  const cardBrand = charge?.payment_method_details?.card?.brand ?? null;
+  const cardLast4 = charge?.payment_method_details?.card?.last4 ?? null;
+  const paymentIntentId =
+    typeof session.payment_intent === "string" ? session.payment_intent : null;
+
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("id, user_id, status, stock_reduced, coupon_code")
+    .eq("id", order_id)
+    .maybeSingle();
+
+  if (orderError || !order) {
+    throw new Error(`Order lookup failed for ${order_id}`);
+  }
+
+  const amount = (session.amount_total ?? 0) / 100;
+  await upsertCompletedPayment({
+    orderId: order_id,
+    userId: order.user_id,
+    amount,
+    paymentIntentId: paymentIntentId ?? session.id,
+    cardBrand,
+    cardLast4,
+  });
+
+  const items = parseItems(meta.items_json);
+  const wasPending = order.status === "pending";
+
+  const { error: updateOrderError } = await supabase
+    .from("orders")
+    .update({ status: "confirmed", updated_at: new Date().toISOString() })
+    .eq("id", order_id);
+
+  if (updateOrderError) {
+    throw new Error(`Failed to mark order confirmed: ${updateOrderError.message}`);
+  }
+
+  if (!order.stock_reduced && items.length) {
+    await reduceStockForItems(items);
+    await supabase
+      .from("orders")
+      .update({ stock_reduced: true, updated_at: new Date().toISOString() })
+      .eq("id", order_id);
+  }
+
+  if (wasPending) {
+    await incrementCouponUsage(meta.coupon_id || null, meta.coupon_code || order.coupon_code || null);
+  }
+
+  // Clear cart by authoritative order user id to avoid metadata mismatch.
+  await supabase.from("cart").delete().eq("user_id", order.user_id);
+
+  console.log(`[webhook] ✅ Order ${order_id} confirmed.`);
+}
+
+/**
+ * checkout.session.expired
+ * User let the 30-min window lapse without paying.
+ * Marks order "cancelled" and restores stock if it was already reduced.
+ */
+async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
+  const meta = session.metadata ?? {};
+  const order_id = meta.order_id ?? session.client_reference_id;
+  if (!order_id) return;
+
+  // Fetch current order state
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, status, stock_reduced, total, user_id")
+    .eq("id", order_id)
+    .single();
+
+  if (!order || order.status === "cancelled") return;
+
+  await supabase
+    .from("orders")
+    .update({ status: "cancelled", updated_at: new Date().toISOString() })
+    .eq("id", order_id);
+
+  // Restore stock only if it was pre-decremented
+  if (order.stock_reduced) {
+    const items = parseItems(meta.items_json);
+    if (items.length) {
+      await restoreStockForItems(items);
+      await supabase
+        .from("orders")
+        .update({ stock_reduced: false, updated_at: new Date().toISOString() })
+        .eq("id", order_id);
     }
   }
+
+  // Mark payment as cancelled, creating it if it doesn't exist yet.
+  await upsertPaymentStatus({
+    orderId: order_id,
+    paymentIntentId:
+      typeof session.payment_intent === "string" ? session.payment_intent : null,
+    status: "cancelled",
+    amount: Number(order.total ?? 0),
+    userId: order.user_id ?? null,
+  });
+
+  console.log(`[webhook] ❌ Order ${order_id} expired and cancelled.`);
+}
+
+/**
+ * payment_intent.payment_failed
+ * Stripe retries payments automatically; on final failure this fires.
+ * We mark payment/order failed with direct table updates.
+ */
+async function handlePaymentFailed(intent: Stripe.PaymentIntent) {
+  const orderId = await resolveOrderIdFromIntent(intent);
 
   if (!orderId) {
-    console.error(`[Webhook] Missing order id in completed session ${session.id}`)
-    return
+    console.log(`[webhook] payment_intent.payment_failed: unable to resolve order for ${intent.id}`);
+    return;
   }
 
-  const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id
+  const now = new Date().toISOString();
 
-  const { error } = await supabaseAdmin
-    .from('payments')
-    .update({
-      status: 'success',
-      transaction_id: paymentIntentId || null,
-      payment_date: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('order_id', orderId)
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, stock_reduced, total, user_id")
+    .eq("id", orderId)
+    .maybeSingle();
 
-  if (error) {
-    console.error(`[Webhook] Failed to mark payment completed for order ${orderId}:`, error)
+  await upsertPaymentStatus({
+    orderId,
+    paymentIntentId: intent.id,
+    status: "failed",
+    amount: Number(order?.total ?? 0),
+    userId: order?.user_id ?? null,
+  });
+
+  await supabase
+    .from("orders")
+    .update({ status: "cancelled", updated_at: now })
+    .eq("id", orderId)
+    .in("status", ["pending", "processing"]);
+
+  if (order?.stock_reduced) {
+    const { data: items } = await supabase
+      .from("order_items")
+      .select("product_id, quantity")
+      .eq("order_id", orderId);
+    await restoreStockForItems(items || []);
+    await supabase
+      .from("orders")
+      .update({ stock_reduced: false, updated_at: now })
+      .eq("id", orderId);
   }
 
-  const { error: orderStatusError } = await supabaseAdmin
-    .from('orders')
-    .update({
-      status: 'processing',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', orderId)
-    .in('status', ['pending', 'failed'])
+  console.log(`[webhook] ⚠️  Payment failed for intent ${intent.id}`);
+}
 
-  if (orderStatusError) {
-    console.error(`[Webhook] Failed to move order ${orderId} to processing:`, orderStatusError)
+async function handlePaymentProcessing(intent: Stripe.PaymentIntent) {
+  const orderId = await resolveOrderIdFromIntent(intent);
+  if (!orderId) return;
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, total, user_id")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  await upsertPaymentStatus({
+    orderId,
+    paymentIntentId: intent.id,
+    status: "processing",
+    amount: Number(order?.total ?? 0),
+    userId: order?.user_id ?? null,
+  });
+
+  await supabase
+    .from("orders")
+    .update({ status: "processing", updated_at: new Date().toISOString() })
+    .eq("id", orderId)
+    .in("status", ["pending", "failed"]);
+}
+
+async function handlePaymentSucceeded(intent: Stripe.PaymentIntent) {
+  const orderId = await resolveOrderIdFromIntent(intent);
+  if (!orderId) return;
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, total, user_id")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  let cardBrand: string | null = null;
+  let cardLast4: string | null = null;
+
+  if (intent.latest_charge) {
+    const latestChargeId =
+      typeof intent.latest_charge === "string"
+        ? intent.latest_charge
+        : intent.latest_charge.id;
+    const charge = await stripe.charges.retrieve(latestChargeId);
+    cardBrand = charge.payment_method_details?.card?.brand ?? null;
+    cardLast4 = charge.payment_method_details?.card?.last4 ?? null;
+  }
+
+  await upsertPaymentStatus({
+    orderId,
+    paymentIntentId: intent.id,
+    status: "completed",
+    amount: Number(order?.total ?? 0),
+    userId: order?.user_id ?? null,
+    cardBrand,
+    cardLast4,
+  });
+
+  await supabase
+    .from("orders")
+    .update({ status: "confirmed", updated_at: new Date().toISOString() })
+    .eq("id", orderId)
+    .in("status", ["pending", "failed", "processing"]);
+}
+
+async function handlePaymentCanceled(intent: Stripe.PaymentIntent) {
+  const orderId = await resolveOrderIdFromIntent(intent);
+  if (!orderId) return;
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, stock_reduced, total, user_id")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  await upsertPaymentStatus({
+    orderId,
+    paymentIntentId: intent.id,
+    status: "cancelled",
+    amount: Number(order?.total ?? 0),
+    userId: order?.user_id ?? null,
+  });
+
+  await supabase
+    .from("orders")
+    .update({ status: "cancelled", updated_at: new Date().toISOString() })
+    .eq("id", orderId)
+    .in("status", ["pending", "processing", "failed"]);
+
+  if (order?.stock_reduced) {
+    const { data: items } = await supabase
+      .from("order_items")
+      .select("product_id, quantity")
+      .eq("order_id", orderId);
+    await restoreStockForItems(items || []);
+    await supabase
+      .from("orders")
+      .update({ stock_reduced: false, updated_at: new Date().toISOString() })
+      .eq("id", orderId);
   }
 }
 
-async function handleCheckoutSessionExpired(
-  session: Stripe.Checkout.Session,
-  supabaseAdmin: ReturnType<typeof createClient>
-) {
-  let orderId = session.metadata?.order_id || session.client_reference_id || null
-  let order: ExpirableOrderRow | null = null
+/**
+ * charge.refunded
+ * Stripe issued a refund (from dashboard or via API).
+ * Updates payments/orders directly.
+ */
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  const paymentIntentId =
+    typeof charge.payment_intent === "string" ? charge.payment_intent : null;
 
-  if (!orderId && session.id) {
-    const { data: bySession, error: bySessionError } = await supabaseAdmin
-      .from('orders')
-      .select('id, status, stock_reduced')
-      .eq('stripe_session_id', session.id)
+  if (!paymentIntentId) return;
+
+  const refundedAmount = (charge.amount_refunded ?? 0) / 100;
+  const isFullRefund = charge.refunded === true;
+
+  // Find most recent refund for reason
+  const latestRefund = charge.refunds?.data?.[0];
+  const refundReason = latestRefund?.reason ?? null;
+
+  const { data: payment } = await supabase
+    .from("payments")
+    .select("id, order_id")
+    .eq("transaction_id", paymentIntentId)
+    .maybeSingle();
+
+  const { data: order } = payment?.order_id
+    ? await supabase
+      .from("orders")
+      .select("id, total, user_id")
+      .eq("id", payment.order_id)
       .maybeSingle()
+    : { data: null };
 
-    if (bySessionError) {
-      console.error('Failed to resolve order via stripe_session_id:', bySessionError)
-    }
-
-    if (bySession) {
-      orderId = bySession.id
-      order = bySession as ExpirableOrderRow
-    }
-  }
-
-  if (!orderId) {
-    console.error('No orderId found for expired session:', session.id)
-    return
-  }
-
-  if (!order) {
-    const { data: fetchedOrder, error: orderError } = await supabaseAdmin
-      .from('orders')
-      .select('id, status, stock_reduced')
-      .eq('id', orderId)
-      .maybeSingle()
-
-    if (orderError || !fetchedOrder) {
-      console.error(`Failed to fetch order ${orderId}:`, orderError)
-      return
-    }
-
-    order = fetchedOrder as ExpirableOrderRow
-  }
-
-  if (order.status !== 'pending' && order.status !== 'failed' && order.status !== 'processing') {
-    console.log(`Order ${orderId} already in status '${order.status}', skipping auto-cancel.`)
-    return
-  }
-
-  let stockRestoreSucceeded = false
-
-  if (order.stock_reduced) {
-    const { data: items } = await supabaseAdmin
-      .from('order_items')
-      .select('product_id, quantity')
-      .eq('order_id', orderId)
-
-    if (items && items.length > 0) {
-      const { error: rpcError } = await supabaseAdmin.rpc('restore_product_stock', {
-        items: items.map((i: StockItem) => ({
-          product_id: i.product_id,
-          quantity: i.quantity,
-        })),
+  if (payment?.id) {
+    await supabase
+      .from("payments")
+      .update({
+        status: "refunded",
+        refund_amount: refundedAmount,
+        refund_reason: refundReason,
+        refund_date: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
+      .eq("id", payment.id);
+  } else if (payment?.order_id) {
+    await upsertPaymentStatus({
+      orderId: payment.order_id,
+      paymentIntentId,
+      status: "refunded",
+      amount: Number(order?.total ?? refundedAmount),
+      userId: order?.user_id ?? null,
+    });
+  }
 
-      if (rpcError) {
-        console.error('Stock restoration failed:', rpcError)
-      } else {
-        stockRestoreSucceeded = true
+  if (payment?.order_id) {
+    await supabase
+      .from("orders")
+      .update({
+        status: isFullRefund ? "refunded" : "confirmed",
+        refund_status: isFullRefund ? "full" : "partial",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", payment.order_id);
+
+    // Restore stock on full refund
+    if (isFullRefund) {
+      const { data: items } = await supabase
+        .from("order_items")
+        .select("product_id, quantity")
+        .eq("order_id", payment.order_id);
+
+      if (items?.length) {
+        await restoreStockForItems(items);
+        await supabase
+          .from("orders")
+          .update({ stock_reduced: false, updated_at: new Date().toISOString() })
+          .eq("id", payment.order_id);
       }
     }
   }
 
-  const { error: orderError } = await supabaseAdmin
-    .from('orders')
+  console.log(
+    `[webhook] 💸 Refund processed for PI ${paymentIntentId} — $${refundedAmount} (${isFullRefund ? "full" : "partial"})`
+  );
+}
+
+/**
+ * charge.refund.updated
+ * Refund status transition — e.g. pending → succeeded or failed.
+ */
+async function handleRefundUpdated(refund: Stripe.Refund) {
+  const paymentIntentId =
+    typeof refund.payment_intent === "string" ? refund.payment_intent : null;
+  if (!paymentIntentId) return;
+
+  const { data: payment } = await supabase
+    .from("payments")
+    .select("id, order_id, refund_amount")
+    .eq("transaction_id", paymentIntentId)
+    .maybeSingle();
+
+  if (!payment) return;
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, total, user_id")
+    .eq("id", payment.order_id)
+    .maybeSingle();
+
+  // Map Stripe refund status → our payments.status
+  const statusMap: Record<string, string> = {
+    succeeded: "refunded",
+    failed: "failed",
+    pending: "processing",
+    canceled: "cancelled",
+  };
+
+  const newStatus = statusMap[refund.status ?? ""] ?? "refund_pending";
+
+  await supabase
+    .from("payments")
     .update({
-      status: 'cancelled',
-      ...(stockRestoreSucceeded ? { stock_reduced: false } : {}),
+      status: newStatus,
+      refund_date:
+        refund.status === "succeeded" ? new Date().toISOString() : null,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', orderId)
+    .eq("id", payment.id);
 
-  if (orderError) {
-    console.error(`Cancellation update failed for order ${orderId}:`, orderError)
-    return
+  if (!payment.id) {
+    await upsertPaymentStatus({
+      orderId: payment.order_id,
+      paymentIntentId,
+      status: newStatus === "refund_pending" ? "completed" : "refunded",
+      amount: Number(order?.total ?? 0),
+      userId: order?.user_id ?? null,
+    });
   }
 
-  const { error: paymentUpdateError } = await supabaseAdmin
-    .from('payments')
-    .update({
-      status: 'cancelled',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('order_id', orderId)
-    .in('status', ['pending', 'processing', 'failed'])
+  // If refund failed, revert order to "confirmed"
+  if (refund.status === "failed") {
+    await supabase
+      .from("orders")
+      .update({ status: "confirmed", refund_status: "failed", updated_at: new Date().toISOString() })
+      .eq("id", payment.order_id);
+  }
 
-  if (paymentUpdateError) {
-    console.error(`Payment cancellation failed for order ${orderId}:`, paymentUpdateError)
+  console.log(
+    `[webhook] 🔄 Refund ${refund.id} updated → ${refund.status}`
+  );
+}
+
+type BasicItem = { product_id?: string | null; quantity?: number | string | null };
+
+function parseItems(raw: string | null | undefined): BasicItem[] {
+  try {
+    const parsed = JSON.parse(raw ?? "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
   }
 }
 
-async function handlePaymentIntentSucceeded(
-  paymentIntent: Stripe.PaymentIntent,
-  supabaseAdmin: ReturnType<typeof createClient>
-) {
-  await updatePaymentIntentStatus(
-    paymentIntent.id,
-    'success',
-    supabaseAdmin,
-    paymentIntent.metadata?.order_id,
-  )
-}
+async function upsertCompletedPayment(params: {
+  orderId: string;
+  userId: string | null;
+  amount: number;
+  paymentIntentId: string | null;
+  cardBrand: string | null;
+  cardLast4: string | null;
+}) {
+  const { orderId, userId, amount, paymentIntentId, cardBrand, cardLast4 } = params;
+  const now = new Date().toISOString();
 
-async function handlePaymentIntentFailed(
-  paymentIntent: Stripe.PaymentIntent,
-  supabaseAdmin: ReturnType<typeof createClient>
-) {
-  await updatePaymentIntentStatus(
-    paymentIntent.id,
-    'failed',
-    supabaseAdmin,
-    paymentIntent.metadata?.order_id,
-  )
-}
+  const payload = {
+    status: "completed",
+    amount,
+    payment_method: "card",
+    transaction_id: paymentIntentId,
+    payment_date: now,
+    card_brand: cardBrand,
+    card_last_four: cardLast4,
+    updated_at: now,
+  };
 
-async function handlePaymentIntentCanceled(
-  paymentIntent: Stripe.PaymentIntent,
-  supabaseAdmin: ReturnType<typeof createClient>
-) {
-  await updatePaymentIntentStatus(
-    paymentIntent.id,
-    'cancelled',
-    supabaseAdmin,
-    paymentIntent.metadata?.order_id,
-  )
-}
+  const { data: existing, error: existingError } = await supabase
+    .from("payments")
+    .select("id")
+    .eq("order_id", orderId)
+    .limit(1);
 
-async function handleChargeRefunded(
-  charge: Stripe.Charge,
-  supabaseAdmin: ReturnType<typeof createClient>
-) {
-  const paymentIntentId = typeof charge.payment_intent === 'string'
-    ? charge.payment_intent
-    : charge.payment_intent?.id
-
-  if (!paymentIntentId) return
-
-  const { data: paymentLink } = await supabaseAdmin
-    .from('payments')
-    .select('order_id')
-    .eq('transaction_id', paymentIntentId)
-    .maybeSingle()
-
-  const linkedOrderId = (paymentLink as PaymentOrderLink | null)?.order_id || null
-  const orderId = linkedOrderId || charge.metadata?.order_id
-
-  if (!orderId) {
-    console.error(`[Webhook] Could not resolve order for refunded charge ${charge.id}`)
-    return
+  if (existingError) {
+    throw new Error(`Failed to lookup payment: ${existingError.message}`);
   }
 
-  await supabaseAdmin
-    .from('payments')
-    .update({
-      status: 'refunded',
-      refund_amount: charge.amount_refunded / 100,
-      refund_date: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('order_id', orderId)
-
-  await supabaseAdmin
-    .from('orders')
-    .update({
-      status: 'refunded',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', orderId)
-}
-
-async function updatePaymentIntentStatus(
-  paymentIntentId: string,
-  status: 'success' | 'failed' | 'cancelled',
-  supabaseAdmin: ReturnType<typeof createClient>,
-  metadataOrderId?: string,
-) {
-  const now = new Date().toISOString()
-
-  let payment: PaymentOrderLink | null = null
-
-  const byTransaction = await supabaseAdmin
-    .from('payments')
-    .update({
-      status,
-      transaction_id: paymentIntentId,
-      ...(status === 'success' ? { payment_date: now } : {}),
-      updated_at: now,
-    })
-    .eq('transaction_id', paymentIntentId)
-    .select('order_id')
-    .maybeSingle()
-
-  if (byTransaction.data) {
-    payment = byTransaction.data as PaymentOrderLink
+  if (existing && existing.length > 0) {
+    const { error } = await supabase
+      .from("payments")
+      .update(payload)
+      .eq("order_id", orderId);
+    if (error) throw new Error(`Failed to update payment: ${error.message}`);
+    return;
   }
 
-  if (!payment && metadataOrderId) {
-    const byOrder = await supabaseAdmin
-      .from('payments')
-      .update({
-        status,
-        transaction_id: paymentIntentId,
-        ...(status === 'success' ? { payment_date: now } : {}),
-        updated_at: now,
-      })
-      .eq('order_id', metadataOrderId)
-      .in('status', ['pending', 'processing', 'failed'])
-      .select('order_id')
-      .maybeSingle()
+  const { error } = await supabase.from("payments").insert({
+    order_id: orderId,
+    user_id: userId,
+    payment_method: "card",
+    status: "completed",
+    amount,
+    currency: "USD",
+    transaction_id: paymentIntentId,
+    payment_date: now,
+    card_brand: cardBrand,
+    card_last_four: cardLast4,
+  });
 
-    if (byOrder.data) {
-      payment = byOrder.data as PaymentOrderLink
+  if (error) throw new Error(`Failed to insert payment: ${error.message}`);
+}
+
+async function upsertPaymentStatus(params: {
+  orderId?: string | null;
+  paymentIntentId?: string | null;
+  status: "pending" | "processing" | "completed" | "cancelled" | "failed" | "refunded";
+  amount?: number;
+  userId?: string | null;
+  cardBrand?: string | null;
+  cardLast4?: string | null;
+}) {
+  const now = new Date().toISOString();
+  const filters: Array<{ key: "transaction_id" | "order_id"; value: string }> = [];
+
+  if (params.paymentIntentId) {
+    filters.push({ key: "transaction_id", value: params.paymentIntentId });
+  }
+
+  if (params.orderId) {
+    filters.push({ key: "order_id", value: params.orderId });
+  }
+
+  for (const filter of filters) {
+    const { data: existing } = await supabase
+      .from("payments")
+      .select("id")
+      .eq(filter.key, filter.value)
+      .maybeSingle();
+
+    if (existing?.id) {
+      const { error } = await supabase
+        .from("payments")
+        .update({
+          status: params.status,
+          ...(params.paymentIntentId ? { transaction_id: params.paymentIntentId } : {}),
+          ...(params.amount !== undefined ? { amount: params.amount } : {}),
+          ...(params.cardBrand !== undefined ? { card_brand: params.cardBrand } : {}),
+          ...(params.cardLast4 !== undefined ? { card_last_four: params.cardLast4 } : {}),
+          ...(params.status === "completed" ? { payment_date: now } : {}),
+          updated_at: now,
+        })
+        .eq("id", existing.id);
+
+      if (error) {
+        throw new Error(`Failed to update payment by ${filter.key}: ${error.message}`);
+      }
+
+      return;
     }
   }
 
-  const orderId = payment?.order_id
-  if (!orderId) {
-    console.log(`[Webhook] No payment row found for payment_intent ${paymentIntentId}`)
-    return
+  if (!params.orderId) return;
+
+  const { error } = await supabase.from("payments").insert({
+    order_id: params.orderId,
+    user_id: params.userId ?? null,
+    payment_method: "card",
+    status: params.status,
+    amount: params.amount ?? 0,
+    currency: "USD",
+    transaction_id: params.paymentIntentId ?? null,
+    payment_date: params.status === "completed" ? now : null,
+    card_brand: params.cardBrand ?? null,
+    card_last_four: params.cardLast4 ?? null,
+  });
+
+  if (error) {
+    throw new Error(`Failed to create payment row: ${error.message}`);
   }
-
-  if (status === 'success') {
-    await supabaseAdmin
-      .from('orders')
-      .update({
-        status: 'processing',
-        updated_at: now,
-      })
-      .eq('id', orderId)
-      .in('status', ['pending', 'failed'])
-    return
-  }
-
-  await supabaseAdmin
-    .from('orders')
-    .update({
-      status: 'cancelled',
-      updated_at: now,
-    })
-    .eq('id', orderId)
-    .in('status', ['pending', 'processing', 'failed'])
-
-  await restockOrder(orderId, supabaseAdmin)
 }
 
-async function restockOrder(
-  orderId: string,
-  supabaseAdmin: ReturnType<typeof createClient>
-) {
-  const { data: order } = await supabaseAdmin
-    .from('orders')
-    .select('stock_reduced')
-    .eq('id', orderId)
-    .maybeSingle()
+async function resolveOrderIdFromIntent(intent: Stripe.PaymentIntent): Promise<string | null> {
+  const metaOrderId = intent.metadata?.order_id;
+  if (metaOrderId) return metaOrderId;
 
-  if (!order?.stock_reduced) {
-    return
+  const { data: paymentByIntent } = await supabase
+    .from("payments")
+    .select("order_id")
+    .eq("transaction_id", intent.id)
+    .maybeSingle();
+
+  if (paymentByIntent?.order_id) {
+    return paymentByIntent.order_id;
   }
 
-  const { data: items } = await supabaseAdmin
-    .from('order_items')
-    .select('product_id, quantity')
-    .eq('order_id', orderId)
+  return null;
+}
 
-  if (!items?.length) {
-    return
+async function reduceStockForItems(items: BasicItem[]) {
+  for (const item of items) {
+    if (!item?.product_id) continue;
+    const quantity = Number(item.quantity ?? 0);
+    if (!Number.isFinite(quantity) || quantity <= 0) continue;
+
+    const { data: product } = await supabase
+      .from("products")
+      .select("stock")
+      .eq("id", item.product_id)
+      .maybeSingle();
+
+    const currentStock = Number(product?.stock ?? 0);
+    const nextStock = Math.max(0, currentStock - quantity);
+
+    await supabase
+      .from("products")
+      .update({ stock: nextStock })
+      .eq("id", item.product_id);
+  }
+}
+
+async function restoreStockForItems(items: BasicItem[]) {
+  for (const item of items) {
+    if (!item?.product_id) continue;
+    const quantity = Number(item.quantity ?? 0);
+    if (!Number.isFinite(quantity) || quantity <= 0) continue;
+
+    const { data: product } = await supabase
+      .from("products")
+      .select("stock")
+      .eq("id", item.product_id)
+      .maybeSingle();
+
+    const currentStock = Number(product?.stock ?? 0);
+    const nextStock = currentStock + quantity;
+
+    await supabase
+      .from("products")
+      .update({ stock: nextStock })
+      .eq("id", item.product_id);
+  }
+}
+
+async function incrementCouponUsage(couponId?: string | null, couponCode?: string | null) {
+  if (couponId) {
+    const { data: coupon } = await supabase
+      .from("coupons")
+      .select("used_count")
+      .eq("id", couponId)
+      .maybeSingle();
+
+    if (coupon) {
+      await supabase
+        .from("coupons")
+        .update({ used_count: Number(coupon.used_count ?? 0) + 1 })
+        .eq("id", couponId);
+      return;
+    }
   }
 
-  const { error: restoreError } = await supabaseAdmin.rpc('restore_product_stock', {
-    items: items.map((i: StockItem) => ({
-      product_id: i.product_id,
-      quantity: i.quantity,
-    })),
-  })
+  if (couponCode) {
+    const { data: coupon } = await supabase
+      .from("coupons")
+      .select("used_count")
+      .eq("code", couponCode)
+      .maybeSingle();
 
-  if (restoreError) {
-    console.error(`[Webhook] Failed to restore stock for order ${orderId}:`, restoreError)
-    return
+    if (coupon) {
+      await supabase
+        .from("coupons")
+        .update({ used_count: Number(coupon.used_count ?? 0) + 1 })
+        .eq("code", couponCode);
+    }
   }
+}
 
-  await supabaseAdmin
-    .from('orders')
-    .update({
-      stock_reduced: false,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', orderId)
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function respond(status: number, body: unknown) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }

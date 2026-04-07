@@ -38,6 +38,16 @@ interface ProductRow {
     price?: number | null;
 }
 
+function toPositiveNumber(value: unknown, fallback = 1): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function toNumber(value: unknown, fallback = 0): number {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get("session_id");
@@ -121,12 +131,18 @@ export async function GET(req: NextRequest) {
                 (dbProduct?.images && Array.isArray(dbProduct.images) && dbProduct.images[0]) ||
                 "";
 
+            const normalizedQuantity = toPositiveNumber(item.qty ?? item.quantity, 1);
+            const normalizedPrice = toNumber(
+                item.prc ?? item.price ?? item.unit_price ?? dbProduct?.price,
+                0,
+            );
+
             return {
                 id: productId,
                 name: item.name || item.product_name || dbProduct?.title || "Unknown Product",
                 image: item.image || item.product_image || dbImage,
-                price: item.prc || item.price || item.unit_price || dbProduct?.price || 0,
-                quantity: item.qty || item.quantity || 1,
+                price: normalizedPrice,
+                quantity: normalizedQuantity,
                 color: item.clr || item.color || "Default",
             };
         });
@@ -225,7 +241,7 @@ export async function GET(req: NextRequest) {
             }
 
             const paymentData = {
-                status: "success",
+                status: "completed",
                 transaction_id: paymentIntentId,
                 card_last_four: cardLast4,
                 card_brand: cardBrand,
