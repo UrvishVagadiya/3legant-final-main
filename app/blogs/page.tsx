@@ -121,6 +121,8 @@ const Blogs = () => {
       ? "grid-cols-1"
       : "grid-cols-1 min-[400px]:grid-cols-2";
 
+  const isHorizontalGrid = viewGrid <= 2;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20 space-y-8 md:space-y-12">
       <div
@@ -168,13 +170,6 @@ const Blogs = () => {
         </div>
         <div className="flex items-center justify-between w-full md:w-auto gap-6 pb-2 md:pb-0">
           <BlogSortMenu sortOption={sortOption} onSort={setSortOption} />
-          <div className="md:hidden">
-            <GridIconBar
-              icons={mobileIcons}
-              activeGrid={mobileViewGrid}
-              onChange={setMobileViewGrid}
-            />
-          </div>
           <div className="hidden md:flex items-center">
             <GridIconBar
               icons={desktopIcons}
@@ -197,20 +192,22 @@ const Blogs = () => {
             <Link
               href={`/blogs/${article.id}`}
               key={article.id}
-              className={`flex flex-col group ${viewGrid === 1 ? "md:flex-row md:items-center md:gap-8" : ""}`}
+              className={`group flex flex-col ${isHorizontalGrid ? "md:flex-row md:items-center md:gap-6 lg:gap-8" : ""}`}
             >
               <div
-                className={`overflow-hidden rounded-sm bg-[#F3F5F7] ${viewGrid === 1 ? "w-full md:w-1/3 shrink-0" : "w-full"} ${mobileViewGrid === 2 ? "aspect-square" : ""}`}
+                className={`overflow-hidden rounded-sm bg-[#F3F5F7] w-full ${isHorizontalGrid ? "md:w-65 md:shrink-0 md:aspect-square" : ""} ${mobileViewGrid === 2 ? "aspect-square" : ""}`}
               >
                 <img
-                  className={`w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105 ${viewGrid === 1 ? "md:aspect-4/3" : "aspect-square"} ${mobileViewGrid === 1 ? "aspect-video md:aspect-square" : "aspect-square"}`}
+                  className={`w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105 ${isHorizontalGrid ? "aspect-square md:aspect-square" : "aspect-square"} ${mobileViewGrid === 1 ? "aspect-video md:aspect-square" : "aspect-square"}`}
                   src={article.img}
                   alt={article.title}
                 />
               </div>
-              <div className={`mt-4 ${viewGrid === 1 ? "md:mt-0 flex-1" : ""}`}>
+              <div
+                className={`mt-4 ${isHorizontalGrid ? "md:mt-0 md:flex-1 md:flex md:flex-col md:justify-center" : ""}`}
+              >
                 <h3
-                  className={`font-medium text-[#141718] mb-2 leading-relaxed ${viewGrid === 1 ? "text-xl md:text-2xl font-semibold" : "text-base md:text-lg"} ${mobileViewGrid === 2 ? "text-sm md:text-base line-clamp-2" : "text-base"}`}
+                  className={`font-medium text-[#141718] mb-2 leading-relaxed ${isHorizontalGrid ? "text-xl md:text-2xl font-semibold" : "text-base md:text-lg"} ${mobileViewGrid === 2 ? "text-sm md:text-base line-clamp-2" : "text-base"}`}
                 >
                   {article.title}
                 </h3>
@@ -221,7 +218,7 @@ const Blogs = () => {
                     day: "numeric",
                   })}
                 </p>
-                {viewGrid === 1 && (
+                {isHorizontalGrid && (
                   <p className="hidden md:block mt-4 text-[#6C7275] line-clamp-3 leading-relaxed">
                     {getBlogExcerpt(article)}
                   </p>

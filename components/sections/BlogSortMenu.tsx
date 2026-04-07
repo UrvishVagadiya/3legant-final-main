@@ -26,7 +26,7 @@ const BlogSortMenu = ({ sortOption, onSort }: BlogSortMenuProps) => {
   return (
     <div className="relative border border-gray-300 rounded px-2 md:border-none md:p-0 md:rounded-none group flex w-full md:w-auto justify-between md:justify-start">
       <div
-        className="flex items-center cursor-pointer py-1.5 md:py-2"
+        className="flex items-center w-full justify-between cursor-pointer py-1.5 md:py-2"
         onClick={() => setIsOpen(!isOpen)}
       >
         <h1 className="text-sm font-medium text-[#141718] md:whitespace-nowrap grow">

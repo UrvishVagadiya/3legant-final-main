@@ -10,7 +10,9 @@ import { useAppSelector, RootState } from "@/store";
 
 const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
-  const { user, isAuthenticated } = useAppSelector((state: RootState) => state.auth);
+  const { user, isAuthenticated } = useAppSelector(
+    (state: RootState) => state.auth,
+  );
 
   const isAuthPage = pathname === "/signin" || pathname === "/signup";
   const isContactPage = pathname === "/contact";
@@ -20,13 +22,24 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
   const isAdminPage = pathname.startsWith("/admin");
 
   const showHeaderNavbar = !isAuthPage && !isResetPassword;
-  const showNewsLetter = !isAuthPage && !isContactPage && !isCartPage && !isAccountPage && !isResetPassword;
+  const showNewsLetter =
+    !isAuthPage &&
+    !isContactPage &&
+    !isCartPage &&
+    !isAccountPage &&
+    !isResetPassword;
   const showFooter = !isAuthPage && !isResetPassword;
 
   const layout = (
     <>
-      {showHeaderNavbar && <Header />}
-      {showHeaderNavbar && <Navbar />}
+      {showHeaderNavbar && (
+        <>
+          <Header />
+          <div className="sticky top-0 z-50">
+          <Navbar />
+        </div>
+        </>
+      )}
       {children}
       {showNewsLetter && <NewsLetter />}
       {showFooter && <Footer />}
@@ -38,11 +51,7 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
     return <>{children}</>;
   }
 
-  return (
-    <>
-      {layout}
-    </>
-  );
+  return <>{layout}</>;
 };
 
 export default GlobalLayout;
