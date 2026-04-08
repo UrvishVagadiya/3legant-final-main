@@ -8,6 +8,8 @@ interface Props {
   setFormData: React.Dispatch<React.SetStateAction<BlogFormData>>;
   editingId: number | null;
   submitting: boolean;
+  formError: string;
+  onChange: () => void;
   onSubmit: (e: FormEvent) => void;
   onClose: () => void;
 }
@@ -17,6 +19,8 @@ export default function BlogFormModal({
   setFormData,
   editingId,
   submitting,
+  formError,
+  onChange,
   onSubmit,
   onClose,
 }: Props) {
@@ -38,7 +42,13 @@ export default function BlogFormModal({
             formData={formData}
             setFormData={setFormData}
             editingId={editingId}
+            onChange={onChange}
           />
+          {formError && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {formError}
+            </div>
+          )}
           <div className="flex gap-3 pt-2">
             <button
               type="button"

@@ -39,6 +39,17 @@ export default function BlogTableRow({
           {blog.author || "admin"}
         </span>
       </td>
+      <td className="px-6 py-4">
+        {String(blog.category || "").toLowerCase() === "featured" ? (
+          <span className="px-2.5 py-1 bg-[#38CB89]/15 text-[#1A7F4F] rounded-full text-[11px] font-medium uppercase">
+            Featured
+          </span>
+        ) : (
+          <span className="px-2.5 py-1 bg-gray-100 text-[#6C7275] rounded-full text-[11px] font-medium uppercase">
+            Normal
+          </span>
+        )}
+      </td>
       <td className="px-6 py-4 text-[#6C7275]">
         {new Date(blog.date).toLocaleDateString("en-US", {
           year: "numeric",

@@ -30,6 +30,7 @@ export type BlogFormData = {
   img: string;
   author: string;
   date: string;
+  featured: boolean;
   intro: string;
   sections: BlogSection[];
 };
@@ -39,6 +40,7 @@ export const emptyBlogForm: BlogFormData = {
   img: "",
   author: "admin",
   date: new Date().toISOString().split("T")[0],
+  featured: false,
   intro: "",
   sections: [
     {

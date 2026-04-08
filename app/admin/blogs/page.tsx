@@ -130,14 +130,17 @@ export default function AdminBlogs() {
   const [formData, setFormData] = React.useState<BlogFormData>(emptyBlogForm);
   const [submitting, setSubmitting] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [formError, setFormError] = React.useState("");
 
   const openEditForm = (b: Blog) => {
     setEditingId(b.id);
+    setFormError("");
     setFormData({
       title: b.title || "",
       img: b.img || "",
       author: b.author || "admin",
       date: b.date ? new Date(b.date).toISOString().split("T")[0] : "",
+      featured: String(b.category || "").toLowerCase() === "featured",
       intro: b.intro || "",
       sections: Array.isArray(b.sections) ? b.sections : emptyBlogForm.sections,
     });
@@ -146,6 +149,7 @@ export default function AdminBlogs() {
 
   const openAddForm = () => {
     setEditingId(null);
+    setFormError("");
     setFormData({
       ...emptyBlogForm,
       sections: emptyBlogForm.sections.map((s) => ({ ...s })),
@@ -174,12 +178,12 @@ export default function AdminBlogs() {
       const content = buildContentFromForm(safeFormData);
 
       if (!title || !img) {
-        toast.error("Please fill blog title and at least one image URL");
+        setFormError("Please fill blog title and at least one image URL");
         return;
       }
 
       if (!content.trim()) {
-        toast.error("Please add blog content in intro or sections");
+        setFormError("Please add blog content in intro or sections");
         return;
       }
 
@@ -188,6 +192,7 @@ export default function AdminBlogs() {
         img,
         author: String(safeFormData.author || "admin").trim() || "admin",
         content,
+        category: safeFormData.featured ? "featured" : undefined,
         date: safeFormData.date
           ? new Date(safeFormData.date).toISOString()
           : new Date().toISOString(),
@@ -202,10 +207,11 @@ export default function AdminBlogs() {
       setShowForm(false);
       setFormData(emptyBlogForm);
       setEditingId(null);
+      setFormError("");
     } catch (err: unknown) {
       const message = getErrorMessage(err);
       console.error("Failed to save blog:", err, message);
-      toast.error(message);
+      setFormError(message);
     } finally {
       setSubmitting(false);
     }
@@ -254,7 +260,7 @@ export default function AdminBlogs() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-[#6C7275]">
               <tr>
-                {["Blog", "Author", "Date", "Actions"].map((h) => (
+                {["Blog", "Author", "Featured", "Date", "Actions"].map((h) => (
                   <th key={h} className="text-left px-6 py-3 font-medium">
                     {h}
                   </th>
@@ -274,7 +280,7 @@ export default function AdminBlogs() {
               {filtered.length === 0 && (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-6 py-12 text-center text-[#6C7275]"
                   >
                     <div className="flex flex-col items-center gap-2">
@@ -295,6 +301,8 @@ export default function AdminBlogs() {
           setFormData={setFormData}
           editingId={editingId}
           submitting={submitting}
+          formError={formError}
+          onChange={() => setFormError("")}
           onSubmit={handleSubmit}
           onClose={() => setShowForm(false)}
         />

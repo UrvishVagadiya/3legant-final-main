@@ -51,17 +51,20 @@ interface Props {
   editingId: number | null;
   imageFile?: File | null;
   onImageChange?: (file: File | null) => void;
+  onChange?: () => void;
 }
 
 export default function BlogFormFields({
   formData,
   setFormData,
   editingId,
+  onChange,
 }: Props) {
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
+    onChange?.();
     setFormData((p: BlogFormData) => ({
       ...p,
       [name]: value,
@@ -73,6 +76,7 @@ export default function BlogFormFields({
     field: keyof BlogSection,
     value: string,
   ) => {
+    onChange?.();
     setFormData((p: BlogFormData) => ({
       ...p,
       sections: p.sections.map((s) =>
@@ -122,11 +126,37 @@ export default function BlogFormFields({
         required
       />
 
+      <div className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3">
+        <input
+          id="featured"
+          name="featured"
+          type="checkbox"
+          checked={formData.featured}
+          onChange={(e) => {
+            onChange?.();
+            setFormData((p: BlogFormData) => ({
+              ...p,
+              featured: e.target.checked,
+            }));
+          }}
+          className="h-4 w-4 rounded border-gray-300 text-[#141718] focus:ring-[#141718]"
+        />
+        <label
+          htmlFor="featured"
+          className="text-sm font-medium text-[#141718] cursor-pointer"
+        >
+          Mark as featured
+        </label>
+      </div>
+
       {/* Introduction */}
       <Textarea
         label="Introduction Paragraph"
         value={formData.intro}
-        onChange={(e) => setFormData({ ...formData, intro: e.target.value })}
+        onChange={(e) => {
+          onChange?.();
+          setFormData({ ...formData, intro: e.target.value });
+        }}
         rows={3}
         placeholder="Your bathroom serves a string of busy functions on a daily basis..."
       />

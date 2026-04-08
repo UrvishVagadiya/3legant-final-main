@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { BsGrid3X3GapFill, BsGridFill } from "react-icons/bs";
 import { PiColumnsFill, PiRowsFill } from "react-icons/pi";
 import GridIconBar from "@/components/shop/GridIconBar";
 import BlogSortMenu, {
   type BlogSortOption,
 } from "@/components/sections/BlogSortMenu";
-import { useLazyGetBlogsPageQuery } from "@/store/api/blogApi";
+import {
+  useGetBlogsQuery,
+  useLazyGetBlogsPageQuery,
+} from "@/store/api/blogApi";
 import { typography } from "@/constants/typography";
 
 import { Blog } from "@/types/blog";
@@ -44,8 +47,25 @@ const getBlogExcerpt = (article: Blog) => {
   return `${raw.substring(0, 160)}...`;
 };
 
+const getFeaturedBlogs = (items: Blog[]) => {
+  const featuredByCategory = items.filter(
+    (blog) => String(blog.category || "").toLowerCase() === "featured",
+  );
+
+  if (featuredByCategory.length > 0) {
+    return [...featuredByCategory].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+  }
+
+  return [...items]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 3);
+};
+
 const Blogs = () => {
   const [fetchBlogsPage] = useLazyGetBlogsPageQuery();
+  const { data: allBlogs = [] } = useGetBlogsQuery();
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
@@ -54,6 +74,10 @@ const Blogs = () => {
   const [viewGrid, setViewGrid] = useState<number>(3);
   const [mobileViewGrid, setMobileViewGrid] = useState<number>(1);
   const [sortOption, setSortOption] = useState<BlogSortOption>("default");
+  const [activeTab, setActiveTab] = useState<"all" | "featured">("all");
+
+  const featuredBlogs = useMemo(() => getFeaturedBlogs(allBlogs), [allBlogs]);
+  const displayedBlogs = activeTab === "featured" ? featuredBlogs : blogs;
 
   useEffect(() => {
     const loadInitialBlogs = async () => {
@@ -83,7 +107,7 @@ const Blogs = () => {
   }, [fetchBlogsPage, sortOption]);
 
   const handleShowMore = async () => {
-    if (isLoadingMore || !hasMore) return;
+    if (activeTab === "featured" || isLoadingMore || !hasMore) return;
 
     setIsLoadingMore(true);
 
@@ -158,12 +182,14 @@ const Blogs = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-4 border-b md:border-none md:pb-0 gap-4 md:gap-0">
         <div className="flex gap-6 md:gap-10 w-full md:w-auto">
           <h1
-            className={`${typography.text16Semibold} border-b-2 border-black pb-1 text-[#141718] whitespace-nowrap`}
+            className={`${activeTab === "all" ? `${typography.text16Semibold} border-b-2 border-black pb-1 text-[#141718]` : `${typography.text16} text-gray-400 hover:text-gray-800`} transition-colors cursor-pointer whitespace-nowrap`}
+            onClick={() => setActiveTab("all")}
           >
             All Blog
           </h1>
           <h1
-            className={`${typography.text16} text-gray-400 hover:text-gray-800 transition-colors cursor-pointer whitespace-nowrap`}
+            className={`${typography.text16} ${activeTab === "featured" ? "text-[#141718] border-b-2 border-black pb-1" : "text-gray-400 hover:text-gray-800"} transition-colors cursor-pointer whitespace-nowrap`}
+            onClick={() => setActiveTab("featured")}
           >
             Featured
           </h1>
@@ -188,7 +214,7 @@ const Blogs = () => {
             <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
-          blogs.map((article) => (
+          displayedBlogs.map((article) => (
             <Link
               href={`/blogs/${article.id}`}
               key={article.id}
@@ -229,7 +255,11 @@ const Blogs = () => {
         )}
       </div>
 
-      {hasMore && !loading && (
+      {!loading && displayedBlogs.length === 0 && (
+        <div className="text-center text-[#6C7275] py-8">No blogs found.</div>
+      )}
+
+      {activeTab === "all" && hasMore && !loading && (
         <div className="flex justify-center items-center mt-8 md:mt-8">
           <button
             onClick={handleShowMore}
