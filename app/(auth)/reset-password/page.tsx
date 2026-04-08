@@ -24,6 +24,8 @@ export default function ResetPasswordPage() {
     register,
     handleSubmit,
     watch,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<FormInputs>();
 
@@ -32,33 +34,32 @@ export default function ResetPasswordPage() {
       try {
         const url = new URL(window.location.href);
         const code = url.searchParams.get("code");
+        let sessionReady = false;
 
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) {
-            setLinkError(
-              "This reset link is invalid or expired. Please request a new one.",
-            );
+          if (!error) {
+            sessionReady = true;
           }
         }
 
-        const hashParams = new URLSearchParams(
-          window.location.hash.replace(/^#/, ""),
-        );
-        const accessToken = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
-        const type = hashParams.get("type");
+        if (!sessionReady) {
+          const hashParams = new URLSearchParams(
+            window.location.hash.replace(/^#/, ""),
+          );
+          const accessToken = hashParams.get("access_token");
+          const refreshToken = hashParams.get("refresh_token");
+          const type = hashParams.get("type");
 
-        if (type === "recovery" && accessToken && refreshToken) {
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
+          if (type === "recovery" && accessToken && refreshToken) {
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
 
-          if (error) {
-            setLinkError(
-              "This reset link is invalid or expired. Please request a new one.",
-            );
+            if (!error) {
+              sessionReady = true;
+            }
           }
         }
 
@@ -66,11 +67,12 @@ export default function ResetPasswordPage() {
           data: { session },
         } = await supabase.auth.getSession();
 
-        if (!session) {
+        if (!session && !sessionReady) {
           setLinkError(
             "This reset link is invalid or expired. Please request a new one.",
           );
         } else {
+          setLinkError("");
           window.history.replaceState({}, "", "/reset-password");
         }
       } catch {
@@ -85,12 +87,17 @@ export default function ResetPasswordPage() {
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
     setMessage("");
+    clearErrors("password");
+
     const { error } = await supabase.auth.updateUser({
       password: data.password,
     });
 
     if (error) {
-      alert(error.message);
+      setError("password", {
+        type: "manual",
+        message: error.message || "Unable to reset password. Please try again.",
+      });
     } else {
       setMessage("Password updated successfully! Redirecting to sign in...");
       await supabase.auth.signOut();

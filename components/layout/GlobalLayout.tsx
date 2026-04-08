@@ -15,20 +15,22 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
   );
 
   const isAuthPage = pathname === "/signin" || pathname === "/signup";
+  const isForgotPassword = pathname === "/forgot-password";
   const isContactPage = pathname === "/contact";
   const isCartPage = pathname === "/cart";
   const isAccountPage = pathname === "/account";
   const isResetPassword = pathname === "/reset-password";
   const isAdminPage = pathname.startsWith("/admin");
 
-  const showHeaderNavbar = !isAuthPage && !isResetPassword;
+  const showHeaderNavbar = !isAuthPage && !isResetPassword && !isForgotPassword;
   const showNewsLetter =
     !isAuthPage &&
     !isContactPage &&
     !isCartPage &&
     !isAccountPage &&
-    !isResetPassword;
-  const showFooter = !isAuthPage && !isResetPassword;
+    !isResetPassword &&
+    !isForgotPassword;
+  const showFooter = !isAuthPage && !isResetPassword && !isForgotPassword;
 
   const layout = (
     <>
@@ -36,8 +38,8 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
         <>
           <Header />
           <div className="sticky top-0 z-50">
-          <Navbar />
-        </div>
+            <Navbar />
+          </div>
         </>
       )}
       {children}
