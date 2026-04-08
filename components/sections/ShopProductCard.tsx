@@ -80,7 +80,7 @@ const ShopProductCard = ({
           <div className="flex flex-col gap-1 min-[400px]:gap-2">
             {(card.isNew ??
               isProductNew(card.created_at || card.createdAt)) && (
-              <div className="bg-[#FFFFFF] text-[#141718] font-bold text-[8px] min-[400px]:text-[9px] sm:text-[10px] md:text-xs py-0.5 min-[400px]:py-1 px-1.5 min-[400px]:px-2 sm:px-2.5 rounded-sm min-[400px]:rounded flex justify-center items-center shadow-sm leading-none">
+              <div className="bg-[#FFFFFF] text-[#141718] font-bold text-[8px] min-[400px]:text-[13px] sm:text-[10px] md:text-xs py-2 min-[400px]:py-2 px-2 min-[400px]:px-2.5 sm:px-2.5 rounded-sm min-[400px]:rounded flex justify-center items-center shadow-sm leading-none">
                 NEW
               </div>
             )}
@@ -90,15 +90,17 @@ const ShopProductCard = ({
               </div>
             )}
           </div>
-          <div className={`${isHorizontal ? "lg:hidden" : ""}`}>
+          <div
+            className={`${isMobileExtended ? "hidden" : ""} ${isHorizontal ? "lg:hidden" : ""}`}
+          >
             <div
               onClick={(e) => handleWishlistToggle(e, card)}
               className={`${isMounted && wishlistItems.some((i) => i.id == card.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100"} bg-white cursor-pointer w-8 h-8 shadow-sm rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110`}
             >
               {isMounted && wishlistItems.some((i) => i.id == card.id) ? (
-                <GoHeartFill className="text-black text-lg" />
+                <GoHeartFill className="text-black text-xl" />
               ) : (
-                <GoHeart className="text-[#6C7275] text-lg" />
+                <GoHeart className="text-[#6C7275] text-xl" />
               )}
             </div>
           </div>
@@ -120,7 +122,10 @@ const ShopProductCard = ({
         <div
           className={`flex items-center gap-1 text-[#141718] mb-1.5 md:mb-2 text-[14px] ${isHorizontal ? "lg:text-base lg:mt-2" : ""}`}
         >
-          <RatingStars rating={getRating(card.id).avgRating} />
+          <RatingStars
+            rating={getRating(card.id).avgRating}
+            className="text-base md:text-lg"
+          />
         </div>
         <h3
           className={`font-semibold text-[#141718] mb-1 truncate text-[15px] ${isHorizontal ? "lg:text-lg lg:mb-2" : ""}`}

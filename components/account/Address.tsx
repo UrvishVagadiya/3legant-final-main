@@ -56,7 +56,7 @@ const AddressSection = ({
       <h2 className="font-semibold text-[16px] text-gray-900">{title}</h2>
       <button
         onClick={() => onAdd(type)}
-        className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-black transition-colors"
+        className="flex items-center cursor-pointer gap-1.5 text-sm font-semibold text-gray-600 hover:text-black transition-colors"
       >
         <Plus size={16} />
         Add New

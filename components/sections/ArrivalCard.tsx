@@ -51,7 +51,7 @@ const ArrivalCard = ({
   return (
     <Link
       href={`/product/${card.id}`}
-      className="group w-55 md:w-65.5 shrink-0 flex flex-col relative pb-4"
+      className="group w-55 sm:w-60 md:w-65.5 shrink-0 flex flex-col relative pb-4"
     >
       <div className="relative w-full aspect-4/5 bg-[#F3F5F7] flex items-center justify-center overflow-hidden rounded">
         <TintedProductImage
@@ -99,7 +99,7 @@ const ArrivalCard = ({
         <div className="flex items-center gap-1 mb-1.5 md:mb-2">
           <RatingStars
             rating={getRating(card.id).avgRating}
-            className="text-[#141718] text-sm md:text-base"
+            className="text-[#141718] text-base md:text-lg"
           />
           <span className="text-xs text-[#6C7275] ml-1">
             ({getRating(card.id).reviewCount})

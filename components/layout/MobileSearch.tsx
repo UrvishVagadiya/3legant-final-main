@@ -22,6 +22,7 @@ const MobileSearch = ({ onResultClick }: MobileSearchProps) => {
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery.trim());
   const [showResults, setShowResults] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const { data: searchResults = [], isFetching: searchLoading } =
@@ -39,6 +40,25 @@ const MobileSearch = ({ onResultClick }: MobileSearchProps) => {
     return () => clearTimeout(timeoutId);
   }, [inputValue, dispatch]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowResults(false);
+        setInputValue("");
+        setDebouncedQuery("");
+        dispatch(setSearchQuery(""));
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dispatch]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
@@ -51,7 +71,7 @@ const MobileSearch = ({ onResultClick }: MobileSearchProps) => {
   };
 
   return (
-    <div className="px-5 py-3 shrink-0 relative">
+    <div ref={searchContainerRef} className="px-5 py-3 shrink-0 relative">
       <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2.5">
         <Search className="w-4 h-4 text-[#6C7275] shrink-0" />
         <input

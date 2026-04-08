@@ -40,7 +40,7 @@ export default function DeleteReviewModal({
           <button
             onClick={onCancel}
             disabled={isLoading}
-            className="text-[#6C7275] transition hover:text-black disabled:opacity-50"
+            className="text-[#6C7275] cursor-pointer transition hover:text-black disabled:opacity-50"
           >
             <X className="h-5 w-5" />
           </button>

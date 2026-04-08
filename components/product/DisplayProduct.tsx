@@ -6,7 +6,10 @@ import { MdKeyboardArrowRight } from "react-icons/md";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import { addToCart, updateQuantity } from "@/store/slices/cartSlice";
 import { useGetReviewsQuery } from "@/store/api/reviewApi";
-import {useGetWishlistItemsQuery,useToggleWishlistMutation} from "@/store/api/wishlistApi";
+import {
+  useGetWishlistItemsQuery,
+  useToggleWishlistMutation,
+} from "@/store/api/wishlistApi";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import YouMightAlsoLike from "./YouMightAlsoLike";
@@ -307,7 +310,7 @@ export const DisplayProduct = ({ p }: { p: Product }) => {
               <div className="flex items-center gap-1">
                 <RatingStars
                   rating={avgRating}
-                  className="text-[#141718] text-[14px]"
+                  className="text-[#141718] text-lg md:text-xl"
                 />
                 <span className="text-sm font-medium text-[#141718] ml-1">
                   {avgRating.toFixed(1)}
@@ -363,12 +366,14 @@ export const DisplayProduct = ({ p }: { p: Product }) => {
 
           <div className="flex flex-col gap-3 py-2 text-[#6C7275] text-[12px]">
             <div className="flex uppercase">
-              <span className="w-24">SKU</span>
-              <span className="text-[#141718]">{p.sku || "1117"}</span>
+              <span className="w-24 text-[14px]">SKU</span>
+              <span className="text-[#141718] text-[14px]">
+                {p.sku || "1117"}
+              </span>
             </div>
             <div className="flex uppercase">
-              <span className="w-24">CATEGORY</span>
-              <span className="text-[#141718] capitalize">
+              <span className="w-24 text-[14px]">CATEGORY</span>
+              <span className="text-[#141718] text-[14px] capitalize">
                 {Array.isArray(p.category)
                   ? p.category.join(", ")
                   : p.category || "Living Room, Bedroom"}

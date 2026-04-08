@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { RiArrowDropDownLine } from "react-icons/ri";
 
 export type BlogSortOption = "default" | "newest" | "oldest" | "az" | "za";
@@ -22,9 +22,33 @@ const options: BlogSortOption[] = ["default", "newest", "oldest", "az", "za"];
 
 const BlogSortMenu = ({ sortOption, onSort }: BlogSortMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        isOpen
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
 
   return (
-    <div className="relative border border-gray-300 rounded px-2 md:border-none md:p-0 md:rounded-none group flex w-full md:w-auto justify-between md:justify-start">
+    <div
+      ref={menuRef}
+      className="relative border border-gray-300 rounded px-2 md:border-none md:p-0 md:rounded-none flex w-full md:w-auto justify-between md:justify-start"
+    >
       <div
         className="flex items-center w-full justify-between cursor-pointer py-1.5 md:py-2"
         onClick={() => setIsOpen(!isOpen)}
@@ -39,7 +63,6 @@ const BlogSortMenu = ({ sortOption, onSort }: BlogSortMenuProps) => {
 
       <div
         className={`absolute right-0 top-full md:top-full mt-1 md:mt-0 w-full md:w-48 bg-white border border-gray-100 shadow-lg rounded-md overflow-hidden z-20 transition-all duration-200
-        md:opacity-0 md:invisible group-hover:md:opacity-100 group-hover:md:visible
         ${isOpen ? "opacity-100 visible" : "opacity-0 invisible max-h-0 md:max-h-none"}`}
       >
         <div className="flex flex-col">

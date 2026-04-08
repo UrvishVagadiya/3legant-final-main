@@ -160,7 +160,7 @@ const ProductCard = ({
         <div className="flex items-center gap-1 mb-1">
           <RatingStars
             rating={avgRating}
-            className={`text-[#141718] ${isSmall ? "text-sm md:text-base" : "text-[14px]"}`}
+            className={`text-[#141718] ${isSmall ? "text-base md:text-lg" : "text-lg md:text-xl"}`}
           />
           <span className="text-xs text-[#6C7275] ml-1">({reviewCount})</span>
           {showColors && colorOptions.length > 1 && (

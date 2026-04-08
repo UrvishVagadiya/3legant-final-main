@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import {
   useGetReviewsQuery,
@@ -41,7 +41,7 @@ interface ReviewCardProps {
 
 export const Stars = ({
   count,
-  size = "text-[14px]",
+  size = "text-lg md:text-xl",
 }: {
   count: number;
   size?: string;
@@ -75,7 +75,7 @@ export function ReviewForm({
         </h4>
         <button
           onClick={onClose}
-          className="text-[#6C7275] hover:text-black focus:outline-none"
+          className="text-[#6C7275] cursor-pointer hover:text-black focus:outline-none"
         >
           <X className="w-5 h-5" />
         </button>
@@ -87,7 +87,7 @@ export function ReviewForm({
             <button
               key={s}
               onClick={() => setRating(s)}
-              className="text-[24px] focus:outline-none"
+              className=" cursor-pointer text-[24px] focus:outline-none"
             >
               {s <= rating ? (
                 <IoMdStar className="text-[#141718]" />
@@ -108,7 +108,7 @@ export function ReviewForm({
       <button
         onClick={onSubmit}
         disabled={submitting || !text.trim()}
-        className="self-end bg-black text-white px-6 py-2.5 rounded-lg text-[14px] font-medium hover:opacity-90 disabled:opacity-50 transition"
+        className="self-end bg-black cursor-pointer text-white px-6 py-2.5 rounded-lg text-[14px] font-medium hover:opacity-90 disabled:opacity-50 transition"
       >
         {submitting
           ? "Processing..."
@@ -167,7 +167,7 @@ export function ReviewCard({
       <div className="flex items-center gap-6">
         <button
           onClick={onToggleLike}
-          className="flex items-center gap-1.5 text-xs text-[#6C7275] hover:text-black focus:outline-none"
+          className="flex items-center cursor-pointer gap-1.5 text-[15px] text-[#6C7275] hover:text-black focus:outline-none"
         >
           {review.liked ? (
             <AiFillHeart className="text-red-500" />
@@ -178,7 +178,7 @@ export function ReviewCard({
         </button>
         <button
           onClick={() => setShowReplyForm(!showReplyForm)}
-          className="flex items-center gap-1.5 text-xs text-[#6C7275] hover:text-black focus:outline-none"
+          className="flex cursor-pointer items-center gap-1.5 text-[14px] text-[#6C7275] hover:text-black focus:outline-none"
         >
           <BsReply />{" "}
           <span>
@@ -190,13 +190,13 @@ export function ReviewCard({
           <div className="flex items-center gap-4 ml-auto">
             <button
               onClick={onEdit}
-              className="flex items-center gap-1 text-xs text-[#6C7275] hover:text-black focus:outline-none"
+              className="flex cursor-pointer items-center gap-1 text-xs text-[#6C7275] hover:text-black focus:outline-none"
             >
               <Edit2 className="w-3 h-3" /> Edit
             </button>
             <button
               onClick={onDelete}
-              className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 focus:outline-none"
+              className="flex items-center cursor-pointer gap-1 text-xs text-red-500 hover:text-red-700 focus:outline-none"
             >
               <Trash2 className="w-3 h-3" /> Delete
             </button>
@@ -241,7 +241,7 @@ export function ReviewCard({
           />
           <button
             onClick={handleReplySubmit}
-            className="bg-black text-white px-4 py-2 rounded-lg text-xs hover:opacity-90"
+            className="bg-black cursor-pointer text-white px-4 py-2 rounded-lg text-xs hover:opacity-90"
           >
             Post
           </button>
@@ -284,6 +284,7 @@ export default function ReviewsSection({
   const [text, setText] = useState("");
   const [rating, setRating] = useState(5);
   const [sortOption, setSortOption] = useState("Newest");
+  const formRef = useRef<HTMLDivElement>(null);
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
     isOpen: boolean;
     reviewId: string | null;
@@ -294,6 +295,29 @@ export default function ReviewsSection({
     reviewText: "",
   });
   const [isDeletingReview, setIsDeletingReview] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        formRef.current &&
+        !formRef.current.contains(event.target as Node) &&
+        showForm
+      ) {
+        setShowForm(false);
+        setIsEditing(false);
+        setText("");
+        setRating(5);
+      }
+    };
+
+    if (showForm) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showForm]);
 
   const handleEdit = () => {
     if (!userReview) return;
@@ -346,57 +370,61 @@ export default function ReviewsSection({
       </div>
 
       {showForm && (
-        <ReviewForm
-          rating={rating}
-          setRating={setRating}
-          text={text}
-          setText={setText}
-          submitting={loading}
-          isEditing={isEditing}
-          onClose={() => setShowForm(false)}
-          onSubmit={async () => {
-            if (!user) return toast.error("Please sign in");
-            if (!isEditing && !canReview) {
-              return toast.error(
-                "Review is available after payment is completed.",
-              );
-            }
-            try {
-              if (isEditing && userReview) {
-                await updateReviewMutation({
-                  productId,
-                  reviewId: userReview.id,
-                  rating,
-                  review: text,
-                }).unwrap();
-                toast.success("Review updated!");
-              } else {
-                const name =
-                  user.user_metadata?.displayName ||
-                  user.user_metadata?.full_name ||
-                  user.user_metadata?.name ||
-                  user.email?.split("@")[0] ||
-                  "Anonymous";
-                await addReviewMutation({
-                  productId,
-                  userId: user.id,
-                  userName: name,
-                  rating,
-                  review: text,
-                }).unwrap();
-                toast.success("Review submitted!");
+        <div ref={formRef}>
+          <ReviewForm
+            rating={rating}
+            setRating={setRating}
+            text={text}
+            setText={setText}
+            submitting={loading}
+            isEditing={isEditing}
+            onClose={() => setShowForm(false)}
+            onSubmit={async () => {
+              if (!user) return toast.error("Please sign in");
+              if (!isEditing && !canReview) {
+                return toast.error(
+                  "Review is available after payment is completed.",
+                );
               }
-              setShowForm(false);
-              setIsEditing(false);
-              setText("");
-              setRating(5);
-            } catch (err: unknown) {
-              const message =
-                err instanceof Error ? err.message : "Failed to process review";
-              toast.error(message);
-            }
-          }}
-        />
+              try {
+                if (isEditing && userReview) {
+                  await updateReviewMutation({
+                    productId,
+                    reviewId: userReview.id,
+                    rating,
+                    review: text,
+                  }).unwrap();
+                  toast.success("Review updated!");
+                } else {
+                  const name =
+                    user.user_metadata?.displayName ||
+                    user.user_metadata?.full_name ||
+                    user.user_metadata?.name ||
+                    user.email?.split("@")[0] ||
+                    "Anonymous";
+                  await addReviewMutation({
+                    productId,
+                    userId: user.id,
+                    userName: name,
+                    rating,
+                    review: text,
+                  }).unwrap();
+                  toast.success("Review submitted!");
+                }
+                setShowForm(false);
+                setIsEditing(false);
+                setText("");
+                setRating(5);
+              } catch (err: unknown) {
+                const message =
+                  err instanceof Error
+                    ? err.message
+                    : "Failed to process review";
+                toast.error(message);
+              }
+            }}
+          />
+        </div>
       )}
 
       <div className="flex justify-between items-center border-b pb-4 mt-4">

@@ -22,7 +22,6 @@ const Arrivals = () => {
   const dispatch = useAppDispatch();
   const { data: products = [], isLoading } = useGetNewArrivalProductsQuery();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [hasHorizontalOverflow, setHasHorizontalOverflow] = useState(false);
 
   const { user } = useAppSelector((state: RootState) => state.auth);
@@ -126,28 +125,16 @@ const Arrivals = () => {
     });
   };
 
-  const handleScroll = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const maxScroll = el.scrollWidth - el.clientWidth;
-    if (maxScroll > 0) setScrollProgress(el.scrollLeft / maxScroll);
-  };
-
   useEffect(() => {
     const updateOverflowState = () => {
       const el = scrollRef.current;
       if (!el) {
         setHasHorizontalOverflow(false);
-        setScrollProgress(0);
         return;
       }
 
       const maxScroll = el.scrollWidth - el.clientWidth;
       setHasHorizontalOverflow(maxScroll > 0);
-
-      if (maxScroll <= 0) {
-        setScrollProgress(0);
-      }
     };
 
     updateOverflowState();
@@ -159,7 +146,7 @@ const Arrivals = () => {
   }, [products]);
 
   return (
-    <div className="w-full">
+    <div className="w-full overflow-x-hidden">
       <div className="px-3 sm:px-5 md:px-10 lg:px-40 pt-5 md:pt-14">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-0">
           <h1 className="text-[28px] sm:text-4xl lg:text-5xl font-medium leading-[1.08] sm:leading-[1.1] wrap-break-word">
@@ -172,11 +159,11 @@ const Arrivals = () => {
       </div>
 
       {isLoading ? (
-        <div className="pl-3 sm:pl-5 md:pl-10 lg:pl-40 mt-6 md:mt-10 flex gap-4 md:gap-6">
+        <div className="pl-3 sm:pl-5 md:pl-10 lg:pl-40 mt-6 md:mt-10 flex gap-4 md:gap-6 overflow-x-hidden">
           {[...Array(4)].map((_, i) => (
             <div
               key={i}
-              className="w-55 sm:w-60 md:w-60 shrink-0 animate-pulse"
+              className="w-55 sm:w-60 md:w-65.5 shrink-0 animate-pulse"
             >
               <div className="w-full aspect-4/5 bg-gray-200 rounded" />
               <div className="mt-3 h-4 bg-gray-200 rounded w-3/4" />
@@ -185,10 +172,9 @@ const Arrivals = () => {
           ))}
         </div>
       ) : (
-        <div className="pl-3 sm:pl-5 md:pl-10 lg:pl-40 mt-6 md:mt-10">
+        <div className="pl-3 sm:pl-5 md:pl-10 lg:pl-40 mt-6 md:mt-10 overflow-x-hidden">
           <div
             ref={scrollRef}
-            onScroll={handleScroll}
             className={`flex gap-4 md:gap-6 pb-2 ${hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden"}`}
           >
             {products.map((card: Product) => (
@@ -202,16 +188,6 @@ const Arrivals = () => {
                 getRating={getRating}
               />
             ))}
-          </div>
-          <div className="pr-5 md:pr-10 lg:pr-40 mt-2">
-            <div
-              className={`h-0.5 bg-gray-200 rounded-full relative ${hasHorizontalOverflow ? "opacity-100" : "opacity-0"}`}
-            >
-              <div
-                className="h-full bg-[#141718] rounded-full absolute top-0 left-0 transition-all duration-150"
-                style={{ width: "33%", left: `${scrollProgress * 67}%` }}
-              />
-            </div>
           </div>
         </div>
       )}
