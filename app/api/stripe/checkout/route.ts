@@ -123,8 +123,6 @@ export async function POST(req: NextRequest) {
 
         const origin = req.headers.get("origin") || "http://localhost:3000";
 
-        // Create order in 'pending' status
-        // const randomStr = Math.random().toString(36).substring(2, 7).toUpperCase();
         const orderCode = `${Date.now().toString().slice(-10)}${Math.floor(Math.random() * 100)
             .toString()
             .padStart(2, "0")}`;
