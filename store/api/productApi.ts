@@ -3,6 +3,31 @@ import { createClient } from '@/utils/supabase/client';
 import { Product } from '../slices/productSlice';
 import { isProductNew } from '@/utils/isProductNew';
 
+type ShopSortOption =
+  | 'default'
+  | 'az'
+  | 'za'
+  | 'price-low-high'
+  | 'price-high-low';
+
+type PriceFilter = {
+  min: number;
+  max: number | null;
+};
+
+type GetShopProductsArgs = {
+  page: number;
+  pageSize: number;
+  category?: string;
+  sort?: ShopSortOption;
+  priceFilters?: PriceFilter[];
+};
+
+type GetShopProductsResponse = {
+  products: Product[];
+  total: number;
+};
+
 const normalizeProduct = (product: Product): Product => ({
   ...product,
   isNew: isProductNew(product.created_at || product.createdAt),
@@ -11,6 +36,66 @@ const normalizeProduct = (product: Product): Product => ({
 export const productApi = apiService.injectEndpoints({
   overrideExisting: true,
   endpoints: (builder) => ({
+    getShopProducts: builder.query<GetShopProductsResponse, GetShopProductsArgs>({
+      queryFn: async ({
+        page,
+        pageSize,
+        category,
+        sort = 'default',
+        priceFilters = [],
+      }) => {
+        const supabase = createClient();
+        const safePage = Math.max(1, page);
+        const safePageSize = Math.max(1, pageSize);
+        const from = (safePage - 1) * safePageSize;
+        const to = from + safePageSize - 1;
+
+        let query = supabase
+          .from('products')
+          .select('*', { count: 'exact' })
+          .eq('status', 'active');
+
+        if (category && category !== 'All Rooms') {
+          query = query.contains('category', [category]);
+        }
+
+        if (priceFilters.length > 0) {
+          const priceClauses = priceFilters.map((range) => {
+            if (range.max === null) {
+              return `price.gte.${range.min}`;
+            }
+            return `and(price.gte.${range.min},price.lte.${range.max})`;
+          });
+
+          query = query.or(priceClauses.join(','));
+        }
+
+        if (sort === 'az') {
+          query = query.order('title', { ascending: true });
+        } else if (sort === 'za') {
+          query = query.order('title', { ascending: false });
+        } else if (sort === 'price-low-high') {
+          query = query.order('price', { ascending: true });
+        } else if (sort === 'price-high-low') {
+          query = query.order('price', { ascending: false });
+        } else {
+          query = query.order('created_at', { ascending: false });
+        }
+
+        const { data, error, count } = await query.range(from, to);
+
+        if (error) return { error };
+
+        return {
+          data: {
+            products: (data || []).map((product: Product) =>
+              normalizeProduct(product),
+            ),
+            total: count || 0,
+          },
+        };
+      },
+    }),
     getProductsPage: builder.query<Product[], { offset: number; limit: number }>({
       queryFn: async ({ offset, limit }) => {
         const supabase = createClient();
@@ -168,6 +253,7 @@ export const productApi = apiService.injectEndpoints({
 });
 
 export const {
+  useGetShopProductsQuery,
   useLazyGetProductsPageQuery,
   useGetProductsQuery,
   useGetNewArrivalProductsQuery,

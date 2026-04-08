@@ -14,7 +14,7 @@ import { getShippingCost } from "@/utils/getShippingCost";
 import { createClient } from "@/utils/supabase/client";
 import { validateCoupon } from "@/utils/coupon";
 import {
-  F,
+  InfoData,
   billingKeys,
   initialForm,
   applyAddress,
@@ -202,7 +202,7 @@ export default function Checkout() {
     if (id === "new") {
       setFormData((p) => {
         const u = { ...p };
-        (b ? billingKeys : [...F]).forEach((k) => (u[k] = ""));
+        (b ? billingKeys : [...InfoData]).forEach((k) => (u[k] = ""));
         return u;
       });
     } else {
