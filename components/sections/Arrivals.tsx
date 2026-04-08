@@ -23,6 +23,7 @@ const Arrivals = () => {
   const { data: products = [], isLoading } = useGetNewArrivalProductsQuery();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [hasHorizontalOverflow, setHasHorizontalOverflow] = useState(false);
 
   const { user } = useAppSelector((state: RootState) => state.auth);
   const wishlistItems = useAppSelector(
@@ -132,6 +133,31 @@ const Arrivals = () => {
     if (maxScroll > 0) setScrollProgress(el.scrollLeft / maxScroll);
   };
 
+  useEffect(() => {
+    const updateOverflowState = () => {
+      const el = scrollRef.current;
+      if (!el) {
+        setHasHorizontalOverflow(false);
+        setScrollProgress(0);
+        return;
+      }
+
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      setHasHorizontalOverflow(maxScroll > 0);
+
+      if (maxScroll <= 0) {
+        setScrollProgress(0);
+      }
+    };
+
+    updateOverflowState();
+    window.addEventListener("resize", updateOverflowState);
+
+    return () => {
+      window.removeEventListener("resize", updateOverflowState);
+    };
+  }, [products]);
+
   return (
     <div className="w-full">
       <div className="px-3 sm:px-5 md:px-10 lg:px-40 pt-5 md:pt-14">
@@ -163,14 +189,8 @@ const Arrivals = () => {
           <div
             ref={scrollRef}
             onScroll={handleScroll}
-            className="flex gap-4 md:gap-6 overflow-x-auto pb-2"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className={`flex gap-4 md:gap-6 pb-2 ${hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden"}`}
           >
-            <style jsx>{`
-              div::-webkit-scrollbar {
-                display: none;
-              }
-            `}</style>
             {products.map((card: Product) => (
               <ArrivalCard
                 key={card.id}
@@ -184,7 +204,9 @@ const Arrivals = () => {
             ))}
           </div>
           <div className="pr-5 md:pr-10 lg:pr-40 mt-2">
-            <div className="h-0.5 bg-gray-200 rounded-full relative">
+            <div
+              className={`h-0.5 bg-gray-200 rounded-full relative ${hasHorizontalOverflow ? "opacity-100" : "opacity-0"}`}
+            >
               <div
                 className="h-full bg-[#141718] rounded-full absolute top-0 left-0 transition-all duration-150"
                 style={{ width: "33%", left: `${scrollProgress * 67}%` }}
