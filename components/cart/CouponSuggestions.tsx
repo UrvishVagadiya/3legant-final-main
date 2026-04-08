@@ -49,7 +49,7 @@ export default function CouponSuggestions({ onSelect, subtotal }: CouponSuggesti
               key={coupon.id}
               onClick={() => isEligible && onSelect(coupon.code)}
               disabled={!isEligible}
-              className={`group relative flex flex-col items-start p-3 rounded-lg border transition-all text-left ${
+              className={`group relative cursor-pointer flex flex-col items-start p-3 rounded-lg border transition-all text-left ${
                 isEligible 
                 ? "bg-white border-[#E8ECEF] hover:border-[#38CB89] hover:shadow-sm" 
                 : "bg-gray-50 border-gray-100 opacity-60 cursor-not-allowed"
@@ -77,7 +77,7 @@ export default function CouponSuggestions({ onSelect, subtotal }: CouponSuggesti
               )}
               
               {isEligible && (
-                <span className="text-[11px] text-[#6C7275] group-hover:text-[#38CB89] transition-colors">
+                <span className="text-[11px] cursor-pointer text-[#6C7275] group-hover:text-[#38CB89] transition-colors">
                   Tap to apply discount
                 </span>
               )}

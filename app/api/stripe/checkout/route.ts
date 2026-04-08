@@ -121,7 +121,11 @@ export async function POST(req: NextRequest) {
             discounts.push({ coupon: stripeCoupon.id });
         }
 
-        const origin = req.headers.get("origin") || "http://localhost:3000";
+        const origin =
+            req.headers.get("origin") ||
+            req.nextUrl.origin ||
+            process.env.NEXT_PUBLIC_SITE_URL ||
+            "http://localhost:3000";
 
         const orderCode = `${Date.now().toString().slice(-10)}${Math.floor(Math.random() * 100)
             .toString()

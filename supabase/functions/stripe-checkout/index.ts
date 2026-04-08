@@ -51,6 +51,32 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+const resolveSiteUrl = (req: Request) => {
+  const origin = req.headers.get('origin')
+  if (origin) return origin.replace(/\/$/, '')
+
+  const referer = req.headers.get('referer')
+  if (referer) {
+    try {
+      return new URL(referer).origin
+    } catch {
+      // ignore invalid referer
+    }
+  }
+
+  const forwardedHost = req.headers.get('x-forwarded-host')
+  if (forwardedHost) {
+    const proto = req.headers.get('x-forwarded-proto') || 'https'
+    return `${proto}://${forwardedHost}`.replace(/\/$/, '')
+  }
+
+  const configured =
+    Deno.env.get('SITE_URL') || Deno.env.get('NEXT_PUBLIC_SITE_URL')
+  if (configured) return configured.replace(/\/$/, '')
+
+  return 'http://localhost:3000'
+}
+
 async function getOrCreateStripeCoupon(
   stripe: Stripe,
   code: string,
@@ -274,7 +300,7 @@ Deno.serve(async (req) => {
     }
 
     // Create Stripe Checkout Session
-    const origin = req.headers.get('origin') || 'http://localhost:3000'
+    const origin = resolveSiteUrl(req)
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,

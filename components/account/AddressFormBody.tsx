@@ -61,7 +61,7 @@ const AddressFormBody = ({
         <FieldBlock label="TYPE *" error={errors.type?.message}>
           <select
             {...register("type", { required: "Type is required" })}
-            className={`${inputClass(errors, "type")} appearance-none`}
+            className={`${inputClass(errors, "type")} cursor-pointer appearance-none`}
           >
             <option value="shipping">Shipping</option>
             <option value="billing">Billing</option>
@@ -130,7 +130,7 @@ const AddressFormBody = ({
       <FieldBlock label="COUNTRY *" error={errors.country?.message}>
         <select
           {...register("country", { required: "Country is required" })}
-          className={`${inputClass(errors, "country")} appearance-none`}
+          className={`${inputClass(errors, "country")} cursor-pointer appearance-none`}
         >
           <option value="">Select</option>
           <option value="US">United States</option>

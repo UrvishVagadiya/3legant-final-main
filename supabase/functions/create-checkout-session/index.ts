@@ -12,6 +12,32 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const resolveSiteUrl = (req: Request) => {
+  const origin = req.headers.get("origin");
+  if (origin) return origin.replace(/\/$/, "");
+
+  const referer = req.headers.get("referer");
+  if (referer) {
+    try {
+      return new URL(referer).origin;
+    } catch {
+      // ignore invalid referer
+    }
+  }
+
+  const forwardedHost = req.headers.get("x-forwarded-host");
+  if (forwardedHost) {
+    const proto = req.headers.get("x-forwarded-proto") || "https";
+    return `${proto}://${forwardedHost}`.replace(/\/$/, "");
+  }
+
+  const configured =
+    Deno.env.get("SITE_URL") || Deno.env.get("NEXT_PUBLIC_SITE_URL");
+  if (configured) return configured.replace(/\/$/, "");
+
+  return "http://localhost:3000";
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -221,7 +247,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Create Stripe Checkout Session ──────────────────────────────────────
-    const siteUrl = Deno.env.get("SITE_URL") || req.headers.get("origin") || "http://localhost:3000";
+    const siteUrl = resolveSiteUrl(req);
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",

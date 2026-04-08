@@ -85,7 +85,7 @@ const Wishlist = () => {
                 <td className="py-6 flex items-center gap-4">
                   <button
                     onClick={() => handleRemoveFromWishlist(item.id)}
-                    className="text-gray-400 hover:text-black transition-colors"
+                    className="cursor-pointer text-gray-400 hover:text-black transition-colors"
                   >
                     <X size={20} />
                   </button>
@@ -113,7 +113,7 @@ const Wishlist = () => {
                 <td className="py-6">
                   <button
                     onClick={() => handleAddToCart(item)}
-                    className="bg-[#141718] text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto"
+                    className="cursor-pointer bg-[#141718] text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors w-full sm:w-auto"
                   >
                     Add to cart
                   </button>
@@ -136,7 +136,7 @@ const Wishlist = () => {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => handleRemoveFromWishlist(item.id)}
-                className="text-gray-400 hover:text-black transition-colors"
+                className="text-gray-400 cursor-pointer hover:text-black transition-colors"
               >
                 <X size={20} />
               </button>
@@ -163,7 +163,7 @@ const Wishlist = () => {
             </div>
             <button
               onClick={() => handleAddToCart(item)}
-              className="bg-[#141718] text-white px-6 py-3 mt-1 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors w-full"
+              className="bg-[#141718] cursor-pointer text-white px-6 py-3 mt-1 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors w-full"
             >
               Add to cart
             </button>

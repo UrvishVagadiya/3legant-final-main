@@ -58,20 +58,20 @@ const AddressCard = ({
             <button
               onClick={() => onSetDefault(address)}
               title="Set as default"
-              className="text-gray-400 hover:text-yellow-500 transition-colors"
+              className="text-gray-400 cursor-pointer hover:text-yellow-500 transition-colors"
             >
               <Star size={16} />
             </button>
           )}
           <button
             onClick={() => onEdit(address)}
-            className="text-gray-400 hover:text-gray-900 transition-colors"
+            className="text-gray-400 cursor-pointer hover:text-gray-900 transition-colors"
           >
             <Edit2 size={16} />
           </button>
           <button
             onClick={() => onDelete(address.id)}
-            className="text-gray-400 hover:text-red-500 transition-colors"
+            className="text-gray-400 cursor-pointer hover:text-red-500 transition-colors"
           >
             <Trash2 size={16} />
           </button>

@@ -93,7 +93,7 @@ const AddressModal = ({
           <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-900 transition-colors p-1"
+            className="text-gray-400 cursor-pointer hover:text-gray-900 transition-colors p-1"
           >
             <X size={20} />
           </button>
@@ -116,14 +116,14 @@ const AddressModal = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2.5 rounded-lg border border-gray-300 font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="px-6 py-2.5 cursor-pointer rounded-lg border border-gray-300 font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             form="address-form"
-            className="px-6 py-2.5 rounded-lg bg-[#141718] font-medium text-white hover:bg-gray-800 transition-colors"
+            className="px-6 py-2.5 cursor-pointer rounded-lg bg-[#141718] font-medium text-white hover:bg-gray-800 transition-colors"
           >
             {defaultValues?.id ? "Save changes" : "Add Address"}
           </button>
