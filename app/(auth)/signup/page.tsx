@@ -21,6 +21,8 @@ type FormInputs = {
 export default function SignUpPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [showExistingUserModal, setShowExistingUserModal] = useState(false);
+  const [existingUserEmail, setExistingUserEmail] = useState("");
 
   const {
     register,
@@ -34,8 +36,49 @@ export default function SignUpPage() {
       return;
     }
 
+    const normalizedEmail = data.email.trim().toLowerCase();
+
+    try {
+      const { data: existing, error: statusError } = await supabase
+        .from("user_status")
+        .select("email, is_verified")
+        .eq("email", normalizedEmail)
+        .maybeSingle();
+
+      if (!statusError && existing?.email) {
+        if (existing.is_verified) {
+          setExistingUserEmail(normalizedEmail);
+          setShowExistingUserModal(true);
+          return;
+        }
+
+        const { error: resendError } = await supabase.auth.resend({
+          type: "signup",
+          email: normalizedEmail,
+          options: {
+            emailRedirectTo: `${window.location.origin}/signin`,
+          },
+        });
+
+        if (resendError) {
+          toast.error(
+            resendError.message ||
+              "Unable to resend verification link. Please try again.",
+          );
+          return;
+        }
+
+        toast.success(
+          "Your account is not verified yet. We sent a new verification link.",
+        );
+        return;
+      }
+    } catch {
+      // Fall through to normal signup if status check fails.
+    }
+
     const { error } = await supabase.auth.signUp({
-      email: data.email,
+      email: normalizedEmail,
       password: data.password,
       options: {
         data: {
@@ -205,6 +248,27 @@ export default function SignUpPage() {
           {isSubmitting ? "Signing Up..." : "Sign Up"}
         </button>
       </form>
+
+      {showExistingUserModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-[#141718] mb-2">
+              Account already exists
+            </h2>
+            <p className="text-sm text-[#6C7275] mb-6 leading-6">
+              {existingUserEmail} is already registered and verified. Please sign
+              in to continue.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push("/signin")}
+              className="w-full bg-[#141718] text-white rounded-lg py-3 text-sm font-medium hover:bg-black transition-colors"
+            >
+              Go to Sign In
+            </button>
+          </div>
+        </div>
+      )}
     </AuthLayout>
   );
 }
