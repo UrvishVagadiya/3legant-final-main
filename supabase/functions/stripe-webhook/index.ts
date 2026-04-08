@@ -185,7 +185,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     cardLast4,
   });
 
-  const items = parseItems(meta.items_json);
+  const items = await getOrderItems(order_id);
   const wasPending = order.status === "pending";
 
   const { error: updateOrderError } = await supabase
@@ -241,7 +241,7 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
 
   // Restore stock only if it was pre-decremented
   if (order.stock_reduced) {
-    const items = parseItems(meta.items_json);
+    const items = await getOrderItems(order_id);
     if (items.length) {
       await restoreStockForItems(items);
       await supabase
@@ -569,13 +569,18 @@ async function handleRefundUpdated(refund: Stripe.Refund) {
 
 type BasicItem = { product_id?: string | null; quantity?: number | string | null };
 
-function parseItems(raw: string | null | undefined): BasicItem[] {
-  try {
-    const parsed = JSON.parse(raw ?? "[]");
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
+async function getOrderItems(orderId: string): Promise<BasicItem[]> {
+  const { data, error } = await supabase
+    .from("order_items")
+    .select("product_id, quantity")
+    .eq("order_id", orderId);
+
+  if (error) {
+    console.error(`[webhook] Failed to load order_items for ${orderId}:`, error.message);
     return [];
   }
+
+  return data || [];
 }
 
 async function upsertCompletedPayment(params: {

@@ -22,7 +22,7 @@ const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const cartItemCount = items.length;
+  const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
   const isMounted = useIsMounted();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -139,7 +139,7 @@ const Navbar = () => {
             </div>
             <div
               onClick={() => {
-                if (items.length === 0) {
+                if (cartItemCount === 0) {
                   toast.error("Your cart is empty!");
                   return;
                 }

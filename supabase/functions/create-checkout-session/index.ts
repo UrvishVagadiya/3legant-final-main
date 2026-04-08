@@ -57,10 +57,9 @@ Deno.serve(async (req) => {
     if (!cart_items?.length) throw new Error("Cart is empty");
 
     // ── Generate order_code ─────────────────────────────────────────────────
-    const order_code = `ORD-${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2, 7)
-      .toUpperCase()}`;
+    const order_code = `${Date.now().toString().slice(-10)}${Math.floor(Math.random() * 100)
+      .toString()
+      .padStart(2, "0")}`;
 
     // ── Build Stripe line items ─────────────────────────────────────────────
     const line_items = cart_items.map((item: any) => ({
@@ -243,12 +242,6 @@ Deno.serve(async (req) => {
         coupon_id: coupon_id ?? "",
         coupon_code: coupon_code ?? "",
         discount: String(discount ?? 0),
-        items_json: JSON.stringify(
-          cart_items.map((i: any) => ({
-            product_id: i.product_id,
-            quantity: i.quantity,
-          }))
-        ),
       },
       success_url: `${siteUrl}/complete?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/checkout/cancel?order_id=${order.id}`,

@@ -76,7 +76,7 @@ const SortByMenu = ({
                   onSort(opt.value);
                   setIsOpen(false);
                 }}
-                className={`text-left px-4 py-2 hover:bg-gray-50 ${
+                className={`text-left px-4 py-2 cursor-pointer hover:bg-gray-50 ${
                   currentSort === opt.value
                     ? "font-bold bg-gray-50 text-black"
                     : "text-[#6C7275]"

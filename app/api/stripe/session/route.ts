@@ -148,7 +148,11 @@ export async function GET(req: NextRequest) {
         });
 
         const existingOrder = finalOrder;
-        const orderCode = existingOrder?.order_code || `#${Date.now().toString().slice(-10)}`;
+        const orderCode =
+            existingOrder?.order_code ||
+            `${Date.now().toString().slice(-10)}${Math.floor(Math.random() * 100)
+                .toString()
+                .padStart(2, "0")}`;
 
         let subtotal = parseFloat(meta.subtotal || String(existingOrder?.subtotal || "0"));
         let shippingCost = parseFloat(meta.shipping_cost || String(existingOrder?.shipping_cost || "0"));

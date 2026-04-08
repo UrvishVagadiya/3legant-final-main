@@ -19,59 +19,6 @@ interface AccountDetailsProps {
   onSubmit: React.FormEventHandler<HTMLFormElement>;
 }
 
-const Field = ({
-  label,
-  name,
-  register,
-  errors,
-  type = "text",
-  placeholder,
-  disabled,
-  hint,
-  validate,
-}: {
-  label: string;
-  name: keyof FormData;
-  register: UseFormRegister<FormData>;
-  errors: FieldErrors<FormData>;
-  type?: string;
-  placeholder?: string;
-  disabled?: boolean;
-  hint?: string;
-  validate?: (value: string) => boolean | string;
-}) => {
-  const inputClass = `w-full border rounded-[6px] px-4 py-3 outline-none transition-colors ${
-    errors[name]
-      ? "border-red-500"
-      : "border-gray-300 focus:border-black bg-white"
-  }`;
-  const required = label.includes("*")
-    ? `${label.replace(" *", "").replace("*", "").trim()} is required`
-    : undefined;
-
-  return (
-    <div className="mb-6">
-      <label className="block text-[12px] font-bold text-[#6C7275] mb-2 uppercase">
-        {label}
-      </label>
-      <input
-        type={type}
-        placeholder={placeholder}
-        disabled={disabled}
-        {...register(name, {
-          ...(required ? { required } : {}),
-          ...(validate ? { validate } : {}),
-        })}
-        className={inputClass}
-      />
-      {hint && <p className="text-[14px] text-[#6C7275] mt-2 italic">{hint}</p>}
-      {errors[name] && (
-        <p className="text-red-500 text-xs mt-1">{errors[name]?.message}</p>
-      )}
-    </div>
-  );
-};
-
 const AccountDetails = ({
   register,
   errors,
@@ -88,91 +35,190 @@ const AccountDetails = ({
       </div>
     )}
 
-    <Field
-      label="FIRST NAME *"
-      name="firstName"
-      register={register}
-      errors={errors}
-      placeholder="First name"
-    />
-    <Field
-      label="LAST NAME *"
-      name="lastName"
-      register={register}
-      errors={errors}
-      placeholder="Last name"
-    />
-    <Field
-      label="Display Name *"
-      name="displayName"
-      register={register}
-      errors={errors}
-      placeholder="Display name"
-      hint="This will be how your name will be displayed in the account section and in reviews"
-    />
-    <div className="mb-10">
-      <Field
-        label="EMAIL *"
-        name="email"
-        register={register}
-        errors={errors}
-        type="email"
-        placeholder="Email"
-        disabled
-        validate={(value: string) => {
-          if (value && !/\S+@\S+\.\S+/.test(value))
-            return "Email format is invalid";
-          return true;
-        }}
+    <div className="mb-6">
+      <label className="block text-[12px] font-bold text-[#6C7275] mb-2 uppercase">
+        FIRST NAME *
+      </label>
+      <input
+        {...register("firstName", { required: "First name is required" })}
+        placeholder="First name"
+        className={`w-full border rounded-md px-4 py-3 outline-none transition-colors ${
+          errors.firstName
+            ? "border-red-500"
+            : "border-gray-300 focus:border-black bg-white"
+        }`}
       />
+      {errors.firstName?.message && (
+        <p className="text-red-500 text-xs pt-2">
+          {String(errors.firstName.message)}
+        </p>
+      )}
+    </div>
+
+    <div className="mb-6">
+      <label className="block text-[12px] font-bold text-[#6C7275] mb-2 uppercase">
+        LAST NAME *
+      </label>
+      <input
+        {...register("lastName", { required: "Last name is required" })}
+        placeholder="Last name"
+        className={`w-full border rounded-md px-4 py-3 outline-none transition-colors ${
+          errors.lastName
+            ? "border-red-500"
+            : "border-gray-300 focus:border-black bg-white"
+        }`}
+      />
+      {errors.lastName?.message && (
+        <p className="text-red-500 text-xs pt-2">
+          {String(errors.lastName.message)}
+        </p>
+      )}
+    </div>
+
+    <div className="mb-6">
+      <label className="block text-[12px] font-bold text-[#6C7275] mb-2 uppercase">
+        Display Name *
+      </label>
+      <input
+        {...register("displayName", { required: "Display name is required" })}
+        placeholder="Display name"
+        className={`w-full border rounded-md px-4 py-3 outline-none transition-colors ${
+          errors.displayName
+            ? "border-red-500"
+            : "border-gray-300 focus:border-black bg-white"
+        }`}
+      />
+      <p className="text-[14px] text-[#6C7275] mt-2 italic">
+        This will be how your name will be displayed in the account section and
+        in reviews
+      </p>
+      {errors.displayName?.message && (
+        <p className="text-red-500 text-xs pt-2">
+          {String(errors.displayName.message)}
+        </p>
+      )}
+    </div>
+
+    <div className="mb-10">
+      <label className="block text-[12px] font-bold text-[#6C7275] mb-2 uppercase">
+        EMAIL *
+      </label>
+      <input
+        type="email"
+        disabled
+        {...register("email", {
+          required: "Email is required",
+          validate: (value: string) => {
+            if (value && !/\S+@\S+\.\S+/.test(value)) {
+              return "Email format is invalid";
+            }
+            return true;
+          },
+        })}
+        placeholder="Email"
+        className={`w-full border rounded-md px-4 py-3 outline-none transition-colors ${
+          errors.email
+            ? "border-red-500"
+            : "border-gray-300 focus:border-black bg-white"
+        }`}
+      />
+      {errors.email?.message && (
+        <p className="text-red-500 text-xs pt-2">
+          {String(errors.email.message)}
+        </p>
+      )}
     </div>
 
     <h1 className="font-semibold text-xl mb-6">Password</h1>
 
-    <Field
-      label="OLD PASSWORD"
-      name="oldPassword"
-      register={register}
-      errors={errors}
-      type="password"
-      placeholder="Old password"
-      validate={(value: string) => {
-        if (watch("newPassword") && !value)
-          return "Old password is required to set a new password";
-        return true;
-      }}
-    />
-    <Field
-      label="NEW PASSWORD"
-      name="newPassword"
-      register={register}
-      errors={errors}
-      type="password"
-      placeholder="New password"
-      validate={(value: string) => {
-        if (watch("oldPassword") && !value)
-          return "New password is required if old password is provided";
-        if (watch("oldPassword") && value === watch("oldPassword"))
-          return "New password cannot be the same as the old password";
-        return true;
-      }}
-    />
-    <div className="mb-8">
-      <Field
-        label="REPEAT NEW PASSWORD"
-        name="repeatNewPassword"
-        register={register}
-        errors={errors}
+    <div className="mb-6">
+      <label className="block text-[12px] font-bold text-[#6C7275] mb-2 uppercase">
+        OLD PASSWORD
+      </label>
+      <input
         type="password"
-        placeholder="Repeat new password"
-        validate={(value: string) => {
-          if (watch("newPassword") && !value)
-            return "Please repeat your new password";
-          if (watch("newPassword") && value !== watch("newPassword"))
-            return "Passwords do not match";
-          return true;
-        }}
+        {...register("oldPassword", {
+          validate: (value: string) => {
+            if (watch("newPassword") && !value) {
+              return "Old password is required to set a new password";
+            }
+            return true;
+          },
+        })}
+        placeholder="Old password"
+        className={`w-full border rounded-md px-4 py-3 outline-none transition-colors ${
+          errors.oldPassword
+            ? "border-red-500"
+            : "border-gray-300 focus:border-black bg-white"
+        }`}
       />
+      {errors.oldPassword?.message && (
+        <p className="text-red-500 text-xs pt-2">
+          {String(errors.oldPassword.message)}
+        </p>
+      )}
+    </div>
+
+    <div className="mb-6">
+      <label className="block text-[12px] font-bold text-[#6C7275] mb-2 uppercase">
+        NEW PASSWORD
+      </label>
+      <input
+        type="password"
+        {...register("newPassword", {
+          validate: (value: string) => {
+            if (watch("oldPassword") && !value) {
+              return "New password is required if old password is provided";
+            }
+            if (watch("oldPassword") && value === watch("oldPassword")) {
+              return "New password cannot be the same as the old password";
+            }
+            return true;
+          },
+        })}
+        placeholder="New password"
+        className={`w-full border rounded-md px-4 py-3 outline-none transition-colors ${
+          errors.newPassword
+            ? "border-red-500"
+            : "border-gray-300 focus:border-black bg-white"
+        }`}
+      />
+      {errors.newPassword?.message && (
+        <p className="text-red-500 text-xs pt-2">
+          {String(errors.newPassword.message)}
+        </p>
+      )}
+    </div>
+
+    <div className="mb-8">
+      <label className="block text-[12px] font-bold text-[#6C7275] mb-2 uppercase">
+        REPEAT NEW PASSWORD
+      </label>
+      <input
+        type="password"
+        {...register("repeatNewPassword", {
+          validate: (value: string) => {
+            if (watch("newPassword") && !value) {
+              return "Please repeat your new password";
+            }
+            if (watch("newPassword") && value !== watch("newPassword")) {
+              return "Passwords do not match";
+            }
+            return true;
+          },
+        })}
+        placeholder="Repeat new password"
+        className={`w-full border rounded-md px-4 py-3 outline-none transition-colors ${
+          errors.repeatNewPassword
+            ? "border-red-500"
+            : "border-gray-300 focus:border-black bg-white"
+        }`}
+      />
+      {errors.repeatNewPassword?.message && (
+        <p className="text-red-500 text-xs pt-2">
+          {String(errors.repeatNewPassword.message)}
+        </p>
+      )}
     </div>
 
     <button

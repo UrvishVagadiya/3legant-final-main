@@ -48,6 +48,7 @@ const AccountContent = () => {
     watch,
     setValue,
     setError,
+    clearErrors,
   } = useForm<FormData>();
 
   useEffect(() => {
@@ -68,54 +69,155 @@ const AccountContent = () => {
   }, [user, setValue]);
 
   const onSubmit = async (data: FormData) => {
-    if (data.newPassword !== data.repeatNewPassword) return;
-    if (data.oldPassword) {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: data.email || "",
-        password: data.oldPassword,
-      });
-      if (signInError) {
-        setError("oldPassword", {
-          type: "manual",
-          message: "Incorrect old password",
-        });
-        return;
+    clearErrors("root");
+
+    const isChangingPassword = Boolean(
+      data.oldPassword || data.newPassword || data.repeatNewPassword,
+    );
+
+    let hasPasswordError = false;
+
+    if (isChangingPassword) {
+      clearErrors(["oldPassword", "newPassword", "repeatNewPassword"]);
+
+      if (!data.oldPassword) {
+        setError(
+          "oldPassword",
+          {
+            type: "manual",
+            message: "Old password is required to set a new password",
+          },
+          { shouldFocus: true },
+        );
+        hasPasswordError = true;
+      }
+
+      if (!data.newPassword) {
+        setError(
+          "newPassword",
+          {
+            type: "manual",
+            message: "New password is required if old password is provided",
+          },
+          { shouldFocus: true },
+        );
+        hasPasswordError = true;
+      }
+
+      if (!data.repeatNewPassword) {
+        setError(
+          "repeatNewPassword",
+          {
+            type: "manual",
+            message: "Please repeat your new password",
+          },
+          { shouldFocus: true },
+        );
+        hasPasswordError = true;
+      }
+
+      if (
+        data.oldPassword &&
+        data.newPassword &&
+        data.newPassword === data.oldPassword
+      ) {
+        setError(
+          "newPassword",
+          {
+            type: "manual",
+            message: "New password cannot be the same as the old password",
+          },
+          { shouldFocus: true },
+        );
+        hasPasswordError = true;
+      }
+
+      if (
+        data.newPassword &&
+        data.repeatNewPassword &&
+        data.newPassword !== data.repeatNewPassword
+      ) {
+        setError(
+          "repeatNewPassword",
+          {
+            type: "manual",
+            message: "Passwords do not match",
+          },
+          { shouldFocus: true },
+        );
+        hasPasswordError = true;
       }
     }
-    const { error } = await supabase.auth.updateUser({
-      email: data.email,
-      password: data.newPassword || undefined,
-      data: {
-        name: `${data.firstName} ${data.lastName}`,
-        displayName: data.displayName,
-      },
-    });
 
-    if (error) {
-      setError("root", { type: "manual", message: error.message });
+    if (hasPasswordError) {
       return;
     }
 
-    const { error: profileError } = await supabase
-      .from("user_profiles")
-      .update({
-        full_name: `${data.firstName} ${data.lastName}`,
-        display_name: data.displayName,
+    try {
+      if (isChangingPassword && data.oldPassword) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: data.email || "",
+          password: data.oldPassword,
+        });
+
+        if (signInError) {
+          setError(
+            "oldPassword",
+            {
+              type: "manual",
+              message: "Incorrect old password",
+            },
+            { shouldFocus: true },
+          );
+          return;
+        }
+      }
+
+      const { error } = await supabase.auth.updateUser({
         email: data.email,
-      })
-      .eq("id", user?.id);
+        password: isChangingPassword ? data.newPassword : undefined,
+        data: {
+          name: `${data.firstName} ${data.lastName}`,
+          displayName: data.displayName,
+        },
+      });
 
-    if (profileError) {
-      console.error("Profile update error:", profileError);
+      if (error) {
+        setError("root", { type: "manual", message: error.message });
+        return;
+      }
+
+      const { error: profileError } = await supabase
+        .from("user_profiles")
+        .update({
+          full_name: `${data.firstName} ${data.lastName}`,
+          display_name: data.displayName,
+          email: data.email,
+        })
+        .eq("id", user?.id);
+
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+      }
+
+      import("react-hot-toast").then((m) => {
+        m.default.success("Profile updated successfully!");
+      });
+
+      setValue("oldPassword", "");
+      setValue("newPassword", "");
+      setValue("repeatNewPassword", "");
+      clearErrors(["oldPassword", "newPassword", "repeatNewPassword"]);
+
+      setFullName(`${data.firstName} ${data.lastName}`);
+      setDisplayName(data.displayName || "");
+      router.refresh();
+    } catch {
+      setError("root", {
+        type: "manual",
+        message: "Something went wrong. Please try again.",
+      });
     }
-
-    import("react-hot-toast").then((m) => {
-      m.default.success("Profile updated successfully!");
-    });
-
-    setFullName(`${data.firstName} ${data.lastName}`);
-    setDisplayName(data.displayName || "");
-    router.refresh();
   };
 
   const handleTabChange = (tab: Tab) => {

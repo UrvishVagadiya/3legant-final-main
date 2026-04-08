@@ -50,7 +50,7 @@ const BlogSortMenu = ({ sortOption, onSort }: BlogSortMenuProps) => {
                 onSort(opt);
                 setIsOpen(false);
               }}
-              className={`text-left px-4 py-3 md:py-2 text-sm hover:bg-gray-50 ${i > 0 ? "border-t border-gray-50 md:border-none" : ""} ${sortOption === opt ? "font-semibold bg-gray-50" : ""}`}
+              className={`text-left px-4 py-3 md:py-2 cursor-pointer text-sm hover:bg-gray-50 ${i > 0 ? "border-t border-gray-50 md:border-none" : ""} ${sortOption === opt ? "font-semibold bg-gray-50" : ""}`}
             >
               {sortLabels[opt]}
             </button>

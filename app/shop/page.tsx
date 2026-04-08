@@ -74,8 +74,6 @@ const Shop = () => {
       lastAppliedQueryCategory.current = "";
       return;
     }
-
-    // Apply query category once per unique query value; do not override manual filter changes.
     if (lastAppliedQueryCategory.current === normalizedQuery) {
       return;
     }
@@ -91,7 +89,6 @@ const Shop = () => {
   }, [searchParams, dispatch]);
 
   useEffect(() => {
-    // Close any open selection dropdown when search params update.
     setOpenDropdown(null);
   }, [searchParams]);
 
@@ -110,8 +107,6 @@ const Shop = () => {
       updated = selectedPrices.includes("All Price") ? [] : ["All Price"];
     } else {
       if (selectedPrices.includes("All Price")) {
-        // If All Price is active and user clicks one label,
-        // uncheck both "All Price" and that clicked label.
         updated = individualPriceLabels.filter((label) => label !== priceLabel);
       } else {
         updated = selectedPrices.includes(priceLabel)
@@ -182,7 +177,6 @@ const Shop = () => {
   }, [products, selectedCategory, selectedPrices, sortOption]);
 
   useEffect(() => {
-    // Reset pagination when filters or sorting change.
     setVisibleCount(PAGE_SIZE);
   }, [selectedCategory, selectedPrices, sortOption]);
 

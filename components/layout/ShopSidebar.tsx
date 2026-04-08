@@ -34,7 +34,7 @@ const ShopSidebar = ({
   return (
     <div className={`w-full ${isFilterOpen ? "block" : "hidden"} lg:block`}>
       <div
-        className="hidden lg:flex gap-2 font-medium items-center mb-6 cursor-pointer hover:text-gray-600 transition-colors w-max"
+        className="hidden lg:flex gap-2 font-medium items-center mb-6 w-max"
         onClick={onClose}
       >
         <IoOptionsOutline className="text-xl" />

@@ -124,8 +124,10 @@ export async function POST(req: NextRequest) {
         const origin = req.headers.get("origin") || "http://localhost:3000";
 
         // Create order in 'pending' status
-        const randomStr = Math.random().toString(36).substring(2, 7).toUpperCase();
-        const orderCode = `#${Date.now().toString().slice(-6)}${randomStr}`;
+        // const randomStr = Math.random().toString(36).substring(2, 7).toUpperCase();
+        const orderCode = `${Date.now().toString().slice(-10)}${Math.floor(Math.random() * 100)
+            .toString()
+            .padStart(2, "0")}`;
 
         const safeSubtotal = Number(subtotal) || 0;
         const safeShippingCost = Number(shippingCost) || 0;
@@ -274,21 +276,6 @@ export async function POST(req: NextRequest) {
                 total: total.toString(),
                 coupon_code: couponCode || "",
                 coupon_id: couponId || "",
-                items_json: JSON.stringify(
-                    items.map(
-                        (item: {
-                            id: string;
-                            quantity: number;
-                            price: number;
-                            color: string;
-                        }) => ({
-                            id: item.id,
-                            qty: item.quantity,
-                            prc: item.price,
-                            clr: item.color,
-                        })
-                    )
-                ),
             },
             success_url: `${origin}/complete?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${origin}/checkout?cancelled=true`,

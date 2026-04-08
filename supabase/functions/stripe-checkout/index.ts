@@ -150,7 +150,9 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const orderCode = `#${Date.now().toString().slice(-6)}${Math.random().toString(36).substring(2, 5).toUpperCase()}`
+    const orderCode = `${Date.now().toString().slice(-10)}${Math.floor(Math.random() * 100)
+      .toString()
+      .padStart(2, '0')}`
 
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
@@ -293,14 +295,6 @@ Deno.serve(async (req) => {
         subtotal: subtotal.toString(),
         shipping_cost: shippingCost.toString(),
         discount: discount.toString(),
-        items_json: JSON.stringify(
-          items.map((i: CheckoutItem) => ({
-            id: i.id,
-            qty: i.quantity,
-            prc: i.price,
-            clr: i.color || 'Default',
-          }))
-        ),
       },
       success_url: `${origin}/complete?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout?cancelled=true&order_id=${order.id}`,

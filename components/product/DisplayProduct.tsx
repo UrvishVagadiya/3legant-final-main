@@ -1,15 +1,12 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { MdKeyboardArrowRight } from "react-icons/md";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import { addToCart, updateQuantity } from "@/store/slices/cartSlice";
 import { useGetReviewsQuery } from "@/store/api/reviewApi";
-import {
-  useGetWishlistItemsQuery,
-  useToggleWishlistMutation,
-} from "@/store/api/wishlistApi";
+import {useGetWishlistItemsQuery,useToggleWishlistMutation} from "@/store/api/wishlistApi";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import YouMightAlsoLike from "./YouMightAlsoLike";
@@ -52,6 +49,7 @@ const refImages = [
 export const DisplayProduct = ({ p }: { p: Product }) => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
+  const { items: cartItems } = useAppSelector((state: RootState) => state.cart);
   const isMounted = useIsMounted();
   const [quantity, setQuantity] = useState(1);
   const [openAccordion, setOpenAccordion] = useState<string | null>("");
@@ -128,6 +126,14 @@ export const DisplayProduct = ({ p }: { p: Product }) => {
         );
       }
     });
+
+  useEffect(() => {
+    const matchingItem = cartItems.find(
+      (item) => item.id === String(pid) && item.color === selectedColor,
+    );
+
+    setQuantity(matchingItem?.quantity ?? 1);
+  }, [cartItems, pid, selectedColor]);
 
   if (!isMounted) return null;
 

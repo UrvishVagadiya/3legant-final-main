@@ -20,7 +20,7 @@ import {
   applyAddress,
   validateCheckoutForm,
 } from "@/utils/checkoutForm";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { typography } from "@/constants/typography";
 import { useSaveAddressMutation } from "@/store/api/addressApi";
@@ -29,6 +29,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
 export default function Checkout() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const { user } = useAppSelector((state: RootState) => state.auth);
   const { items: cartItems, shippingMethod } = useAppSelector(
     (state: RootState) => state.cart,
@@ -83,11 +84,18 @@ export default function Checkout() {
   };
 
   // ── Cart ─────────────────────────────────────────────────────────────────
-  const handleUpdateQuantity = (id: string, color: string, quantity: number) => {
+  const handleUpdateQuantity = (
+    id: string,
+    color: string,
+    quantity: number,
+  ) => {
     const item = cartItems.find((i) => i.id === id && i.color === color);
     if (!item) return;
     if (quantity < 0) return;
-    if (quantity === 0) { dispatch(updateQuantity({ id, color, quantity })); return; }
+    if (quantity === 0) {
+      dispatch(updateQuantity({ id, color, quantity }));
+      return;
+    }
     if (item.stock <= 0 || quantity > item.stock) return;
     dispatch(updateQuantity({ id, color, quantity }));
   };
@@ -95,6 +103,13 @@ export default function Checkout() {
   const handleSetShippingMethod = (method: string) => {
     dispatch(setShippingMethod(method));
   };
+
+  useEffect(() => {
+    if (!isMounted) return;
+    if (cartItems.length === 0) {
+      router.replace("/cart");
+    }
+  }, [cartItems.length, isMounted, router]);
 
   // ── Load user data & saved addresses ────────────────────────────────────
   useEffect(() => {
@@ -202,7 +217,11 @@ export default function Checkout() {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
     if (errors[name])
-      setErrors((p) => { const n = { ...p }; delete n[name]; return n; });
+      setErrors((p) => {
+        const n = { ...p };
+        delete n[name];
+        return n;
+      });
   };
 
   // ── Save address helper ──────────────────────────────────────────────────
@@ -224,8 +243,12 @@ export default function Checkout() {
         name,
         phone: isBilling ? formData.billingPhone : formData.phone,
         email: isBilling ? undefined : formData.email,
-        address: isBilling ? formData.billingStreetAddress : formData.streetAddress,
-        street_address: isBilling ? formData.billingStreetAddress : formData.streetAddress,
+        address: isBilling
+          ? formData.billingStreetAddress
+          : formData.streetAddress,
+        street_address: isBilling
+          ? formData.billingStreetAddress
+          : formData.streetAddress,
         city: isBilling ? formData.billingCity : formData.city,
         state: isBilling ? formData.billingState : formData.state,
         zip_code: isBilling ? formData.billingZipCode : formData.zipCode,
@@ -258,7 +281,9 @@ export default function Checkout() {
     setPlacing(true);
     try {
       const supabaseClient = createClient();
-      const { data: { session } } = await supabaseClient.auth.getSession();
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
 
       if (!session?.access_token) {
         toast.error("Your session has expired. Please sign in again.");
@@ -352,6 +377,16 @@ export default function Checkout() {
   };
 
   if (!isMounted) return null;
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="max-w-300 mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-20 font-inter text-[#141718]">
+        <div className="flex min-h-[40vh] items-center justify-center text-sm text-[#6C7275]">
+          Redirecting to cart...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-300 mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-20 font-inter text-[#141718]">
