@@ -128,16 +128,28 @@ const Address = ({ fullName }: AddressProps) => {
       try {
         await saveAddr({ data, userId: user.id, modalFixedType }).unwrap();
         setModalOpen(false);
+        toast.success("Address saved successfully!");
       } catch (err: unknown) {
-        const message =
-          typeof err === "object" &&
-          err !== null &&
-          "data" in err &&
-          typeof (err as { data?: unknown }).data === "string"
-            ? (err as { data: string }).data
-            : "Unable to save address. Please try again.";
+        console.error("Save error:", err);
+
+        let message = "Unable to save address. Please try again.";
+
+        // Extract error message from RTK Query error
+        if (typeof err === "object" && err !== null) {
+          const error = err as any;
+
+          // Check various error message locations
+          if (error.data && typeof error.data === "string") {
+            message = error.data;
+          } else if (error.message && typeof error.message === "string") {
+            message = error.message;
+          } else if (error.error && typeof error.error === "string") {
+            message = error.error;
+          }
+        }
+
         toast.error(message);
-        throw new Error("Address save failed");
+        // Don't re-throw - let user fix and try again
       }
     }
   };

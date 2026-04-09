@@ -202,7 +202,7 @@ const OrdersHistory = () => {
             >
               <button
                 onClick={() => toggleOrderDetails(order.id)}
-                className="w-full p-4 md:p-6 hover:bg-gray-50/50 transition-colors text-left"
+                className="w-full p-4 cursor-pointer md:p-6 hover:bg-gray-50/50 transition-colors text-left"
               >
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-10">
@@ -273,7 +273,7 @@ const OrdersHistory = () => {
             type="button"
             onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1 || isFetching}
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm text-[#141718] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 border cursor-pointer border-gray-300 rounded-md text-sm text-[#141718] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
@@ -288,7 +288,7 @@ const OrdersHistory = () => {
               setCurrentPage((prev) => Math.min(totalPages, prev + 1))
             }
             disabled={currentPage === totalPages || isFetching}
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm text-[#141718] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 cursor-pointer border border-gray-300 rounded-md text-sm text-[#141718] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>

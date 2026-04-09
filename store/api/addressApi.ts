@@ -123,22 +123,33 @@ export const addressApi = apiService.injectEndpoints({
 
         const tryWithLabel = data.label ? { ...baseRow, label: data.label } : baseRow;
 
-        if (data.id) {
-          let { error } = await supabase.from("user_addresses").update(tryWithLabel).eq("id", data.id);
-          if (error && data.label) {
-            const retry = await supabase.from("user_addresses").update(baseRow).eq("id", data.id);
-            error = retry.error;
+        try {
+          if (data.id) {
+            let { error } = await supabase.from("user_addresses").update(tryWithLabel).eq("id", data.id);
+            if (error && data.label) {
+              const retry = await supabase.from("user_addresses").update(baseRow).eq("id", data.id);
+              error = retry.error;
+            }
+            if (error) {
+              console.error("Update error:", error);
+              return { error: { status: 400, data: error.message || "Failed to update address" } };
+            }
+          } else {
+            const { data: existingOfType } = await supabase.from("user_addresses").select("id").eq("user_id", userId).eq("type", type);
+            const isDefault = (existingOfType || []).length === 0;
+            let { error } = await supabase.from("user_addresses").insert({ ...tryWithLabel, is_default: isDefault });
+            if (error) {
+              const retry = await supabase.from("user_addresses").insert({ ...baseRow, is_default: isDefault });
+              error = retry.error;
+            }
+            if (error) {
+              console.error("Insert error:", error);
+              return { error: { status: 400, data: error.message || "Failed to add address" } };
+            }
           }
-          if (error) return { error };
-        } else {
-          const { data: existingOfType } = await supabase.from("user_addresses").select("id").eq("user_id", userId).eq("type", type);
-          const isDefault = (existingOfType || []).length === 0;
-          let { error } = await supabase.from("user_addresses").insert({ ...tryWithLabel, is_default: isDefault });
-          if (error) {
-            const retry = await supabase.from("user_addresses").insert({ ...baseRow, is_default: isDefault });
-            error = retry.error;
-          }
-          if (error) return { error };
+        } catch (err) {
+          console.error("Unexpected error:", err);
+          return { error: { status: 500, data: "An unexpected error occurred while saving the address" } };
         }
 
         return { data: null };

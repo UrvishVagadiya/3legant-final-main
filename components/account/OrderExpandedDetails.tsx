@@ -195,7 +195,7 @@ const OrderExpandedDetails = ({
               {isInstantCancelEligible && (
                 <button
                   onClick={() => setShowRefundModal(true)}
-                  className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 border border-rose-600 text-rose-600 rounded-full text-sm font-medium hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                  className="flex items-center cursor-pointer justify-center gap-2 w-full sm:w-auto px-4 py-2 border border-rose-600 text-rose-600 rounded-full text-sm font-medium hover:bg-rose-600 hover:text-white transition-all shadow-sm"
                 >
                   <RefreshCcw size={16} />
                   Cancel Order
@@ -206,7 +206,7 @@ const OrderExpandedDetails = ({
                 <div className="flex flex-col sm:items-end gap-1 w-full sm:w-auto">
                   <button
                     onClick={() => setShowRefundModal(true)}
-                    className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 border border-[#141718] rounded-full text-sm font-medium hover:bg-[#141718] hover:text-white transition-all shadow-sm"
+                    className="flex cursor-pointer items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 border border-[#141718] rounded-full text-sm font-medium hover:bg-[#141718] hover:text-white transition-all shadow-sm"
                   >
                     <RefreshCcw size={16} />
                     Request Refund

@@ -60,7 +60,7 @@ const RefundRequestModal = ({
           </h3>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-1 hover:bg-gray-100 cursor-pointer rounded-full transition-colors"
           >
             <X size={20} />
           </button>
@@ -91,14 +91,14 @@ const RefundRequestModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 py-3 cursor-pointer border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 transition-colors"
             >
               Back
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-3 bg-[#141718] text-white rounded-full text-sm font-medium hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 py-3 cursor-pointer bg-[#141718] text-white rounded-full text-sm font-medium hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading && <Loader2 size={16} className="animate-spin" />}
               {isInstant ? "Confirm Cancellation" : "Submit Request"}
