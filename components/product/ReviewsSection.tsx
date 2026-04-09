@@ -246,14 +246,14 @@ export function ReviewCard({
                           setEditingReplyId(r.id);
                           setEditingReplyText(r.reply);
                         }}
-                        className="text-[#6C7275] hover:text-black text-[11px] font-medium"
+                        className="text-[#6C7275] cursor-pointer hover:text-black text-[11px] font-medium"
                       >
                         Edit
                       </button>
                       <button
                         type="button"
                         onClick={() => onDeleteReply(r.id)}
-                        className="text-red-500 hover:text-red-700 text-[11px] font-medium"
+                        className="text-red-500 cursor-pointer hover:text-red-700 text-[11px] font-medium"
                       >
                         Delete
                       </button>
@@ -276,14 +276,14 @@ export function ReviewCard({
                           setEditingReplyId(null);
                           setEditingReplyText("");
                         }}
-                        className="text-xs font-medium text-[#6C7275] hover:text-black"
+                        className="text-xs cursor-pointer font-medium text-[#6C7275] hover:text-black"
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
                         onClick={handleReplyEditSubmit}
-                        className="bg-black text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-90"
+                        className="bg-black cursor-pointer text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-90"
                       >
                         Save
                       </button>
