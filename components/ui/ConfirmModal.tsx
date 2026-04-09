@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 interface ConfirmModalProps {
@@ -38,8 +39,8 @@ export default function ConfirmModal({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/30 px-4">
+  return createPortal(
+    <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/60 px-4">
       <div className="w-full max-w-sm rounded-lg border border-[#E8ECEF] bg-white shadow-2xl">
         <div className="flex justify-between items-center p-6 border-b border-[#E8ECEF]">
           <h2 className="text-lg font-medium text-[#141718]">{title}</h2>
@@ -77,6 +78,7 @@ export default function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

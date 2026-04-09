@@ -143,8 +143,6 @@ const Address = ({ fullName }: AddressProps) => {
 
   const isDuplicateAddress = (data: AddressData) => {
     const type = data.type || modalFixedType || "shipping";
-    const targetName = normalize(data.name);
-    const targetPhone = normalize(data.phone);
     const targetStreet = normalize(data.street_address || "");
     const targetCity = normalize(data.city || "");
     const targetState = normalize(data.state || "");
@@ -155,12 +153,7 @@ const Address = ({ fullName }: AddressProps) => {
       if (address.type !== type) return false;
       if (data.id && address.id === data.id) return false;
 
-      const currentName = normalize(
-        `${address.first_name} ${address.last_name}`,
-      );
       return (
-        currentName === targetName &&
-        normalize(address.phone || "") === targetPhone &&
         normalize(address.street_address || "") === targetStreet &&
         normalize(address.city || "") === targetCity &&
         normalize(address.state || "") === targetState &&

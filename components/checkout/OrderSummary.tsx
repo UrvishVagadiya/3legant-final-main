@@ -41,13 +41,14 @@ const shippingOptions = [
     price: 15,
     priceLabel: "+$15.00",
   },
-  { value: "pickup", label: "Pick Up", price: 21, priceLabel: "$21.00" },
+  { value: "pickup", label: "Pick Up", price: 0.21, priceLabel: "+21%" },
 ];
 
 export default function OrderSummary({
   cartItems,
   updateQuantity,
   subtotal,
+  shippingCost,
   shippingMethod,
   discount,
   total,
@@ -73,10 +74,10 @@ export default function OrderSummary({
   };
 
   return (
-    <div className="border border-gray-300 rounded-lg p-6">
+    <div className="border border-gray-300 rounded-lg p-5 md:p-4 lg:p-6 md:sticky md:top-24">
       <h2 className="text-xl font-semibold mb-6">Order summary</h2>
 
-      <div className="space-y-4 mb-6 max-h-100 overflow-y-auto pr-2">
+      <div className="space-y-4 mb-5 md:mb-4 lg:mb-6 max-h-90 lg:max-h-100 overflow-y-auto pr-2">
         {cartItems.map((item) => (
           <div key={item.id} className="flex gap-4 items-center">
             <div
@@ -217,7 +218,7 @@ export default function OrderSummary({
           <span className="font-medium">
             {shippingMethod === "free" && "Free"}
             {shippingMethod === "express" && "$15.00"}
-            {shippingMethod === "pickup" && "$21.00"}
+            {shippingMethod === "pickup" && `$${shippingCost.toFixed(2)} (21%)`}
           </span>
         </div>
         <div className="flex items-center justify-between text-sm">

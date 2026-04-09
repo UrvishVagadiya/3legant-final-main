@@ -44,7 +44,7 @@ const NewsLetter = () => {
 
   return (
     <div className="newsletter-section bg-[#F3F5F7] relative h-auto py-16 md:py-0 md:h-90 w-full overflow-hidden">
-      <div className="newsletter-images hidden md:block">
+      <div className="newsletter-images hidden lg:block">
         <Image
           style={{ mixBlendMode: "multiply" }}
           className="absolute -top-35 -left-65"

@@ -139,7 +139,7 @@ const AccountSidebar = ({
         </h1>
       </div>
 
-      <div className="md:hidden mb-4">
+      <div className="lg:hidden mb-4">
         <select
           className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none font-semibold text-gray-900 bg-white shadow-sm"
           value={activeTab}
@@ -161,7 +161,7 @@ const AccountSidebar = ({
         </select>
       </div>
 
-      <div className="hidden md:flex flex-col gap-6 text-[16px]">
+      <div className="hidden lg:flex flex-col gap-6 text-[16px]">
         {tabs.map((t) => (
           <h2
             key={t.value}

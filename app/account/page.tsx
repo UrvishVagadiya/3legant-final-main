@@ -243,7 +243,7 @@ const AccountContent = () => {
         My Account
       </h1>
 
-      <div className="flex flex-col lg:flex-row lg:items-start gap-6 md:gap-8 lg:gap-10 xl:gap-18 mb-16 md:mb-20">
+      <div className="flex flex-col lg:flex-row lg:items-start gap-6 md:gap-8 lg:gap-10 xl:gap-18 mb-2 md:mb-20">
         <AccountSidebar
           fullName={fullName}
           displayName={displayName}

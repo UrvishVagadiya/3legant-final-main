@@ -11,7 +11,7 @@ interface CartSummaryProps {
 const shippingOptions = [
   { value: "free", label: "Free shipping", price: "$0.00" },
   { value: "express", label: "Express shipping", price: "+$15.00" },
-  { value: "pickup", label: "Pick Up", price: "%21.00" },
+  { value: "pickup", label: "Pick Up", price: "+21%" },
 ];
 
 const CartSummary = ({
@@ -21,11 +21,11 @@ const CartSummary = ({
   setShippingMethod,
   hasItems,
 }: CartSummaryProps) => (
-  <div className="w-full lg:w-[35%]">
-    <div className="border border-gray-300 rounded p-6">
+  <div className="w-full md:w-[42%] lg:w-[35%] md:sticky md:top-24">
+    <div className="border border-gray-300 rounded p-5 md:p-4 lg:p-6">
       <h2 className="text-xl font-semibold mb-6">Cart summary</h2>
 
-      <div className="space-y-3 mb-6">
+      <div className="space-y-3 mb-5 md:mb-4 lg:mb-6">
         {shippingOptions.map((opt) => (
           <label
             key={opt.value}

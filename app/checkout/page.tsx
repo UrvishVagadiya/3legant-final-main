@@ -17,11 +17,7 @@ import {
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { getShippingCost } from "@/utils/getShippingCost";
 import { createClient } from "@/utils/supabase/client";
-import {
-  Coupon,
-  calculateCouponDiscount,
-  validateCoupon,
-} from "@/utils/coupon";
+import { calculateCouponDiscount, validateCoupon } from "@/utils/coupon";
 import {
   InfoData,
   billingKeys,
@@ -70,7 +66,7 @@ export default function Checkout() {
     (a, i) => a + getEffectiveCartLineTotal(i),
     0,
   );
-  const shippingCost = getShippingCost(shippingMethod);
+  const shippingCost = getShippingCost(shippingMethod, subtotal);
   const total = subtotal + shippingCost - couponDiscount;
 
   useEffect(() => {
@@ -502,13 +498,13 @@ export default function Checkout() {
   }
 
   return (
-    <div className="max-w-300 mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-20 font-inter text-[#141718]">
+    <div className="max-w-300 mx-auto px-4 sm:px-6 md:px-7 lg:px-8 py-8 md:py-10 mb-6 font-inter text-[#141718]">
       <div className="flex flex-col items-center justify-center mb-8">
         <h1 className={`${typography.h3} mb-4`}>Check Out</h1>
         <CheckoutStepper step={2} />
       </div>
-      <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 w-full">
-        <div className="w-full lg:w-[65%] space-y-8">
+      <div className="flex flex-col md:flex-row md:items-start gap-8 md:gap-6 lg:gap-16 w-full">
+        <div className="w-full md:w-[58%] lg:w-[65%] space-y-8">
           <ContactInfo
             formData={formData}
             errors={errors}
@@ -540,7 +536,7 @@ export default function Checkout() {
             onPlaceOrder={handlePlaceOrder}
           />
         </div>
-        <div className="w-full lg:w-[35%]">
+        <div className="w-full md:w-[42%] lg:w-[35%]">
           <OrderSummary
             cartItems={cartItems.map((item) => ({
               ...item,

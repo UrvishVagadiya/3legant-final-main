@@ -123,7 +123,7 @@ const ContactUs = () => {
             </div>
           ))}
         </div>
-        <div className="flex flex-col-reverse lg:flex-row w-full gap-8 lg:gap-3 mb-18">
+        <div className="flex flex-col-reverse lg:flex-row w-full gap-8 lg:gap-3 mb-10">
           <ContactForm />
           <div className="w-full lg:w-1/2 h-87.5 lg:h-auto p-0 lg:p-3 mb-2 lg:mb-0 flex flex-col">
             <iframe

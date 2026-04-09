@@ -148,7 +148,7 @@ const Blogs = () => {
   const isHorizontalGrid = viewGrid <= 2;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-20 space-y-8 md:space-y-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 space-y-8 md:space-y-12">
       <div
         className="w-full min-h-72 sm:min-h-80 md:min-h-98 flex items-center justify-center rounded-lg mt-4 sm:mt-6"
         style={{
@@ -179,7 +179,7 @@ const Blogs = () => {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-4 border-b md:border-none md:pb-0 gap-4 md:gap-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-4 md:border-none md:pb-0 gap-4 md:gap-0">
         <div className="flex gap-6 md:gap-10 w-full md:w-auto">
           <h1
             className={`${activeTab === "all" ? `${typography.text16Semibold} border-b-2 border-black pb-1 text-[#141718]` : `${typography.text16} text-gray-400 hover:text-gray-800`} transition-colors cursor-pointer whitespace-nowrap`}

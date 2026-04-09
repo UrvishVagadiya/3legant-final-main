@@ -304,7 +304,7 @@ const Shop = () => {
   const isSidebarOpen = viewGrid === 3;
 
   return (
-    <div className="max-w-310 mx-auto px-4 sm:px-6 lg:px-8 mb-20 font-inter">
+    <div className="max-w-310 mx-auto px-4 sm:px-6 lg:px-8 mb-9 font-inter">
       <ShopHeader />
       <div className="flex flex-col lg:flex-row gap-8 my-8 md:my-12 relative w-full items-start">
         {isSidebarOpen && (

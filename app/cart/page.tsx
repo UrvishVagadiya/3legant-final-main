@@ -15,11 +15,7 @@ import {
 } from "@/store/slices/cartSlice";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { getShippingCost } from "@/utils/getShippingCost";
-import {
-  Coupon,
-  calculateCouponDiscount,
-  validateCoupon,
-} from "@/utils/coupon";
+import { calculateCouponDiscount, validateCoupon } from "@/utils/coupon";
 import toast from "react-hot-toast";
 import { typography } from "@/constants/typography";
 import { getEffectiveCartLineTotal } from "@/utils/getEffectiveCartPrice";
@@ -65,7 +61,8 @@ const Cart = () => {
     (acc, curr) => acc + getEffectiveCartLineTotal(curr),
     0,
   );
-  const total = subtotal + getShippingCost(shippingMethod) - couponDiscount;
+  const total =
+    subtotal + getShippingCost(shippingMethod, subtotal) - couponDiscount;
 
   useEffect(() => {
     if (!appliedCoupon) {
@@ -107,14 +104,14 @@ const Cart = () => {
   };
 
   return (
-    <div className="max-w-300 mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-20 font-inter text-[#141718]">
+    <div className="max-w-300 mx-auto px-4 sm:px-6 md:px-7 lg:px-8 py-8 md:py-10 mb-6 font-inter text-[#141718]">
       <div className="flex flex-col items-center justify-center mb-8">
         <h1 className={`${typography.h3} mb-4`}>Cart</h1>
         <CheckoutStepper step={1} />
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 w-full">
-        <div className="w-full lg:w-[65%]">
+      <div className="flex flex-col md:flex-row md:items-start gap-8 md:gap-6 lg:gap-16 w-full">
+        <div className="w-full md:w-[58%] lg:w-[65%]">
           <div className="hidden md:grid grid-cols-12 pb-4 border-b border-gray-300 text-sm font-semibold text-gray-500">
             <div className="col-span-6">Product</div>
             <div className="col-span-2 text-center">Quantity</div>
@@ -131,7 +128,7 @@ const Cart = () => {
             />
           ))}
 
-          <div className="mt-8">
+          <div className="mt-8 md:mt-6 lg:mt-8">
             <h3 className={`${typography.text18Semibold} mb-2`}>
               Have a coupon?
             </h3>
@@ -155,7 +152,7 @@ const Cart = () => {
                 </button>
               </div>
             )}
-            <div className="flex items-center border border-gray-300 rounded overflow-hidden max-w-sm mb-2">
+            <div className="flex items-center border border-gray-300 rounded overflow-hidden max-w-sm md:max-w-full lg:max-w-sm mb-2">
               <div className="pl-3 text-gray-400">
                 <Ticket size={20} />
               </div>
@@ -173,7 +170,7 @@ const Cart = () => {
                 {couponLoading ? "..." : "Apply"}
               </button>
             </div>
-            <div className="max-w-sm">
+            <div className="max-w-sm md:max-w-full lg:max-w-sm">
               <CouponSuggestions
                 onSelect={(code: string) => {
                   setCouponCode(code);
