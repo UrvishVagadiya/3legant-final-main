@@ -51,7 +51,7 @@ export default function ShippingSection({
           type="checkbox"
           checked={useDifferentBilling}
           onChange={(e) => onBillingToggle(e.target.checked)}
-          className="w-4 h-4 text-black rounded border-gray-300 focus:ring-black"
+          className="w-4 h-4 cursor-pointer text-black rounded border-gray-300 focus:ring-black"
         />
         <span className="text-sm text-gray-600">
           Use a different billing address (optional)

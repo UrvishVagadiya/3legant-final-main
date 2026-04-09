@@ -11,21 +11,23 @@ interface AddressFormFieldsProps {
 }
 
 const fieldConfig = (prefix: string) => {
-  const p = prefix;
+  const withPrefix = (field: string) =>
+    prefix ? `${prefix}${field[0].toUpperCase()}${field.slice(1)}` : field;
+
   return {
     street: {
-      name: `${p}streetAddress`,
+      name: withPrefix("streetAddress"),
       label: "STREET ADDRESS *",
       placeholder: "Street Address",
     },
-    country: { name: `${p}country`, label: "COUNTRY *" },
+    country: { name: withPrefix("country"), label: "COUNTRY *" },
     city: {
-      name: `${p}city`,
+      name: withPrefix("city"),
       label: "TOWN / CITY *",
       placeholder: "Town / City",
     },
-    state: { name: `${p}state`, label: "STATE", placeholder: "State" },
-    zip: { name: `${p}zipCode`, label: "ZIP CODE", placeholder: "Zip Code" },
+    state: { name: withPrefix("state"), label: "STATE", placeholder: "State" },
+    zip: { name: withPrefix("zipCode"), label: "ZIP CODE", placeholder: "Zip Code" },
   };
 };
 
