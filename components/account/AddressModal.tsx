@@ -63,18 +63,19 @@ const AddressModal = ({
   if (!isOpen) return null;
 
   const onSubmit = async (data: FormFields) => {
+    const trimmedCountry = data.country.trim();
     await onSave({
       id: defaultValues?.id,
       label: data.label,
       type: fixedType || data.type,
       name: data.name.trim(),
       phone: data.phone.trim(),
-      address: `${data.street_address.trim()}, ${data.city.trim()}, ${data.state.trim()} ${data.zip_code.trim()}, ${data.country}`,
+      address: `${data.street_address.trim()}, ${data.city.trim()}, ${data.state.trim()} ${data.zip_code.trim()}, ${trimmedCountry}`,
       street_address: data.street_address.trim(),
       city: data.city.trim(),
       state: data.state.trim(),
       zip_code: data.zip_code.trim(),
-      country: data.country,
+      country: trimmedCountry,
     });
   };
 

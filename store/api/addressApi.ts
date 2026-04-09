@@ -77,13 +77,15 @@ export const addressApi = apiService.injectEndpoints({
     saveAddress: builder.mutation<null, { data: AddressData; userId: string; modalFixedType?: "shipping" | "billing" }>({
       queryFn: async ({ data, userId, modalFixedType }) => {
         const supabase = createClient();
-        const trimmedName = data.name.trim();
-        const trimmedPhone = data.phone.trim();
-        const trimmedStreet = (data.street_address || data.address).trim();
-        const trimmedCity = (data.city || "").trim();
-        const trimmedState = (data.state || "").trim();
-        const trimmedZip = (data.zip_code || "").trim();
-        const trimmedCountry = (data.country || "").trim();
+
+        // Ensure all fields exist and trim them
+        const trimmedName = (data.name ?? "").toString().trim();
+        const trimmedPhone = (data.phone ?? "").toString().trim();
+        const trimmedStreet = ((data.street_address ?? data.address ?? "")).toString().trim();
+        const trimmedCity = (data.city ?? "").toString().trim();
+        const trimmedState = (data.state ?? "").toString().trim();
+        const trimmedZip = (data.zip_code ?? "").toString().trim();
+        const trimmedCountry = (data.country ?? "").toString().trim();
 
         // Validate each field and provide specific error
         const missingFields = [];
