@@ -85,8 +85,21 @@ export const addressApi = apiService.injectEndpoints({
         const trimmedZip = (data.zip_code || "").trim();
         const trimmedCountry = (data.country || "").trim();
 
-        if (!trimmedName || !trimmedPhone || !trimmedStreet || !trimmedCity || !trimmedState || !trimmedZip || !trimmedCountry) {
-          return { error: { status: 400, data: "Address fields are required" } };
+        // Validate each field and provide specific error
+        const missingFields = [];
+        if (!trimmedName) missingFields.push("Full name");
+        if (!trimmedPhone) missingFields.push("Phone number");
+        if (!trimmedStreet) missingFields.push("Street address");
+        if (!trimmedCity) missingFields.push("City");
+        if (!trimmedState) missingFields.push("State");
+        if (!trimmedZip) missingFields.push("Zip code");
+        if (!trimmedCountry) missingFields.push("Country");
+
+        if (missingFields.length > 0) {
+          const fieldMessage = missingFields.length === 1
+            ? `${missingFields[0]} is required`
+            : `Required fields missing: ${missingFields.join(", ")}`;
+          return { error: { status: 400, data: fieldMessage } };
         }
 
         const nameParts = trimmedName.split(/\s+/);

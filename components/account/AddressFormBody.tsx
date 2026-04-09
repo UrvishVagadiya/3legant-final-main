@@ -76,7 +76,8 @@ const AddressFormBody = ({
         placeholder="Full name"
         {...register("name", {
           required: "Full name is required",
-          validate: (v) => v.trim().length > 0 || "Full name is required",
+          validate: (v) =>
+            !v || v.trim().length > 0 || "Full name cannot be empty",
         })}
         className={inputClass(errors, "name")}
       />
@@ -88,7 +89,8 @@ const AddressFormBody = ({
         placeholder="Phone number"
         {...register("phone", {
           required: "Phone number is required",
-          validate: (v) => v.trim().length > 0 || "Phone number is required",
+          validate: (v) =>
+            !v || v.trim().length > 0 || "Phone number cannot be empty",
         })}
         className={inputClass(errors, "phone")}
       />
@@ -100,7 +102,8 @@ const AddressFormBody = ({
         placeholder="Street address"
         {...register("street_address", {
           required: "Street address is required",
-          validate: (v) => v.trim().length > 0 || "Street address is required",
+          validate: (v) =>
+            !v || v.trim().length > 0 || "Street address cannot be empty",
         })}
         className={inputClass(errors, "street_address")}
       />
@@ -113,7 +116,8 @@ const AddressFormBody = ({
           placeholder="City"
           {...register("city", {
             required: "City is required",
-            validate: (v) => v.trim().length > 0 || "City is required",
+            validate: (v) =>
+              !v || v.trim().length > 0 || "City cannot be empty",
           })}
           className={inputClass(errors, "city")}
         />
@@ -124,7 +128,8 @@ const AddressFormBody = ({
           placeholder="State"
           {...register("state", {
             required: "State is required",
-            validate: (v) => v.trim().length > 0 || "State is required",
+            validate: (v) =>
+              !v || v.trim().length > 0 || "State cannot be empty",
           })}
           className={inputClass(errors, "state")}
         />
@@ -138,7 +143,8 @@ const AddressFormBody = ({
           placeholder="Zip code"
           {...register("zip_code", {
             required: "Zip code is required",
-            validate: (v) => v.trim().length > 0 || "Zip code is required",
+            validate: (v) =>
+              !v || v.trim().length > 0 || "Zip code cannot be empty",
           })}
           className={inputClass(errors, "zip_code")}
         />
