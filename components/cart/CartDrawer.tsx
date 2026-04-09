@@ -14,6 +14,10 @@ import {
 import { useSyncCartMutation } from "@/store/api/cartApi";
 import { colorMap } from "../product/ColorSelector";
 import { typography } from "@/constants/typography";
+import {
+  getEffectiveCartLineTotal,
+  getEffectiveCartPrice,
+} from "@/utils/getEffectiveCartPrice";
 
 export default function CartDrawer() {
   const dispatch = useAppDispatch();
@@ -33,7 +37,7 @@ export default function CartDrawer() {
   if (!isMounted) return null;
 
   const computedSubtotal = items.reduce(
-    (acc, item) => acc + item.price * item.quantity,
+    (acc, item) => acc + getEffectiveCartLineTotal(item),
     0,
   );
 
@@ -128,7 +132,7 @@ export default function CartDrawer() {
                   </div>
                   <div className="flex flex-col items-end gap-1 pt-1">
                     <span className="text-[#141718] font-semibold text-[14px]">
-                      ${Number(item.price).toFixed(2)}
+                      ${getEffectiveCartPrice(item).toFixed(2)}
                     </span>
                     <button
                       type="button"

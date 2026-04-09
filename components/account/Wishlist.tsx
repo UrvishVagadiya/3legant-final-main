@@ -44,6 +44,7 @@ const Wishlist = () => {
             typeof item.price === "string"
               ? parseFloat(item.price.replace(/[^0-9.]/g, ""))
               : Number(item.price),
+          mrp: item.MRP,
           image: item.image,
           color: item.color || "Default",
           stock: item.stock || 1,

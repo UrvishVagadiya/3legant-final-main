@@ -23,7 +23,7 @@ interface AddressModalProps {
   title: string;
   defaultValues: AddressData | null;
   onClose: () => void;
-  onSave: (data: AddressData) => void;
+  onSave: (data: AddressData) => Promise<void> | void;
   showTypeSelector?: boolean;
   fixedType?: "shipping" | "billing";
 }
@@ -62,21 +62,20 @@ const AddressModal = ({
 
   if (!isOpen) return null;
 
-  const onSubmit = (data: FormFields) => {
-    onSave({
+  const onSubmit = async (data: FormFields) => {
+    await onSave({
       id: defaultValues?.id,
       label: data.label,
       type: fixedType || data.type,
-      name: data.name,
-      phone: data.phone,
-      address: `${data.street_address}, ${data.city}, ${data.state} ${data.zip_code}, ${data.country}`,
-      street_address: data.street_address,
-      city: data.city,
-      state: data.state,
-      zip_code: data.zip_code,
+      name: data.name.trim(),
+      phone: data.phone.trim(),
+      address: `${data.street_address.trim()}, ${data.city.trim()}, ${data.state.trim()} ${data.zip_code.trim()}, ${data.country}`,
+      street_address: data.street_address.trim(),
+      city: data.city.trim(),
+      state: data.state.trim(),
+      zip_code: data.zip_code.trim(),
       country: data.country,
     });
-    onClose();
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {

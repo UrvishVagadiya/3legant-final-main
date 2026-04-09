@@ -85,7 +85,7 @@ const ShopProductCard = ({
               </div>
             )}
             {displayMrp > displayPrice && (
-              <div className="bg-[#38CB89] text-white font-bold text-[8px] min-[400px]:text-[9px] sm:text-[10px] md:text-xs py-0.5 min-[400px]:py-1 px-1.5 min-[400px]:px-2 sm:px-2.5 rounded-sm min-[400px]:rounded flex justify-center items-center shadow-sm leading-none whitespace-nowrap">
+              <div className="bg-[#38CB89] text-white font-bold text-[8px] min-[400px]:text-[9px] sm:text-[10px] md:text-xs py-0.5 min-[400px]:py-2 px-1.5 min-[400px]:px-2 sm:px-2.5 rounded-sm min-[400px]:rounded flex justify-center items-center shadow-sm leading-none whitespace-nowrap">
                 -{Math.round(((displayMrp - displayPrice) / displayMrp) * 100)}%
               </div>
             )}

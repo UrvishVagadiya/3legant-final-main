@@ -74,7 +74,10 @@ const AddressFormBody = ({
       <input
         type="text"
         placeholder="Full name"
-        {...register("name", { required: "Full name is required" })}
+        {...register("name", {
+          required: "Full name is required",
+          validate: (v) => v.trim().length > 0 || "Full name is required",
+        })}
         className={inputClass(errors, "name")}
       />
     </FieldBlock>
@@ -83,7 +86,10 @@ const AddressFormBody = ({
       <input
         type="text"
         placeholder="Phone number"
-        {...register("phone", { required: "Phone number is required" })}
+        {...register("phone", {
+          required: "Phone number is required",
+          validate: (v) => v.trim().length > 0 || "Phone number is required",
+        })}
         className={inputClass(errors, "phone")}
       />
     </FieldBlock>
@@ -94,6 +100,7 @@ const AddressFormBody = ({
         placeholder="Street address"
         {...register("street_address", {
           required: "Street address is required",
+          validate: (v) => v.trim().length > 0 || "Street address is required",
         })}
         className={inputClass(errors, "street_address")}
       />
@@ -104,7 +111,10 @@ const AddressFormBody = ({
         <input
           type="text"
           placeholder="City"
-          {...register("city", { required: "City is required" })}
+          {...register("city", {
+            required: "City is required",
+            validate: (v) => v.trim().length > 0 || "City is required",
+          })}
           className={inputClass(errors, "city")}
         />
       </FieldBlock>
@@ -112,7 +122,10 @@ const AddressFormBody = ({
         <input
           type="text"
           placeholder="State"
-          {...register("state", { required: "State is required" })}
+          {...register("state", {
+            required: "State is required",
+            validate: (v) => v.trim().length > 0 || "State is required",
+          })}
           className={inputClass(errors, "state")}
         />
       </FieldBlock>
@@ -123,7 +136,10 @@ const AddressFormBody = ({
         <input
           type="text"
           placeholder="Zip code"
-          {...register("zip_code", { required: "Zip code is required" })}
+          {...register("zip_code", {
+            required: "Zip code is required",
+            validate: (v) => v.trim().length > 0 || "Zip code is required",
+          })}
           className={inputClass(errors, "zip_code")}
         />
       </FieldBlock>

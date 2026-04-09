@@ -6,6 +6,8 @@ export interface CartItem {
   id: string;
   name: string;
   price: number;
+  mrp?: number;
+  validUntil?: string | number | null;
   image: string;
   color: string;
   quantity: number;
@@ -57,7 +59,11 @@ const cartSlice = createSlice({
     },
     addToCart: (state, action: PayloadAction<{ item: Omit<CartItem, 'quantity'> }>) => {
       const { item } = action.payload;
-      const safeItem = { ...item, price: Number(item.price) };
+      const safeItem = {
+        ...item,
+        price: Number(item.price),
+        mrp: item.mrp !== undefined ? Number(item.mrp) : undefined,
+      };
       const existingItem = state.items.find(i => i.id === safeItem.id && i.color === safeItem.color);
 
       if (safeItem.stock <= 0) {

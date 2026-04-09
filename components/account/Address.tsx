@@ -5,11 +5,12 @@ import { Plus } from "lucide-react";
 import AddressModal from "./AddressModal";
 import AddressCard from "./AddressCard";
 import { useAppSelector, RootState } from "@/store";
-import { 
-  useGetAddressesQuery, 
-  useDeleteAddressMutation, 
-  useSetDefaultAddressMutation, 
-  useSaveAddressMutation 
+import toast from "react-hot-toast";
+import {
+  useGetAddressesQuery,
+  useDeleteAddressMutation,
+  useSetDefaultAddressMutation,
+  useSaveAddressMutation,
 } from "@/store/api/addressApi";
 import type { DbAddress, AddressData } from "@/store/api/addressApi";
 
@@ -82,14 +83,21 @@ const AddressSection = ({
 
 const Address = ({ fullName }: AddressProps) => {
   const { user } = useAppSelector((state: RootState) => state.auth);
-  const { data: addresses = [], isLoading: loading } = useGetAddressesQuery(user?.id ?? '', { skip: !user?.id });
+  const { data: addresses = [], isLoading: loading } = useGetAddressesQuery(
+    user?.id ?? "",
+    { skip: !user?.id },
+  );
   const [deleteAddr] = useDeleteAddressMutation();
   const [setDefault] = useSetDefaultAddressMutation();
   const [saveAddr] = useSaveAddressMutation();
-  
+
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<AddressData | null>(null);
-  const [modalFixedType, setModalFixedType] = useState<"shipping" | "billing" | undefined>(undefined);
+  const [editingAddress, setEditingAddress] = useState<AddressData | null>(
+    null,
+  );
+  const [modalFixedType, setModalFixedType] = useState<
+    "shipping" | "billing" | undefined
+  >(undefined);
 
   const handleAdd = (type?: "shipping" | "billing") => {
     setEditingAddress(null);
@@ -105,7 +113,7 @@ const Address = ({ fullName }: AddressProps) => {
 
   const handleDelete = async (id: string) => {
     if (user?.id) {
-       await deleteAddr({ id, userId: user.id });
+      await deleteAddr({ id, userId: user.id });
     }
   };
 
@@ -117,8 +125,13 @@ const Address = ({ fullName }: AddressProps) => {
 
   const handleSave = async (data: AddressData) => {
     if (user?.id) {
-      await saveAddr({ data, userId: user.id, modalFixedType }).unwrap();
-      setModalOpen(false);
+      try {
+        await saveAddr({ data, userId: user.id, modalFixedType }).unwrap();
+        setModalOpen(false);
+      } catch {
+        toast.error("Please fill all required address fields.");
+        throw new Error("Address save failed");
+      }
     }
   };
 

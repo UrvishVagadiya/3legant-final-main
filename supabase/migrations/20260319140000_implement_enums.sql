@@ -7,7 +7,7 @@ BEGIN
 
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'product_category') THEN
         CREATE TYPE "public"."product_category" AS ENUM (
-            'Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Dinning', 'Outdoor', 'Office'
+            'Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Dinning', 'Outdoor'
         );
     END IF;
 
@@ -68,7 +68,7 @@ DROP INDEX IF EXISTS "public"."idx_products_category";
 -- Clean up invalid categories inside the array before altering
 CREATE OR REPLACE FUNCTION filter_product_categories(cats text[]) RETURNS text[] AS $$
 DECLARE
-    valid_cats text[] := ARRAY['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Dinning', 'Outdoor', 'Office'];
+    valid_cats text[] := ARRAY['Living Room', 'Bedroom', 'Kitchen', 'Bathroom', 'Dinning', 'Outdoor'];
     result text[] := '{}';
     c text;
 BEGIN

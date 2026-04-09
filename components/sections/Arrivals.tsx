@@ -116,6 +116,9 @@ const Arrivals = () => {
             id: String(product.id),
             name: product.title || product.name || "",
             price: product.price,
+            mrp:
+              product.mrp || product.oldprice || product.old_price || undefined,
+            validUntil: product.validUntil || product.valid_until || null,
             image: product.img || product.image_url || "/image-1.png",
             color: preferredColor,
             stock: Number(product.stock) || 0,

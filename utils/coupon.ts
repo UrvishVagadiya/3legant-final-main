@@ -14,6 +14,23 @@ export interface Coupon {
     valid_until: string | null;
 }
 
+export function calculateCouponDiscount(coupon: Coupon, subtotal: number): number {
+    if (subtotal <= 0) return 0;
+    if (subtotal < coupon.min_order_amount) return 0;
+
+    let discount = 0;
+    if (coupon.discount_type === 'percentage') {
+        discount = subtotal * (coupon.discount_value / 100);
+        if (coupon.max_discount_amount) {
+            discount = Math.min(discount, coupon.max_discount_amount);
+        }
+    } else {
+        discount = coupon.discount_value;
+    }
+
+    return Math.min(discount, subtotal);
+}
+
 export async function validateCoupon(code: string, subtotal: number, userId?: string): Promise<{ valid: boolean; coupon?: Coupon; discount: number; error?: string }> {
     const supabase = createClient();
 
@@ -56,17 +73,7 @@ export async function validateCoupon(code: string, subtotal: number, userId?: st
         return { valid: false, discount: 0, error: `Minimum order amount is $${coupon.min_order_amount.toFixed(2)}` };
     }
 
-    let discount = 0;
-    if (coupon.discount_type === 'percentage') {
-        discount = subtotal * (coupon.discount_value / 100);
-        if (coupon.max_discount_amount) {
-            discount = Math.min(discount, coupon.max_discount_amount);
-        }
-    } else {
-        discount = coupon.discount_value;
-    }
-
-    discount = Math.min(discount, subtotal);
+    const discount = calculateCouponDiscount(coupon, subtotal);
 
     return { valid: true, coupon, discount };
 }

@@ -34,10 +34,12 @@ const ArrivalCard = ({
   handleAddToCart,
   getRating,
 }: ArrivalCardProps) => {
-  const expired = isOfferExpired(card.valid_until);
-  const displayPrice =
-    expired && card.mrp && card.mrp > card.price ? card.mrp : card.price;
-  const displayMrp = expired ? undefined : (card.mrp ?? undefined);
+  const expired = isOfferExpired(card.valid_until || card.validUntil);
+  const rawPrice = Number(card.price) || 0;
+  const rawMrp =
+    Number(card.mrp) || Number(card.old_price) || Number(card.oldprice) || 0;
+  const displayPrice = expired && rawMrp > rawPrice ? rawMrp : rawPrice;
+  const displayMrp = expired ? undefined : rawMrp || undefined;
   const colorOptions = Array.isArray(card.color)
     ? card.color
     : card.color
@@ -70,7 +72,7 @@ const ArrivalCard = ({
               </div>
             )}
             {discount(displayPrice, displayMrp) > 0 && (
-              <div className="bg-[#38CB89] text-white font-bold text-[9px] sm:text-[11px] md:text-sm py-0.5 sm:py-1 px-2 sm:px-3 rounded flex justify-center items-center shadow-sm">
+              <div className="bg-[#38CB89] text-white font-bold text-[9px] sm:text-[11px] md:text-sm py-0.3 sm:py-1 px-0.5 sm:px-3 rounded flex justify-center items-center shadow-sm">
                 -{discount(displayPrice, displayMrp)}%
               </div>
             )}

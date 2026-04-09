@@ -127,6 +127,8 @@ const ShopProductGrid = ({
             id: String(card.id),
             name: card.title || card.name || "",
             price: card.price,
+            mrp: card.mrp || card.oldprice || card.old_price || undefined,
+            validUntil: card.validUntil || card.valid_until || null,
             image: card.img || card.image_url || "/image-1.png",
             color: preferredColor,
             stock: Number(card.stock) || 0,

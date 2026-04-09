@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Ticket } from "lucide-react";
 import CouponSuggestions from "@/components/cart/CouponSuggestions";
 import { colorMap } from "../product/ColorSelector";
+import { getEffectiveCartLineTotal } from "@/utils/getEffectiveCartPrice";
 
 interface CartItem {
   id: string;
@@ -111,7 +112,7 @@ export default function OrderSummary({
                   </p>
                 </div>
                 <span className="font-semibold text-sm">
-                  ${(Number(item.price) * item.quantity).toFixed(2)}
+                  ${getEffectiveCartLineTotal(item).toFixed(2)}
                 </span>
               </div>
               <div className="flex items-center border border-gray-300 rounded px-2 py-0.5 mt-2 w-fit gap-3">

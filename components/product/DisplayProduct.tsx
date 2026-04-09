@@ -117,6 +117,8 @@ export const DisplayProduct = ({ p }: { p: Product }) => {
             id: String(pid),
             name: p.name || p.title || "Tray Table",
             price,
+            mrp: safeMrp || undefined,
+            validUntil: p.validUntil || p.valid_until || null,
             image: img,
             color: selectedColor,
             stock: p.stock || 0,

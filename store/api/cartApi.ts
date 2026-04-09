@@ -9,6 +9,11 @@ interface CartRow {
   products?: {
     title?: string | null;
     price?: number | string | null;
+    mrp?: number | string | null;
+    oldprice?: number | string | null;
+    old_price?: number | string | null;
+    valid_until?: string | null;
+    validUntil?: string | null;
     img?: string | null;
     image_url?: string | null;
     image?: string | null;
@@ -33,6 +38,12 @@ export const cartApi = apiService.injectEndpoints({
           id: row.product_id,
           name: row.products?.title || '',
           price: Number(row.products?.price) || 0,
+          mrp:
+            Number(row.products?.mrp) ||
+            Number(row.products?.oldprice) ||
+            Number(row.products?.old_price) ||
+            undefined,
+          validUntil: row.products?.validUntil || row.products?.valid_until || null,
           image: row.products?.img || row.products?.image_url || row.products?.image || '/image-1.png',
           color: row.color || 'Default',
           quantity: row.quantity,

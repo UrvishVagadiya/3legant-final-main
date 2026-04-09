@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Ticket } from "lucide-react";
 import CheckoutStepper from "@/components/sections/CheckoutStepper";
 import CartItem from "@/components/cart/CartItem";
@@ -13,9 +13,14 @@ import {
 } from "@/store/slices/cartSlice";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { getShippingCost } from "@/utils/getShippingCost";
-import { validateCoupon } from "@/utils/coupon";
+import {
+  Coupon,
+  calculateCouponDiscount,
+  validateCoupon,
+} from "@/utils/coupon";
 import toast from "react-hot-toast";
 import { typography } from "@/constants/typography";
+import { getEffectiveCartLineTotal } from "@/utils/getEffectiveCartPrice";
 
 const Cart = () => {
   const dispatch = useAppDispatch();
@@ -26,7 +31,7 @@ const Cart = () => {
 
   const isMounted = useIsMounted();
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [discount, setDiscount] = useState(0);
   const [couponLoading, setCouponLoading] = useState(false);
 
@@ -58,10 +63,33 @@ const Cart = () => {
   };
 
   const subtotal = items.reduce(
-    (acc, curr) => acc + Number(curr.price) * curr.quantity,
+    (acc, curr) => acc + getEffectiveCartLineTotal(curr),
     0,
   );
   const total = subtotal + getShippingCost(shippingMethod) - discount;
+
+  useEffect(() => {
+    if (!appliedCoupon) {
+      if (discount !== 0) {
+        setDiscount(0);
+      }
+      return;
+    }
+
+    if (subtotal < appliedCoupon.min_order_amount) {
+      setAppliedCoupon(null);
+      setDiscount(0);
+      toast.error(
+        `Coupon removed. Minimum order amount is $${appliedCoupon.min_order_amount.toFixed(2)}`,
+      );
+      return;
+    }
+
+    const nextDiscount = calculateCouponDiscount(appliedCoupon, subtotal);
+    if (nextDiscount !== discount) {
+      setDiscount(nextDiscount);
+    }
+  }, [appliedCoupon, subtotal, discount]);
 
   if (!isMounted) return null;
 
@@ -70,7 +98,7 @@ const Cart = () => {
     setCouponLoading(true);
     const result = await validateCoupon(couponCode.trim(), subtotal, user?.id);
     if (result.valid && result.coupon) {
-      setAppliedCoupon(result.coupon.code);
+      setAppliedCoupon(result.coupon);
       setDiscount(result.discount);
       setCouponCode("");
       toast.success(`Coupon applied! -$${result.discount.toFixed(2)}`);
@@ -115,7 +143,7 @@ const Cart = () => {
             {appliedCoupon && (
               <div className="flex items-center gap-2 mb-3 text-sm">
                 <Ticket size={16} className="text-[#38CB89]" />
-                <span className="font-medium">{appliedCoupon}</span>
+                <span className="font-medium">{appliedCoupon.code}</span>
                 <span className="text-[#38CB89]">-${discount.toFixed(2)}</span>
                 <button
                   onClick={() => {

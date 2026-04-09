@@ -2,6 +2,10 @@ import { X } from "lucide-react";
 import TintedProductImage from "../product/TintedProductImage";
 import { CartItem as CartItemType } from "@/store/slices/cartSlice";
 import { colorMap } from "../product/ColorSelector";
+import {
+  getEffectiveCartLineTotal,
+  getEffectiveCartPrice,
+} from "@/utils/getEffectiveCartPrice";
 
 interface CartItemProps {
   item: CartItemType;
@@ -10,6 +14,8 @@ interface CartItemProps {
 }
 
 const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => {
+  const unitPrice = getEffectiveCartPrice(item);
+  const lineTotal = getEffectiveCartLineTotal(item);
   const colorHex = item.color ? colorMap[item.color] : null;
   const shouldTint = item.color && item.color.toLowerCase() !== "white";
 
@@ -49,9 +55,7 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => {
       </div>
 
       <div className="col-span-6 md:col-span-2 flex justify-between md:justify-center items-center w-full md:w-auto">
-        <div className="md:hidden font-semibold">
-          ${Number(item.price).toFixed(2)}
-        </div>
+        <div className="md:hidden font-semibold">${unitPrice.toFixed(2)}</div>
         <div className="flex items-center border border-gray-400 rounded px-2 py-1 gap-4 w-25 justify-between">
           <button
             type="button"
@@ -74,10 +78,10 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => {
       </div>
 
       <div className="hidden md:block col-span-2 text-center font-medium">
-        ${Number(item.price).toFixed(2)}
+        ${unitPrice.toFixed(2)}
       </div>
       <div className="hidden md:block col-span-2 text-right font-semibold">
-        ${(Number(item.price) * item.quantity).toFixed(2)}
+        ${lineTotal.toFixed(2)}
       </div>
     </div>
   );

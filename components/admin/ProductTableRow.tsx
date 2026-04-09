@@ -8,8 +8,7 @@ export type ProductCategory =
   | "Kitchen"
   | "Bathroom"
   | "Dinning"
-  | "Outdoor"
-  | "Office";
+  | "Outdoor";
 
 export type ProductColor =
   | "Black"

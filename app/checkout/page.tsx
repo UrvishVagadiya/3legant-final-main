@@ -12,7 +12,11 @@ import { updateQuantity, setShippingMethod } from "@/store/slices/cartSlice";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { getShippingCost } from "@/utils/getShippingCost";
 import { createClient } from "@/utils/supabase/client";
-import { validateCoupon } from "@/utils/coupon";
+import {
+  Coupon,
+  calculateCouponDiscount,
+  validateCoupon,
+} from "@/utils/coupon";
 import {
   InfoData,
   billingKeys,
@@ -24,6 +28,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { typography } from "@/constants/typography";
 import { useSaveAddressMutation } from "@/store/api/addressApi";
+import {
+  getEffectiveCartLineTotal,
+  getEffectiveCartPrice,
+} from "@/utils/getEffectiveCartPrice";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
@@ -48,19 +56,39 @@ export default function Checkout() {
 
   const [placing, setPlacing] = useState(false);
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{
-    id: string;
-    code: string;
-  } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponLoading, setCouponLoading] = useState(false);
 
   const subtotal = cartItems.reduce(
-    (a, i) => a + Number(i.price) * i.quantity,
+    (a, i) => a + getEffectiveCartLineTotal(i),
     0,
   );
   const shippingCost = getShippingCost(shippingMethod);
   const total = subtotal + shippingCost - couponDiscount;
+
+  useEffect(() => {
+    if (!appliedCoupon) {
+      if (couponDiscount !== 0) {
+        setCouponDiscount(0);
+      }
+      return;
+    }
+
+    if (subtotal < appliedCoupon.min_order_amount) {
+      setAppliedCoupon(null);
+      setCouponDiscount(0);
+      toast.error(
+        `Coupon removed. Minimum order amount is $${appliedCoupon.min_order_amount.toFixed(2)}`,
+      );
+      return;
+    }
+
+    const nextDiscount = calculateCouponDiscount(appliedCoupon, subtotal);
+    if (nextDiscount !== couponDiscount) {
+      setCouponDiscount(nextDiscount);
+    }
+  }, [appliedCoupon, subtotal, couponDiscount]);
 
   // ── Coupon ──────────────────────────────────────────────────────────────
   const handleApplyCoupon = async () => {
@@ -68,7 +96,7 @@ export default function Checkout() {
     setCouponLoading(true);
     const result = await validateCoupon(couponCode.trim(), subtotal, user?.id);
     if (result.valid && result.coupon) {
-      setAppliedCoupon({ id: result.coupon.id, code: result.coupon.code });
+      setAppliedCoupon(result.coupon);
       setCouponDiscount(result.discount);
       setCouponCode("");
       toast.success(`Coupon applied! You saved $${result.discount.toFixed(2)}`);
@@ -294,9 +322,16 @@ export default function Checkout() {
       try {
         await saveCheckoutAddress("shipping");
         if (useDifferentBilling) await saveCheckoutAddress("billing");
-      } catch (saveError) {
+      } catch (saveError: unknown) {
         console.error("Save address error:", saveError);
-        toast.error("Unable to save your address. Please try again.");
+        const msg =
+          typeof saveError === "object" &&
+          saveError !== null &&
+          "data" in saveError &&
+          typeof (saveError as { data?: unknown }).data === "string"
+            ? (saveError as { data: string }).data
+            : "Please complete all required address fields before payment.";
+        toast.error(msg);
         return;
       }
 
@@ -318,7 +353,7 @@ export default function Checkout() {
               title: i.name,
               img: i.image,
               quantity: i.quantity,
-              unit_price: i.price,
+              unit_price: getEffectiveCartPrice(i),
               color: i.color ?? null,
             })),
             shipping_data: {
@@ -429,7 +464,10 @@ export default function Checkout() {
         </div>
         <div className="w-full lg:w-[35%]">
           <OrderSummary
-            cartItems={cartItems}
+            cartItems={cartItems.map((item) => ({
+              ...item,
+              price: getEffectiveCartPrice(item),
+            }))}
             updateQuantity={handleUpdateQuantity}
             subtotal={subtotal}
             shippingCost={shippingCost}
