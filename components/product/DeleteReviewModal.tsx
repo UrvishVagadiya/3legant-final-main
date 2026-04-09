@@ -7,6 +7,10 @@ import { X } from "lucide-react";
 interface DeleteReviewModalProps {
   isOpen: boolean;
   reviewText?: string;
+  title?: string;
+  message?: string;
+  confirmText?: string;
+  loadingText?: string;
   isLoading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -15,6 +19,10 @@ interface DeleteReviewModalProps {
 export default function DeleteReviewModal({
   isOpen,
   reviewText,
+  title = "Delete Review",
+  message = "Are you sure you want to delete this review? This action cannot be undone.",
+  confirmText = "Yes, Delete",
+  loadingText = "Deleting...",
   isLoading = false,
   onConfirm,
   onCancel,
@@ -36,7 +44,7 @@ export default function DeleteReviewModal({
     <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/60 px-4">
       <div className="w-full max-w-sm rounded-lg border border-[#E8ECEF] bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-[#E8ECEF] p-6">
-          <h2 className="text-lg font-medium text-[#141718]">Delete Review</h2>
+          <h2 className="text-lg font-medium text-[#141718]">{title}</h2>
           <button
             onClick={onCancel}
             disabled={isLoading}
@@ -47,10 +55,7 @@ export default function DeleteReviewModal({
         </div>
 
         <div className="p-6">
-          <p className="text-sm leading-6 text-[#6C7275]">
-            Are you sure you want to delete this review? This action cannot be
-            undone.
-          </p>
+          <p className="text-sm leading-6 text-[#6C7275]">{message}</p>
         </div>
 
         <div className="flex justify-end gap-3 border-t border-[#E8ECEF] p-6">
@@ -66,7 +71,7 @@ export default function DeleteReviewModal({
             disabled={isLoading}
             className="rounded-lg cursor-pointer bg-red-500 px-6 py-2 text-sm font-medium text-white transition hover:bg-red-600 disabled:opacity-50"
           >
-            {isLoading ? "Deleting..." : "Yes, Delete"}
+            {isLoading ? loadingText : confirmText}
           </button>
         </div>
       </div>

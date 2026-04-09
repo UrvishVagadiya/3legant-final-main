@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import AddressModal from "./AddressModal";
 import AddressCard from "./AddressCard";
+import DeleteReviewModal from "@/components/product/DeleteReviewModal";
 import { useAppSelector, RootState } from "@/store";
 import toast from "react-hot-toast";
 import {
@@ -95,6 +96,16 @@ const Address = ({ fullName }: AddressProps) => {
   const [editingAddress, setEditingAddress] = useState<AddressData | null>(
     null,
   );
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    addressId: string | null;
+    addressType: "shipping" | "billing" | null;
+  }>({
+    isOpen: false,
+    addressId: null,
+    addressType: null,
+  });
+  const [isDeletingAddress, setIsDeletingAddress] = useState(false);
   const [modalFixedType, setModalFixedType] = useState<
     "shipping" | "billing" | undefined
   >(undefined);
@@ -113,7 +124,11 @@ const Address = ({ fullName }: AddressProps) => {
 
   const handleDelete = async (id: string) => {
     if (user?.id) {
-      await deleteAddr({ id, userId: user.id });
+      setDeleteConfirmModal({
+        isOpen: true,
+        addressId: id,
+        addressType: null,
+      });
     }
   };
 
@@ -249,6 +264,43 @@ const Address = ({ fullName }: AddressProps) => {
         fixedType={modalFixedType}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
+      />
+
+      <DeleteReviewModal
+        isOpen={deleteConfirmModal.isOpen}
+        isLoading={isDeletingAddress}
+        title="Delete Address"
+        message="Are you sure you want to delete this address? This action cannot be undone."
+        confirmText="Yes, Delete"
+        loadingText="Deleting..."
+        onCancel={() =>
+          setDeleteConfirmModal({
+            isOpen: false,
+            addressId: null,
+            addressType: null,
+          })
+        }
+        onConfirm={async () => {
+          if (!user?.id || !deleteConfirmModal.addressId) return;
+
+          setIsDeletingAddress(true);
+          try {
+            await deleteAddr({
+              id: deleteConfirmModal.addressId,
+              userId: user.id,
+            }).unwrap();
+            toast.success("Address deleted successfully!");
+            setDeleteConfirmModal({
+              isOpen: false,
+              addressId: null,
+              addressType: null,
+            });
+          } catch (err) {
+            toast.error("Failed to delete address");
+          } finally {
+            setIsDeletingAddress(false);
+          }
+        }}
       />
     </div>
   );

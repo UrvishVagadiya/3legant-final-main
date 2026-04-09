@@ -17,7 +17,6 @@ import { IoMdStar, IoMdStarOutline } from "react-icons/io";
 import { X, Edit2, Trash2 } from "lucide-react";
 import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 import { BsReply } from "react-icons/bs";
-import ConfirmModal from "@/components/ui/ConfirmModal";
 import DeleteReviewModal from "@/components/product/DeleteReviewModal";
 import type { Review } from "@/store/api/reviewApi";
 
@@ -621,13 +620,8 @@ export default function ReviewsSection({
         )}
       </div>
 
-      <ConfirmModal
+      <DeleteReviewModal
         isOpen={replyDeleteConfirmModal.isOpen}
-        title="Delete Reply"
-        message="Are you sure you want to delete this reply? This action cannot be undone."
-        confirmText="Yes, Delete"
-        cancelText="Cancel"
-        isDangerous
         isLoading={isDeletingReply}
         onCancel={() =>
           setReplyDeleteConfirmModal({
@@ -662,6 +656,10 @@ export default function ReviewsSection({
             setIsDeletingReply(false);
           }
         }}
+        title="Delete Reply"
+        message="Are you sure you want to delete this reply? This action cannot be undone."
+        confirmText="Yes, Delete"
+        loadingText="Deleting..."
       />
 
       <DeleteReviewModal
