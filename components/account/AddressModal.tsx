@@ -50,8 +50,8 @@ const AddressModal = ({
       country: defaultValues?.country || "",
     }),
     [
-      defaultValues?.id,
       defaultValues?.label,
+      defaultValues?.type,
       defaultValues?.name,
       defaultValues?.phone,
       defaultValues?.street_address,
@@ -67,57 +67,44 @@ const AddressModal = ({
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<FormFields>({
     mode: "onChange",
     defaultValues: defaultFormValues,
   });
 
-  // Watch all form fields to verify they're being captured
-  const watchedValues = watch();
-
-  useEffect(() => {
-    console.log("Current form state:", watchedValues);
-  }, [watchedValues]);
-
   useEffect(() => {
     if (isOpen) {
-      console.log("Modal opened, resetting form with:", defaultFormValues);
       reset(defaultFormValues);
     }
   }, [isOpen, defaultFormValues, reset]);
 
   if (!isOpen) return null;
 
-  const onSubmit = async (data: FormFields) => {
-    console.log("✅ Form successfully submitted - React Hook Form data:", data);
-    console.log("Form errors at submit time:", errors);
-    console.log("Has validation errors:", Object.keys(errors).length > 0);
+  const onSubmit = async (
+    _data: FormFields,
+    event?: React.BaseSyntheticEvent,
+  ) => {
+    const form = event?.currentTarget as HTMLFormElement | undefined;
+    const formValues = form
+      ? Object.fromEntries(new FormData(form).entries())
+      : {};
 
-    // Ensure all fields exist before trimming
-    const name = (data.name ?? "").trim();
-    const phone = (data.phone ?? "").trim();
-    const street_address = (data.street_address ?? "").trim();
-    const city = (data.city ?? "").trim();
-    const state = (data.state ?? "").trim();
-    const zip_code = (data.zip_code ?? "").trim();
-    const country = (data.country ?? "").trim();
+    const name = String(formValues.name ?? "").trim();
+    const phone = String(formValues.phone ?? "").trim();
+    const street_address = String(formValues.street_address ?? "").trim();
+    const city = String(formValues.city ?? "").trim();
+    const state = String(formValues.state ?? "").trim();
+    const zip_code = String(formValues.zip_code ?? "").trim();
+    const country = String(formValues.country ?? "").trim();
+    const type = String(
+      formValues.type ?? (fixedType || defaultValues?.type || "shipping"),
+    ) as "shipping" | "billing";
 
-    console.log("Trimmed fields:", {
-      name,
-      phone,
-      street_address,
-      city,
-      state,
-      zip_code,
-      country,
-    });
-
-    const payload = {
+    await onSave({
       id: defaultValues?.id,
-      label: data.label ?? "",
-      type: fixedType || data.type || "shipping",
+      label: String(formValues.label ?? "").trim(),
+      type,
       name,
       phone,
       address: `${street_address}, ${city}, ${state} ${zip_code}, ${country}`,
@@ -126,17 +113,11 @@ const AddressModal = ({
       state,
       zip_code,
       country,
-    };
-
-    console.log("Final payload to send:", payload);
-
-    await onSave(payload);
+    });
   };
 
-  const onInvalidSubmit = (errors: any) => {
-    console.error("❌ Form submission blocked by validation errors:", errors);
-    const errorList = Object.keys(errors).map(key => `${key}: ${errors[key]?.message}`).join(", ");
-    console.error("Error details:", errorList);
+  const onInvalidSubmit = (formErrors: unknown) => {
+    console.error("Form submission blocked by validation errors:", formErrors);
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -183,8 +164,7 @@ const AddressModal = ({
           <button
             type="submit"
             form="address-form"
-            disabled={Object.keys(errors).length > 0}
-            className="px-6 py-2.5 cursor-pointer rounded-lg bg-[#141718] font-medium text-white hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2.5 cursor-pointer rounded-lg bg-[#141718] font-medium text-white hover:bg-gray-800 transition-colors"
           >
             {defaultValues?.id ? "Save changes" : "Add Address"}
           </button>
