@@ -56,10 +56,51 @@ export const addressApi = apiService.injectEndpoints({
       providesTags: (result, error, userId) => [{ type: 'Address', id: userId }],
     }),
     deleteAddress: builder.mutation<null, { id: string; userId: string }>({
-      queryFn: async ({ id }) => {
+      queryFn: async ({ id, userId }) => {
         const supabase = createClient();
-        const { error } = await supabase.from("user_addresses").delete().eq("id", id);
+
+        const { data: deletingAddress, error: getAddressError } = await supabase
+          .from("user_addresses")
+          .select("id, type, is_default")
+          .eq("id", id)
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (getAddressError) return { error: getAddressError };
+
+        const { error } = await supabase
+          .from("user_addresses")
+          .delete()
+          .eq("id", id)
+          .eq("user_id", userId);
         if (error) return { error };
+
+        if (deletingAddress?.is_default && deletingAddress.type) {
+          const { data: remainingAddresses, error: remainingError } = await supabase
+            .from("user_addresses")
+            .select("id, is_default")
+            .eq("user_id", userId)
+            .eq("type", deletingAddress.type)
+            .order("created_at", { ascending: false });
+
+          if (remainingError) return { error: remainingError };
+
+          if (remainingAddresses?.length) {
+            const hasDefault = remainingAddresses.some(
+              (address: { id: string; is_default: boolean }) => address.is_default,
+            );
+            if (!hasDefault) {
+              const { error: setDefaultError } = await supabase
+                .from("user_addresses")
+                .update({ is_default: true })
+                .eq("id", remainingAddresses[0].id)
+                .eq("user_id", userId);
+
+              if (setDefaultError) return { error: setDefaultError };
+            }
+          }
+        }
+
         return { data: null };
       },
       invalidatesTags: (result, error, { userId }) => [{ type: 'Address', id: userId }],

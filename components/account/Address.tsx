@@ -123,8 +123,45 @@ const Address = ({ fullName }: AddressProps) => {
     }
   };
 
+  const normalize = (value: string) =>
+    value.trim().replace(/\s+/g, " ").toLowerCase();
+
+  const isDuplicateAddress = (data: AddressData) => {
+    const type = data.type || modalFixedType || "shipping";
+    const targetName = normalize(data.name);
+    const targetPhone = normalize(data.phone);
+    const targetStreet = normalize(data.street_address || "");
+    const targetCity = normalize(data.city || "");
+    const targetState = normalize(data.state || "");
+    const targetZip = normalize(data.zip_code || "");
+    const targetCountry = normalize(data.country || "");
+
+    return addresses.some((address) => {
+      if (address.type !== type) return false;
+      if (data.id && address.id === data.id) return false;
+
+      const currentName = normalize(
+        `${address.first_name} ${address.last_name}`,
+      );
+      return (
+        currentName === targetName &&
+        normalize(address.phone || "") === targetPhone &&
+        normalize(address.street_address || "") === targetStreet &&
+        normalize(address.city || "") === targetCity &&
+        normalize(address.state || "") === targetState &&
+        normalize(address.zip_code || "") === targetZip &&
+        normalize(address.country || "") === targetCountry
+      );
+    });
+  };
+
   const handleSave = async (data: AddressData) => {
     if (user?.id) {
+      if (!data.id && isDuplicateAddress(data)) {
+        toast.error("This address already exists.");
+        return;
+      }
+
       console.log("handleSave received data:", data);
       console.log("Data types:", {
         name: typeof data.name,

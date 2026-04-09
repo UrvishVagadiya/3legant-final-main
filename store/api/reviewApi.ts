@@ -262,6 +262,36 @@ export const reviewApi = apiService.injectEndpoints({
       },
       invalidatesTags: (result, error, { productId, reviewId }) => [{ type: 'Review', id: reviewId }, { type: 'Review', id: `LIST_${productId}` }],
     }),
+    updateReply: builder.mutation<ReviewReply, { productId: string; reviewId: string; replyId: string; userId: string; reply: string }>({
+      queryFn: async ({ replyId, userId, reply }) => {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("review_replies")
+          .update({ reply })
+          .eq("id", replyId)
+          .eq("user_id", userId)
+          .select()
+          .single();
+
+        if (error) return { error };
+        return { data: data as ReviewReply };
+      },
+      invalidatesTags: (result, error, { productId, reviewId }) => [{ type: 'Review', id: reviewId }, { type: 'Review', id: `LIST_${productId}` }],
+    }),
+    deleteReply: builder.mutation<null, { productId: string; reviewId: string; replyId: string; userId: string }>({
+      queryFn: async ({ replyId, userId }) => {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from("review_replies")
+          .delete()
+          .eq("id", replyId)
+          .eq("user_id", userId);
+
+        if (error) return { error };
+        return { data: null };
+      },
+      invalidatesTags: (result, error, { productId, reviewId }) => [{ type: 'Review', id: reviewId }, { type: 'Review', id: `LIST_${productId}` }],
+    }),
   }),
 });
 
@@ -274,4 +304,6 @@ export const {
   useDeleteReviewMutation,
   useToggleLikeReviewMutation,
   useAddReplyMutation,
+  useUpdateReplyMutation,
+  useDeleteReplyMutation,
 } = reviewApi;

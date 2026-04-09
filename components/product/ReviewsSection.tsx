@@ -9,6 +9,8 @@ import {
   useDeleteReviewMutation,
   useToggleLikeReviewMutation,
   useAddReplyMutation,
+  useUpdateReplyMutation,
+  useDeleteReplyMutation,
 } from "@/store/api/reviewApi";
 import toast from "react-hot-toast";
 import { IoMdStar, IoMdStarOutline } from "react-icons/io";
@@ -37,6 +39,8 @@ interface ReviewCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onSubmitReply: (reply: string) => void;
+  onEditReply: (replyId: string, reply: string) => void;
+  onDeleteReply: (replyId: string) => void;
 }
 
 export const Stars = ({
@@ -127,9 +131,13 @@ export function ReviewCard({
   onEdit,
   onDelete,
   onSubmitReply,
+  onEditReply,
+  onDeleteReply,
 }: ReviewCardProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editingReplyText, setEditingReplyText] = useState("");
   const isOwner = currentUserId === review.user_id;
 
   const handleReplySubmit = () => {
@@ -137,6 +145,13 @@ export function ReviewCard({
     onSubmitReply(replyText);
     setReplyText("");
     setShowReplyForm(false);
+  };
+
+  const handleReplyEditSubmit = () => {
+    if (!editingReplyId || !editingReplyText.trim()) return;
+    onEditReply(editingReplyId, editingReplyText);
+    setEditingReplyId(null);
+    setEditingReplyText("");
   };
 
   return (
@@ -224,8 +239,60 @@ export function ReviewCard({
                   <span className="text-[#6C7275]">
                     {new Date(r.created_at).toLocaleDateString()}
                   </span>
+                  {currentUserId === r.user_id && (
+                    <div className="ml-auto flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingReplyId(r.id);
+                          setEditingReplyText(r.reply);
+                        }}
+                        className="text-[#6C7275] hover:text-black text-[11px] font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteReply(r.id)}
+                        className="text-red-500 hover:text-red-700 text-[11px] font-medium"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <p className="text-[#6C7275] text-xs mt-1">{r.reply}</p>
+
+                {editingReplyId === r.id ? (
+                  <div className="mt-2 flex flex-col gap-2">
+                    <textarea
+                      value={editingReplyText}
+                      onChange={(e) => setEditingReplyText(e.target.value)}
+                      rows={3}
+                      className="w-full border border-[#E8ECEF] rounded-lg px-3 py-2 text-xs outline-none focus:border-black resize-none"
+                    />
+                    <div className="flex items-center gap-2 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingReplyId(null);
+                          setEditingReplyText("");
+                        }}
+                        className="text-xs font-medium text-[#6C7275] hover:text-black"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleReplyEditSubmit}
+                        className="bg-black text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-90"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[#6C7275] text-xs mt-1">{r.reply}</p>
+                )}
               </div>
             </div>
           ))}
@@ -275,6 +342,8 @@ export default function ReviewsSection({
   const [deleteReviewMutation] = useDeleteReviewMutation();
   const [toggleLikeMutation] = useToggleLikeReviewMutation();
   const [addReplyMutation] = useAddReplyMutation();
+  const [updateReplyMutation] = useUpdateReplyMutation();
+  const [deleteReplyMutation] = useDeleteReplyMutation();
 
   const loading = loadingReviews || isAdding || isUpdating;
   const userReview = reviews.find((r) => r.user_id === user?.id) || null;
@@ -294,7 +363,17 @@ export default function ReviewsSection({
     reviewId: null,
     reviewText: "",
   });
+  const [replyDeleteConfirmModal, setReplyDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    reviewId: string | null;
+    replyId: string | null;
+  }>({
+    isOpen: false,
+    reviewId: null,
+    replyId: null,
+  });
   const [isDeletingReview, setIsDeletingReview] = useState(false);
+  const [isDeletingReply, setIsDeletingReply] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -339,6 +418,43 @@ export default function ReviewsSection({
       : 0;
   const canShowReviewWriteSection =
     !!userReview || (Boolean(user) && canReview);
+
+  const handleReplyEdit = async (
+    reviewId: string,
+    replyId: string,
+    reply: string,
+  ) => {
+    if (!user) return toast.error("Please sign in");
+    try {
+      await updateReplyMutation({
+        productId,
+        reviewId,
+        replyId,
+        userId: user.id,
+        reply,
+      }).unwrap();
+      toast.success("Reply updated!");
+    } catch (err) {
+      toast.error("Failed to update reply");
+    }
+  };
+
+  const handleReplyDelete = async (reviewId: string, replyId: string) => {
+    if (!user) return toast.error("Please sign in");
+    try {
+      await deleteReplyMutation({
+        productId,
+        reviewId,
+        replyId,
+        userId: user.id,
+      }).unwrap();
+      toast.success("Reply deleted!");
+      return true;
+    } catch (err) {
+      toast.error("Failed to delete reply");
+      return false;
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8 mt-10">
@@ -490,10 +606,63 @@ export default function ReviewsSection({
                   toast.error("Failed to post reply");
                 }
               }}
+              onEditReply={async (replyId: string, reply: string) =>
+                handleReplyEdit(review.id, replyId, reply)
+              }
+              onDeleteReply={async (replyId: string) => {
+                setReplyDeleteConfirmModal({
+                  isOpen: true,
+                  reviewId: review.id,
+                  replyId,
+                });
+              }}
             />
           ))
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={replyDeleteConfirmModal.isOpen}
+        title="Delete Reply"
+        message="Are you sure you want to delete this reply? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        isDangerous
+        isLoading={isDeletingReply}
+        onCancel={() =>
+          setReplyDeleteConfirmModal({
+            isOpen: false,
+            reviewId: null,
+            replyId: null,
+          })
+        }
+        onConfirm={async () => {
+          if (
+            !user ||
+            !replyDeleteConfirmModal.reviewId ||
+            !replyDeleteConfirmModal.replyId
+          ) {
+            return;
+          }
+
+          setIsDeletingReply(true);
+          try {
+            const deleted = await handleReplyDelete(
+              replyDeleteConfirmModal.reviewId,
+              replyDeleteConfirmModal.replyId,
+            );
+            if (deleted) {
+              setReplyDeleteConfirmModal({
+                isOpen: false,
+                reviewId: null,
+                replyId: null,
+              });
+            }
+          } finally {
+            setIsDeletingReply(false);
+          }
+        }}
+      />
 
       <DeleteReviewModal
         isOpen={deleteConfirmModal.isOpen}
