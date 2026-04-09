@@ -63,19 +63,37 @@ const AddressModal = ({
   if (!isOpen) return null;
 
   const onSubmit = async (data: FormFields) => {
-    const trimmedCountry = data.country.trim();
+    // Ensure all fields exist before trimming
+    const name = (data.name ?? "").trim();
+    const phone = (data.phone ?? "").trim();
+    const street_address = (data.street_address ?? "").trim();
+    const city = (data.city ?? "").trim();
+    const state = (data.state ?? "").trim();
+    const zip_code = (data.zip_code ?? "").trim();
+    const country = (data.country ?? "").trim();
+
+    console.log("Form data:", {
+      name,
+      phone,
+      street_address,
+      city,
+      state,
+      zip_code,
+      country,
+    });
+
     await onSave({
       id: defaultValues?.id,
-      label: data.label,
-      type: fixedType || data.type,
-      name: data.name.trim(),
-      phone: data.phone.trim(),
-      address: `${data.street_address.trim()}, ${data.city.trim()}, ${data.state.trim()} ${data.zip_code.trim()}, ${trimmedCountry}`,
-      street_address: data.street_address.trim(),
-      city: data.city.trim(),
-      state: data.state.trim(),
-      zip_code: data.zip_code.trim(),
-      country: trimmedCountry,
+      label: data.label ?? "",
+      type: fixedType || data.type || "shipping",
+      name,
+      phone,
+      address: `${street_address}, ${city}, ${state} ${zip_code}, ${country}`,
+      street_address,
+      city,
+      state,
+      zip_code,
+      country,
     });
   };
 

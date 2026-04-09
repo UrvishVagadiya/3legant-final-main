@@ -78,6 +78,8 @@ export const addressApi = apiService.injectEndpoints({
       queryFn: async ({ data, userId, modalFixedType }) => {
         const supabase = createClient();
 
+        console.log("Received address data:", data);
+
         // Ensure all fields exist and trim them
         const trimmedName = (data.name ?? "").toString().trim();
         const trimmedPhone = (data.phone ?? "").toString().trim();
@@ -86,6 +88,8 @@ export const addressApi = apiService.injectEndpoints({
         const trimmedState = (data.state ?? "").toString().trim();
         const trimmedZip = (data.zip_code ?? "").toString().trim();
         const trimmedCountry = (data.country ?? "").toString().trim();
+
+        console.log("Trimmed fields:", { trimmedName, trimmedPhone, trimmedStreet, trimmedCity, trimmedState, trimmedZip, trimmedCountry });
 
         // Validate each field and provide specific error
         const missingFields = [];
@@ -101,6 +105,7 @@ export const addressApi = apiService.injectEndpoints({
           const fieldMessage = missingFields.length === 1
             ? `${missingFields[0]} is required`
             : `Required fields missing: ${missingFields.join(", ")}`;
+          console.error("Validation failed:", fieldMessage);
           return { error: { status: 400, data: fieldMessage } };
         }
 
