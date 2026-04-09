@@ -24,7 +24,8 @@ export function validateCheckoutForm(
     requireBillingFields: boolean = useDifferentBilling,
 ): Record<string, string> {
     const errors: Record<string, string> = {};
-    const fieldsToValidate = [...InfoData, "email"] as string[];
+    const fieldsToValidate = InfoData.filter((field) => field !== "lastName") as string[];
+    fieldsToValidate.push("email");
     if (useDifferentBilling && requireBillingFields) {
         fieldsToValidate.push(...billingKeys);
     }

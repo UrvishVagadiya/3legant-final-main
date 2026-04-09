@@ -21,10 +21,9 @@ type FormData = {
   repeatNewPassword: string;
 };
 
-import { useAppDispatch, useAppSelector, RootState } from "@/store";
+import { useAppSelector, RootState } from "@/store";
 
 const AccountContent = () => {
-  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
   const [fullName, setFullName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -230,7 +229,7 @@ const AccountContent = () => {
   };
 
   return (
-    <div className="w-full max-w-350 mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 2xl:px-12 py-8 md:py-14 lg:py-16">
+    <div className="w-full max-w-350 mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 2xl:px-12 pt-8 md:pt-14 lg:pt-20 pb-8 md:pb-14 lg:pb-16">
       <button
         type="button"
         onClick={handleBack}
@@ -244,7 +243,7 @@ const AccountContent = () => {
         My Account
       </h1>
 
-      <div className="flex flex-col lg:flex-row gap-6 md:gap-8 lg:gap-10 xl:gap-18 mb-16 md:mb-20">
+      <div className="flex flex-col lg:flex-row lg:items-start gap-6 md:gap-8 lg:gap-10 xl:gap-18 mb-16 md:mb-20">
         <AccountSidebar
           fullName={fullName}
           displayName={displayName}

@@ -100,7 +100,7 @@ const AccountSidebar = ({
       : "text-gray-500 hover:text-gray-900 font-semibold cursor-pointer transition-colors";
 
   return (
-    <div className="w-full lg:w-60 xl:w-65 bg-[#F3F5F7] p-5 md:p-6 rounded-xl h-fit shrink-0">
+    <div className="w-full lg:w-60 xl:w-65 bg-[#F3F5F7] p-5 md:p-6 rounded-xl h-fit shrink-0 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto self-start">
       <div className="flex flex-col items-center mb-8">
         <div className="relative">
           <div className="w-20 h-20 rounded-full bg-gray-300 overflow-hidden mb-2 flex items-center justify-center">

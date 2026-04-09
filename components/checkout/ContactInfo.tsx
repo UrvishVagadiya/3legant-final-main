@@ -18,7 +18,7 @@ export default function ContactInfo({
       <h2 className="text-xl font-semibold mb-6">Contact Information</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <FormField
-          label="FIRST NAME"
+          label="FIRST NAME *"
           name="firstName"
           value={formData.firstName}
           onChange={onChange}
@@ -35,7 +35,7 @@ export default function ContactInfo({
         />
       </div>
       <FormField
-        label="PHONE NUMBER"
+        label="PHONE NUMBER *"
         name="phone"
         type="tel"
         value={formData.phone}
@@ -45,7 +45,7 @@ export default function ContactInfo({
         className="mb-4"
       />
       <FormField
-        label="EMAIL ADDRESS"
+        label="EMAIL ADDRESS *"
         name="email"
         type="email"
         value={formData.email}
