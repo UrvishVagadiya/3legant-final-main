@@ -72,16 +72,6 @@ const AddressModal = ({
     const zip_code = (data.zip_code ?? "").trim();
     const country = (data.country ?? "").trim();
 
-    console.log("Form data:", {
-      name,
-      phone,
-      street_address,
-      city,
-      state,
-      zip_code,
-      country,
-    });
-
     await onSave({
       id: defaultValues?.id,
       label: data.label ?? "",

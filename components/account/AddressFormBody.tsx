@@ -77,7 +77,7 @@ const AddressFormBody = ({
         {...register("name", {
           required: "Full name is required",
           validate: (v) =>
-            !v || v.trim().length > 0 || "Full name cannot be empty",
+            (v && v.trim().length > 0) || "Full name is required",
         })}
         className={inputClass(errors, "name")}
       />
@@ -90,7 +90,7 @@ const AddressFormBody = ({
         {...register("phone", {
           required: "Phone number is required",
           validate: (v) =>
-            !v || v.trim().length > 0 || "Phone number cannot be empty",
+            (v && v.trim().length > 0) || "Phone number is required",
         })}
         className={inputClass(errors, "phone")}
       />
@@ -103,7 +103,7 @@ const AddressFormBody = ({
         {...register("street_address", {
           required: "Street address is required",
           validate: (v) =>
-            !v || v.trim().length > 0 || "Street address cannot be empty",
+            (v && v.trim().length > 0) || "Street address is required",
         })}
         className={inputClass(errors, "street_address")}
       />
@@ -116,8 +116,7 @@ const AddressFormBody = ({
           placeholder="City"
           {...register("city", {
             required: "City is required",
-            validate: (v) =>
-              !v || v.trim().length > 0 || "City cannot be empty",
+            validate: (v) => (v && v.trim().length > 0) || "City is required",
           })}
           className={inputClass(errors, "city")}
         />
@@ -128,8 +127,7 @@ const AddressFormBody = ({
           placeholder="State"
           {...register("state", {
             required: "State is required",
-            validate: (v) =>
-              !v || v.trim().length > 0 || "State cannot be empty",
+            validate: (v) => (v && v.trim().length > 0) || "State is required",
           })}
           className={inputClass(errors, "state")}
         />
@@ -144,7 +142,7 @@ const AddressFormBody = ({
           {...register("zip_code", {
             required: "Zip code is required",
             validate: (v) =>
-              !v || v.trim().length > 0 || "Zip code cannot be empty",
+              (v && v.trim().length > 0) || "Zip code is required",
           })}
           className={inputClass(errors, "zip_code")}
         />
