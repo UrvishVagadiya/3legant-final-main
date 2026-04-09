@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Navbar from "@/components/layout/Navbar";
@@ -10,9 +11,14 @@ import { useAppSelector, RootState } from "@/store";
 
 const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const { user, isAuthenticated } = useAppSelector(
     (state: RootState) => state.auth,
   );
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isAuthPage = pathname === "/signin" || pathname === "/signup";
   const isForgotPassword = pathname === "/forgot-password";
@@ -43,7 +49,7 @@ const GlobalLayout = ({ children }: { children: React.ReactNode }) => {
         </>
       )}
       {children}
-      {showNewsLetter && <NewsLetter />}
+      {mounted && showNewsLetter && <NewsLetter />}
       {showFooter && <Footer />}
       <CartDrawer />
     </>

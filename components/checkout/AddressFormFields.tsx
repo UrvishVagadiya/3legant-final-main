@@ -27,7 +27,11 @@ const fieldConfig = (prefix: string) => {
       placeholder: "Town / City",
     },
     state: { name: withPrefix("state"), label: "STATE", placeholder: "State" },
-    zip: { name: withPrefix("zipCode"), label: "ZIP CODE", placeholder: "Zip Code" },
+    zip: {
+      name: withPrefix("zipCode"),
+      label: "ZIP CODE",
+      placeholder: "Zip Code",
+    },
   };
 };
 
