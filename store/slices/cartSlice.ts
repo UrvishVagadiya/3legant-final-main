@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import toast from 'react-hot-toast';
 import { createClient } from '@/utils/supabase/client';
+import { Coupon } from '@/utils/coupon';
 
 export interface CartItem {
   id: string;
@@ -20,11 +21,13 @@ interface CartState {
   shippingMethod: string;
   syncing: boolean;
   lastFetched: number | null;
+  appliedCoupon: Coupon | null;
+  couponDiscount: number;
 }
 
 const getInitialCartState = (): CartState => {
   if (typeof window === 'undefined') {
-    return { isCartOpen: false, items: [], shippingMethod: 'free', syncing: false, lastFetched: null };
+    return { isCartOpen: false, items: [], shippingMethod: 'free', syncing: false, lastFetched: null, appliedCoupon: null, couponDiscount: 0 };
   }
   const saved = localStorage.getItem('cart-storage');
   if (saved) {
@@ -36,12 +39,14 @@ const getInitialCartState = (): CartState => {
         shippingMethod: parsed.shippingMethod || 'free',
         syncing: false,
         lastFetched: null,
+        appliedCoupon: parsed.appliedCoupon || null,
+        couponDiscount: parsed.couponDiscount || 0,
       };
     } catch (e) {
       console.error('Failed to parse cart storage', e);
     }
   }
-  return { isCartOpen: false, items: [], shippingMethod: 'free', syncing: false, lastFetched: null };
+  return { isCartOpen: false, items: [], shippingMethod: 'free', syncing: false, lastFetched: null, appliedCoupon: null, couponDiscount: 0 };
 };
 
 const initialState: CartState = getInitialCartState();
@@ -55,7 +60,7 @@ const cartSlice = createSlice({
     },
     setShippingMethod: (state, action: PayloadAction<string>) => {
       state.shippingMethod = action.payload;
-      localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod }));
+      localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod, appliedCoupon: state.appliedCoupon, couponDiscount: state.couponDiscount }));
     },
     addToCart: (state, action: PayloadAction<{ item: Omit<CartItem, 'quantity'> }>) => {
       const { item } = action.payload;
@@ -89,11 +94,11 @@ const cartSlice = createSlice({
         style: { borderRadius: '8px', background: '#141718', color: '#fff' },
         id: 'add-to-cart-success',
       });
-      localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod }));
+      localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod, appliedCoupon: state.appliedCoupon, couponDiscount: state.couponDiscount }));
     },
     removeFromCart: (state, action: PayloadAction<{ id: string; color: string }>) => {
       state.items = state.items.filter(i => !(i.id === action.payload.id && i.color === action.payload.color));
-      localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod }));
+      localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod, appliedCoupon: state.appliedCoupon, couponDiscount: state.couponDiscount }));
     },
     updateQuantity: (state, action: PayloadAction<{ id: string; color: string; quantity: number }>) => {
       const { id, color, quantity } = action.payload;
@@ -102,7 +107,7 @@ const cartSlice = createSlice({
       if (item) {
         if (quantity <= 0) {
           state.items.splice(itemIndex, 1);
-          localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod }));
+          localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod, appliedCoupon: state.appliedCoupon, couponDiscount: state.couponDiscount }));
           return;
         }
 
@@ -112,7 +117,7 @@ const cartSlice = createSlice({
           item.quantity = Math.min(item.stock, Math.max(1, quantity));
         }
       }
-      localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod }));
+      localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod, appliedCoupon: state.appliedCoupon, couponDiscount: state.couponDiscount }));
     },
     clearCart: (state) => {
       state.items = [];
@@ -120,10 +125,20 @@ const cartSlice = createSlice({
     },
     setCartItems: (state, action: PayloadAction<CartItem[]>) => {
       state.items = action.payload;
-      localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod }));
+      localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod, appliedCoupon: state.appliedCoupon, couponDiscount: state.couponDiscount }));
+    },
+    setAppliedCoupon: (state, action: PayloadAction<{ coupon: Coupon | null; discount: number }>) => {
+      state.appliedCoupon = action.payload.coupon;
+      state.couponDiscount = action.payload.discount;
+      localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod, appliedCoupon: state.appliedCoupon, couponDiscount: state.couponDiscount }));
+    },
+    removeCoupon: (state) => {
+      state.appliedCoupon = null;
+      state.couponDiscount = 0;
+      localStorage.setItem('cart-storage', JSON.stringify({ items: state.items, shippingMethod: state.shippingMethod, appliedCoupon: null, couponDiscount: 0 }));
     }
   },
 });
 
-export const { toggleCart, setShippingMethod, addToCart, removeFromCart, updateQuantity, clearCart, setCartItems } = cartSlice.actions;
+export const { toggleCart, setShippingMethod, addToCart, removeFromCart, updateQuantity, clearCart, setCartItems, setAppliedCoupon, removeCoupon } = cartSlice.actions;
 export default cartSlice.reducer;

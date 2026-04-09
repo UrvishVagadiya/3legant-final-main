@@ -8,7 +8,12 @@ import PaymentSection from "@/components/checkout/PaymentSection";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import { SavedAddress } from "@/components/checkout/SavedAddressSelector";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
-import { updateQuantity, setShippingMethod } from "@/store/slices/cartSlice";
+import {
+  updateQuantity,
+  setShippingMethod,
+  setAppliedCoupon,
+  removeCoupon,
+} from "@/store/slices/cartSlice";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { getShippingCost } from "@/utils/getShippingCost";
 import { createClient } from "@/utils/supabase/client";
@@ -39,9 +44,12 @@ export default function Checkout() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { user } = useAppSelector((state: RootState) => state.auth);
-  const { items: cartItems, shippingMethod } = useAppSelector(
-    (state: RootState) => state.cart,
-  );
+  const {
+    items: cartItems,
+    shippingMethod,
+    appliedCoupon,
+    couponDiscount,
+  } = useAppSelector((state: RootState) => state.cart);
   const searchParams = useSearchParams();
   const isMounted = useIsMounted();
 
@@ -56,8 +64,6 @@ export default function Checkout() {
 
   const [placing, setPlacing] = useState(false);
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-  const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponLoading, setCouponLoading] = useState(false);
 
   const subtotal = cartItems.reduce(
@@ -69,15 +75,11 @@ export default function Checkout() {
 
   useEffect(() => {
     if (!appliedCoupon) {
-      if (couponDiscount !== 0) {
-        setCouponDiscount(0);
-      }
       return;
     }
 
     if (subtotal < appliedCoupon.min_order_amount) {
-      setAppliedCoupon(null);
-      setCouponDiscount(0);
+      dispatch(removeCoupon());
       toast.error(
         `Coupon removed. Minimum order amount is $${appliedCoupon.min_order_amount.toFixed(2)}`,
       );
@@ -86,9 +88,11 @@ export default function Checkout() {
 
     const nextDiscount = calculateCouponDiscount(appliedCoupon, subtotal);
     if (nextDiscount !== couponDiscount) {
-      setCouponDiscount(nextDiscount);
+      dispatch(
+        setAppliedCoupon({ coupon: appliedCoupon, discount: nextDiscount }),
+      );
     }
-  }, [appliedCoupon, subtotal, couponDiscount]);
+  }, [appliedCoupon, subtotal, couponDiscount, dispatch]);
 
   // ── Coupon ──────────────────────────────────────────────────────────────
   const handleApplyCoupon = async () => {
@@ -96,8 +100,9 @@ export default function Checkout() {
     setCouponLoading(true);
     const result = await validateCoupon(couponCode.trim(), subtotal, user?.id);
     if (result.valid && result.coupon) {
-      setAppliedCoupon(result.coupon);
-      setCouponDiscount(result.discount);
+      dispatch(
+        setAppliedCoupon({ coupon: result.coupon, discount: result.discount }),
+      );
       setCouponCode("");
       toast.success(`Coupon applied! You saved $${result.discount.toFixed(2)}`);
     } else {
@@ -106,9 +111,8 @@ export default function Checkout() {
     setCouponLoading(false);
   };
 
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponDiscount(0);
+  const handleRemoveCoupon = () => {
+    dispatch(removeCoupon());
   };
 
   // ── Cart ─────────────────────────────────────────────────────────────────
@@ -553,7 +557,7 @@ export default function Checkout() {
             onApplyCoupon={handleApplyCoupon}
             couponLoading={couponLoading}
             appliedCoupon={appliedCoupon}
-            onRemoveCoupon={removeCoupon}
+            onRemoveCoupon={handleRemoveCoupon}
             setShippingMethod={handleSetShippingMethod}
             placing={placing}
             onPlaceOrder={handlePlaceOrder}

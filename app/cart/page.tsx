@@ -10,6 +10,8 @@ import {
   removeFromCart,
   updateQuantity,
   setShippingMethod,
+  setAppliedCoupon,
+  removeCoupon,
 } from "@/store/slices/cartSlice";
 import { useIsMounted } from "@/hooks/useIsMounted";
 import { getShippingCost } from "@/utils/getShippingCost";
@@ -25,14 +27,11 @@ import { getEffectiveCartLineTotal } from "@/utils/getEffectiveCartPrice";
 const Cart = () => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
-  const { items, shippingMethod } = useAppSelector(
-    (state: RootState) => state.cart,
-  );
+  const { items, shippingMethod, appliedCoupon, couponDiscount } =
+    useAppSelector((state: RootState) => state.cart);
 
   const isMounted = useIsMounted();
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-  const [discount, setDiscount] = useState(0);
   const [couponLoading, setCouponLoading] = useState(false);
 
   const handleRemoveItem = (id: string, color: string) => {
@@ -66,19 +65,15 @@ const Cart = () => {
     (acc, curr) => acc + getEffectiveCartLineTotal(curr),
     0,
   );
-  const total = subtotal + getShippingCost(shippingMethod) - discount;
+  const total = subtotal + getShippingCost(shippingMethod) - couponDiscount;
 
   useEffect(() => {
     if (!appliedCoupon) {
-      if (discount !== 0) {
-        setDiscount(0);
-      }
       return;
     }
 
     if (subtotal < appliedCoupon.min_order_amount) {
-      setAppliedCoupon(null);
-      setDiscount(0);
+      dispatch(removeCoupon());
       toast.error(
         `Coupon removed. Minimum order amount is $${appliedCoupon.min_order_amount.toFixed(2)}`,
       );
@@ -86,10 +81,12 @@ const Cart = () => {
     }
 
     const nextDiscount = calculateCouponDiscount(appliedCoupon, subtotal);
-    if (nextDiscount !== discount) {
-      setDiscount(nextDiscount);
+    if (nextDiscount !== couponDiscount) {
+      dispatch(
+        setAppliedCoupon({ coupon: appliedCoupon, discount: nextDiscount }),
+      );
     }
-  }, [appliedCoupon, subtotal, discount]);
+  }, [appliedCoupon, subtotal, couponDiscount, dispatch]);
 
   if (!isMounted) return null;
 
@@ -98,8 +95,9 @@ const Cart = () => {
     setCouponLoading(true);
     const result = await validateCoupon(couponCode.trim(), subtotal, user?.id);
     if (result.valid && result.coupon) {
-      setAppliedCoupon(result.coupon);
-      setDiscount(result.discount);
+      dispatch(
+        setAppliedCoupon({ coupon: result.coupon, discount: result.discount }),
+      );
       setCouponCode("");
       toast.success(`Coupon applied! -$${result.discount.toFixed(2)}`);
     } else {
@@ -144,11 +142,12 @@ const Cart = () => {
               <div className="flex items-center gap-2 mb-3 text-sm">
                 <Ticket size={16} className="text-[#38CB89]" />
                 <span className="font-medium">{appliedCoupon.code}</span>
-                <span className="text-[#38CB89]">-${discount.toFixed(2)}</span>
+                <span className="text-[#38CB89]">
+                  -${couponDiscount.toFixed(2)}
+                </span>
                 <button
                   onClick={() => {
-                    setAppliedCoupon(null);
-                    setDiscount(0);
+                    dispatch(removeCoupon());
                   }}
                   className="cursor-pointer text-gray-400 hover:text-black ml-1"
                 >
