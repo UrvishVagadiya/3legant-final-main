@@ -263,26 +263,113 @@ export default function Checkout() {
       ? `${formData.billingFirstName} ${formData.billingLastName}`.trim()
       : `${formData.firstName} ${formData.lastName}`.trim();
 
-    await saveAddress({
-      userId: user.id,
-      modalFixedType: type,
-      data: {
-        type,
-        name,
-        phone: isBilling ? formData.billingPhone : formData.phone,
-        email: isBilling ? undefined : formData.email,
-        address: isBilling
-          ? formData.billingStreetAddress
-          : formData.streetAddress,
-        street_address: isBilling
-          ? formData.billingStreetAddress
-          : formData.streetAddress,
-        city: isBilling ? formData.billingCity : formData.city,
-        state: isBilling ? formData.billingState : formData.state,
-        zip_code: isBilling ? formData.billingZipCode : formData.zipCode,
-        country: isBilling ? formData.billingCountry : formData.country,
-      },
-    }).unwrap();
+    try {
+      await saveAddress({
+        userId: user.id,
+        modalFixedType: type,
+        data: {
+          type,
+          name,
+          phone: isBilling ? formData.billingPhone : formData.phone,
+          email: isBilling ? undefined : formData.email,
+          address: isBilling
+            ? formData.billingStreetAddress
+            : formData.streetAddress,
+          street_address: isBilling
+            ? formData.billingStreetAddress
+            : formData.streetAddress,
+          city: isBilling ? formData.billingCity : formData.city,
+          state: isBilling ? formData.billingState : formData.state,
+          zip_code: isBilling ? formData.billingZipCode : formData.zipCode,
+          country: isBilling ? formData.billingCountry : formData.country,
+        },
+      }).unwrap();
+    } catch (error: unknown) {
+      const status =
+        typeof error === "object" && error !== null && "status" in error
+          ? (error as { status?: number }).status
+          : undefined;
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "data" in error &&
+        typeof (error as { data?: unknown }).data === "string"
+          ? (error as { data: string }).data
+          : "";
+
+      if (
+        status === 409 ||
+        /duplicate|already exists|conflict|unique/i.test(message)
+      ) {
+        return;
+      }
+
+      throw error;
+    }
+  };
+
+  const getShippingPayload = () => {
+    if (selShippingId !== "new") {
+      const selected = savedShipping.find((a) => a.id === selShippingId);
+      if (selected) {
+        return {
+          first_name: selected.first_name,
+          last_name: selected.last_name,
+          email: selected.email || formData.email,
+          phone: selected.phone || formData.phone,
+          street_address: selected.street_address,
+          city: selected.city,
+          state: selected.state,
+          zip_code: selected.zip_code,
+          country: selected.country,
+        };
+      }
+    }
+
+    return {
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      street_address: formData.streetAddress,
+      city: formData.city,
+      state: formData.state,
+      zip_code: formData.zipCode,
+      country: formData.country,
+    };
+  };
+
+  const getBillingPayload = () => {
+    if (!useDifferentBilling) {
+      return null;
+    }
+
+    if (selBillingId !== "new") {
+      const selected = savedBilling.find((a) => a.id === selBillingId);
+      if (selected) {
+        return {
+          first_name: selected.first_name,
+          last_name: selected.last_name,
+          phone: selected.phone || formData.billingPhone,
+          street_address: selected.street_address,
+          city: selected.city,
+          state: selected.state,
+          zip_code: selected.zip_code,
+          country: selected.country,
+        };
+      }
+    }
+
+    return {
+      first_name: formData.billingFirstName,
+      last_name: formData.billingLastName,
+      phone: formData.billingPhone,
+      street_address: formData.billingStreetAddress,
+      city: formData.billingCity,
+      state: formData.billingState,
+      zip_code: formData.billingZipCode,
+      country: formData.billingCountry,
+    };
   };
 
   // ── Place order → calls Supabase edge function directly ─────────────────
@@ -292,7 +379,13 @@ export default function Checkout() {
       return;
     }
 
-    const newErrors = validateCheckoutForm(formData, useDifferentBilling);
+    const shouldValidateBillingFields =
+      useDifferentBilling && selBillingId === "new";
+    const newErrors = validateCheckoutForm(
+      formData,
+      useDifferentBilling,
+      shouldValidateBillingFields,
+    );
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       document
@@ -336,6 +429,8 @@ export default function Checkout() {
       }
 
       const finalTotal = subtotal + shippingCost - couponDiscount;
+      const shippingPayload = getShippingPayload();
+      const billingPayload = getBillingPayload();
 
       // Call Supabase edge function directly (no Next.js API route needed)
       const response = await fetch(
@@ -356,29 +451,8 @@ export default function Checkout() {
               unit_price: getEffectiveCartPrice(i),
               color: i.color ?? null,
             })),
-            shipping_data: {
-              first_name: formData.firstName,
-              last_name: formData.lastName,
-              email: formData.email,
-              phone: formData.phone,
-              street_address: formData.streetAddress,
-              city: formData.city,
-              state: formData.state,
-              zip_code: formData.zipCode,
-              country: formData.country,
-            },
-            billing_data: useDifferentBilling
-              ? {
-                  first_name: formData.billingFirstName,
-                  last_name: formData.billingLastName,
-                  phone: formData.billingPhone,
-                  street_address: formData.billingStreetAddress,
-                  city: formData.billingCity,
-                  state: formData.billingState,
-                  zip_code: formData.billingZipCode,
-                  country: formData.billingCountry,
-                }
-              : null,
+            shipping_data: shippingPayload,
+            billing_data: billingPayload,
             has_different_billing: useDifferentBilling,
             shipping_method: shippingMethod,
             shipping_cost: shippingCost,

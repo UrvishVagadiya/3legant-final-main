@@ -18,10 +18,14 @@ export function applyAddress(address: SavedAddress, isBilling: boolean): Record<
     return r;
 }
 
-export function validateCheckoutForm(formData: Record<string, string>, useDifferentBilling: boolean): Record<string, string> {
+export function validateCheckoutForm(
+    formData: Record<string, string>,
+    useDifferentBilling: boolean,
+    requireBillingFields: boolean = useDifferentBilling,
+): Record<string, string> {
     const errors: Record<string, string> = {};
     const fieldsToValidate = [...InfoData, "email"] as string[];
-    if (useDifferentBilling) {
+    if (useDifferentBilling && requireBillingFields) {
         fieldsToValidate.push(...billingKeys);
     }
 

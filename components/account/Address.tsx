@@ -128,8 +128,15 @@ const Address = ({ fullName }: AddressProps) => {
       try {
         await saveAddr({ data, userId: user.id, modalFixedType }).unwrap();
         setModalOpen(false);
-      } catch {
-        toast.error("Please fill all required address fields.");
+      } catch (err: unknown) {
+        const message =
+          typeof err === "object" &&
+          err !== null &&
+          "data" in err &&
+          typeof (err as { data?: unknown }).data === "string"
+            ? (err as { data: string }).data
+            : "Unable to save address. Please try again.";
+        toast.error(message);
         throw new Error("Address save failed");
       }
     }
