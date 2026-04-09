@@ -1,7 +1,6 @@
 import React from "react";
-import { UseFormRegister, FieldErrors } from "react-hook-form";
 
-export type FormFields = {
+export type AddressFormValues = {
   label: string;
   type: "shipping" | "billing";
   name: string;
@@ -13,8 +12,10 @@ export type FormFields = {
   country: string;
 };
 
-const inputClass = (errors: FieldErrors<FormFields>, field: keyof FormFields) =>
-  `w-full border rounded-[6px] px-4 py-3 outline-none transition-colors ${errors[field] ? "border-red-500" : "border-gray-300 focus:border-black bg-white"}`;
+export type FormFields = AddressFormValues;
+
+const inputClass = (hasError: boolean) =>
+  `w-full border rounded-[6px] px-4 py-3 outline-none transition-colors ${hasError ? "border-red-500" : "border-gray-300 focus:border-black bg-white"}`;
 
 const FieldBlock = ({
   label,
@@ -35,15 +36,20 @@ const FieldBlock = ({
 );
 
 interface Props {
-  register: UseFormRegister<FormFields>;
-  errors: FieldErrors<FormFields>;
+  values: FormFields;
+  errors: Partial<Record<keyof FormFields, string>>;
+  onChange: <K extends keyof FormFields>(
+    field: K,
+    value: FormFields[K],
+  ) => void;
   showTypeSelector: boolean;
   fixedType?: "shipping" | "billing";
 }
 
 const AddressFormBody = ({
-  register,
+  values,
   errors,
+  onChange,
   showTypeSelector,
   fixedType,
 }: Props) => (
@@ -53,15 +59,19 @@ const AddressFormBody = ({
         <input
           type="text"
           placeholder='e.g. "Home", "Office"'
-          {...register("label")}
-          className={inputClass(errors, "label")}
+          value={values.label}
+          onChange={(e) => onChange("label", e.target.value)}
+          className={inputClass(Boolean(errors.label))}
         />
       </FieldBlock>
       {showTypeSelector && !fixedType && (
-        <FieldBlock label="TYPE *" error={errors.type?.message}>
+        <FieldBlock label="TYPE *" error={errors.type}>
           <select
-            {...register("type", { required: "Type is required" })}
-            className={`${inputClass(errors, "type")} cursor-pointer appearance-none`}
+            value={values.type}
+            onChange={(e) =>
+              onChange("type", e.target.value as FormFields["type"])
+            }
+            className={`${inputClass(Boolean(errors.type))} cursor-pointer appearance-none`}
           >
             <option value="shipping">Shipping</option>
             <option value="billing">Billing</option>
@@ -70,87 +80,72 @@ const AddressFormBody = ({
       )}
     </div>
 
-    <FieldBlock label="FULL NAME *" error={errors.name?.message}>
+    <FieldBlock label="FULL NAME *" error={errors.name}>
       <input
         type="text"
         placeholder="Full name"
-        {...register("name", {
-          required: "Full name is required",
-          validate: (v) =>
-            (v && v.trim().length > 0) || "Full name is required",
-        })}
-        className={inputClass(errors, "name")}
+        value={values.name}
+        onChange={(e) => onChange("name", e.target.value)}
+        className={inputClass(Boolean(errors.name))}
       />
     </FieldBlock>
 
-    <FieldBlock label="PHONE NUMBER *" error={errors.phone?.message}>
+    <FieldBlock label="PHONE NUMBER *" error={errors.phone}>
       <input
         type="text"
         placeholder="Phone number"
-        {...register("phone", {
-          required: "Phone number is required",
-          validate: (v) =>
-            (v && v.trim().length > 0) || "Phone number is required",
-        })}
-        className={inputClass(errors, "phone")}
+        value={values.phone}
+        onChange={(e) => onChange("phone", e.target.value)}
+        className={inputClass(Boolean(errors.phone))}
       />
     </FieldBlock>
 
-    <FieldBlock label="STREET ADDRESS *" error={errors.street_address?.message}>
+    <FieldBlock label="STREET ADDRESS *" error={errors.street_address}>
       <input
         type="text"
         placeholder="Street address"
-        {...register("street_address", {
-          required: "Street address is required",
-          validate: (v) =>
-            (v && v.trim().length > 0) || "Street address is required",
-        })}
-        className={inputClass(errors, "street_address")}
+        value={values.street_address}
+        onChange={(e) => onChange("street_address", e.target.value)}
+        className={inputClass(Boolean(errors.street_address))}
       />
     </FieldBlock>
 
     <div className="grid grid-cols-2 gap-4">
-      <FieldBlock label="CITY *" error={errors.city?.message}>
+      <FieldBlock label="CITY *" error={errors.city}>
         <input
           type="text"
           placeholder="City"
-          {...register("city", {
-            required: "City is required",
-            validate: (v) => (v && v.trim().length > 0) || "City is required",
-          })}
-          className={inputClass(errors, "city")}
+          value={values.city}
+          onChange={(e) => onChange("city", e.target.value)}
+          className={inputClass(Boolean(errors.city))}
         />
       </FieldBlock>
-      <FieldBlock label="STATE *" error={errors.state?.message}>
+      <FieldBlock label="STATE *" error={errors.state}>
         <input
           type="text"
           placeholder="State"
-          {...register("state", {
-            required: "State is required",
-            validate: (v) => (v && v.trim().length > 0) || "State is required",
-          })}
-          className={inputClass(errors, "state")}
+          value={values.state}
+          onChange={(e) => onChange("state", e.target.value)}
+          className={inputClass(Boolean(errors.state))}
         />
       </FieldBlock>
     </div>
 
     <div className="grid grid-cols-2 gap-4">
-      <FieldBlock label="ZIP CODE *" error={errors.zip_code?.message}>
+      <FieldBlock label="ZIP CODE *" error={errors.zip_code}>
         <input
           type="text"
           placeholder="Zip code"
-          {...register("zip_code", {
-            required: "Zip code is required",
-            validate: (v) =>
-              (v && v.trim().length > 0) || "Zip code is required",
-          })}
-          className={inputClass(errors, "zip_code")}
+          value={values.zip_code}
+          onChange={(e) => onChange("zip_code", e.target.value)}
+          className={inputClass(Boolean(errors.zip_code))}
         />
       </FieldBlock>
-      <FieldBlock label="COUNTRY *" error={errors.country?.message}>
+      <FieldBlock label="COUNTRY *" error={errors.country}>
         <select
-          {...register("country", { required: "Country is required" })}
-          className={`${inputClass(errors, "country")} cursor-pointer appearance-none`}
+          value={values.country}
+          onChange={(e) => onChange("country", e.target.value)}
+          className={`${inputClass(Boolean(errors.country))} cursor-pointer appearance-none`}
         >
           <option value="">Select</option>
           <option value="US">United States</option>

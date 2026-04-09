@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import AddressFormBody, { FormFields } from "./AddressFormBody";
+import AddressFormBody, { AddressFormValues } from "./AddressFormBody";
 
 export type AddressData = {
   id?: string;
@@ -37,87 +36,86 @@ const AddressModal = ({
   showTypeSelector = false,
   fixedType,
 }: AddressModalProps) => {
-  const defaultFormValues = useMemo(
-    () => ({
-      label: defaultValues?.label || "",
-      type: fixedType || defaultValues?.type || "shipping",
-      name: defaultValues?.name || "",
-      phone: defaultValues?.phone || "",
-      street_address: defaultValues?.street_address || "",
-      city: defaultValues?.city || "",
-      state: defaultValues?.state || "",
-      zip_code: defaultValues?.zip_code || "",
-      country: defaultValues?.country || "",
-    }),
-    [
-      defaultValues?.label,
-      defaultValues?.type,
-      defaultValues?.name,
-      defaultValues?.phone,
-      defaultValues?.street_address,
-      defaultValues?.city,
-      defaultValues?.state,
-      defaultValues?.zip_code,
-      defaultValues?.country,
-      fixedType,
-    ],
-  );
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<FormFields>({
-    mode: "onChange",
-    defaultValues: defaultFormValues,
+  const buildInitialValues = (): AddressFormValues => ({
+    label: defaultValues?.label || "",
+    type: fixedType || defaultValues?.type || "shipping",
+    name: defaultValues?.name || "",
+    phone: defaultValues?.phone || "",
+    street_address: defaultValues?.street_address || "",
+    city: defaultValues?.city || "",
+    state: defaultValues?.state || "",
+    zip_code: defaultValues?.zip_code || "",
+    country: defaultValues?.country || "",
   });
+
+  const [values, setValues] = useState<AddressFormValues>(buildInitialValues());
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof AddressFormValues, string>>
+  >({});
 
   useEffect(() => {
     if (isOpen) {
-      reset(defaultFormValues);
+      setValues(buildInitialValues());
+      setErrors({});
     }
-  }, [isOpen, defaultFormValues, reset]);
+  }, [isOpen, defaultValues, fixedType]);
 
   if (!isOpen) return null;
 
-  const onSubmit = async (
-    _data: FormFields,
-    event?: React.BaseSyntheticEvent,
+  const handleFieldChange = <K extends keyof AddressFormValues>(
+    field: K,
+    value: AddressFormValues[K],
   ) => {
-    const form = event?.currentTarget as HTMLFormElement | undefined;
-    const formValues = form
-      ? Object.fromEntries(new FormData(form).entries())
-      : {};
-
-    const name = String(formValues.name ?? "").trim();
-    const phone = String(formValues.phone ?? "").trim();
-    const street_address = String(formValues.street_address ?? "").trim();
-    const city = String(formValues.city ?? "").trim();
-    const state = String(formValues.state ?? "").trim();
-    const zip_code = String(formValues.zip_code ?? "").trim();
-    const country = String(formValues.country ?? "").trim();
-    const type = String(
-      formValues.type ?? (fixedType || defaultValues?.type || "shipping"),
-    ) as "shipping" | "billing";
-
-    await onSave({
-      id: defaultValues?.id,
-      label: String(formValues.label ?? "").trim(),
-      type,
-      name,
-      phone,
-      address: `${street_address}, ${city}, ${state} ${zip_code}, ${country}`,
-      street_address,
-      city,
-      state,
-      zip_code,
-      country,
-    });
+    setValues((current) => ({ ...current, [field]: value }));
+    setErrors((current) => ({ ...current, [field]: undefined }));
   };
 
-  const onInvalidSubmit = (formErrors: unknown) => {
-    console.error("Form submission blocked by validation errors:", formErrors);
+  const validate = () => {
+    const nextErrors: Partial<Record<keyof AddressFormValues, string>> = {};
+    (Object.keys(values) as Array<keyof AddressFormValues>).forEach((field) => {
+      const value = String(values[field] ?? "").trim();
+      if (field !== "label" && field !== "type" && !value) {
+        const labelMap: Record<
+          Exclude<keyof AddressFormValues, "label" | "type">,
+          string
+        > = {
+          name: "Full name",
+          phone: "Phone number",
+          street_address: "Street address",
+          city: "City",
+          state: "State",
+          zip_code: "Zip code",
+          country: "Country",
+        };
+        nextErrors[field] =
+          `${labelMap[field as keyof typeof labelMap]} is required`;
+      }
+    });
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!validate()) return;
+
+    const payload = {
+      id: defaultValues?.id,
+      label: values.label.trim(),
+      type: fixedType || values.type || "shipping",
+      name: values.name.trim(),
+      phone: values.phone.trim(),
+      address: `${values.street_address.trim()}, ${values.city.trim()}, ${values.state.trim()} ${values.zip_code.trim()}, ${values.country.trim()}`,
+      street_address: values.street_address.trim(),
+      city: values.city.trim(),
+      state: values.state.trim(),
+      zip_code: values.zip_code.trim(),
+      country: values.country.trim(),
+    };
+
+    await onSave(payload);
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -140,14 +138,11 @@ const AddressModal = ({
           </button>
         </div>
         <div className="p-6 overflow-y-auto">
-          <form
-            id="address-form"
-            onSubmit={handleSubmit(onSubmit, onInvalidSubmit)}
-            className="space-y-4"
-          >
+          <form id="address-form" onSubmit={onSubmit} className="space-y-4">
             <AddressFormBody
-              register={register}
+              values={values}
               errors={errors}
+              onChange={handleFieldChange}
               showTypeSelector={showTypeSelector}
               fixedType={fixedType}
             />
