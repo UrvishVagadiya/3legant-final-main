@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { X } from "lucide-react";
 import AddressFormBody, { FormFields } from "./AddressFormBody";
@@ -37,33 +37,63 @@ const AddressModal = ({
   showTypeSelector = false,
   fixedType,
 }: AddressModalProps) => {
-  const getDefaults = (): FormFields => ({
-    label: defaultValues?.label || "",
-    type: fixedType || defaultValues?.type || "shipping",
-    name: defaultValues?.name || "",
-    phone: defaultValues?.phone || "",
-    street_address: defaultValues?.street_address || "",
-    city: defaultValues?.city || "",
-    state: defaultValues?.state || "",
-    zip_code: defaultValues?.zip_code || "",
-    country: defaultValues?.country || "",
-  });
+  const defaultFormValues = useMemo(
+    () => ({
+      label: defaultValues?.label || "",
+      type: fixedType || defaultValues?.type || "shipping",
+      name: defaultValues?.name || "",
+      phone: defaultValues?.phone || "",
+      street_address: defaultValues?.street_address || "",
+      city: defaultValues?.city || "",
+      state: defaultValues?.state || "",
+      zip_code: defaultValues?.zip_code || "",
+      country: defaultValues?.country || "",
+    }),
+    [
+      defaultValues?.id,
+      defaultValues?.label,
+      defaultValues?.name,
+      defaultValues?.phone,
+      defaultValues?.street_address,
+      defaultValues?.city,
+      defaultValues?.state,
+      defaultValues?.zip_code,
+      defaultValues?.country,
+      fixedType,
+    ],
+  );
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
-  } = useForm<FormFields>({ defaultValues: getDefaults() });
+  } = useForm<FormFields>({
+    mode: "onChange",
+    defaultValues: defaultFormValues,
+  });
+
+  // Watch all form fields to verify they're being captured
+  const watchedValues = watch();
 
   useEffect(() => {
-    if (isOpen) reset(getDefaults());
-  }, [isOpen, defaultValues, fixedType, reset]);
+    console.log("Current form state:", watchedValues);
+  }, [watchedValues]);
+
+  useEffect(() => {
+    if (isOpen) {
+      console.log("Modal opened, resetting form with:", defaultFormValues);
+      reset(defaultFormValues);
+    }
+  }, [isOpen, defaultFormValues, reset]);
 
   if (!isOpen) return null;
 
   const onSubmit = async (data: FormFields) => {
-    console.log("Form submitted with data:", data);
+    console.log("✅ Form successfully submitted - React Hook Form data:", data);
+    console.log("Form errors at submit time:", errors);
+    console.log("Has validation errors:", Object.keys(errors).length > 0);
 
     // Ensure all fields exist before trimming
     const name = (data.name ?? "").trim();
@@ -103,6 +133,12 @@ const AddressModal = ({
     await onSave(payload);
   };
 
+  const onInvalidSubmit = (errors: any) => {
+    console.error("❌ Form submission blocked by validation errors:", errors);
+    const errorList = Object.keys(errors).map(key => `${key}: ${errors[key]?.message}`).join(", ");
+    console.error("Error details:", errorList);
+  };
+
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -125,7 +161,7 @@ const AddressModal = ({
         <div className="p-6 overflow-y-auto">
           <form
             id="address-form"
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(onSubmit, onInvalidSubmit)}
             className="space-y-4"
           >
             <AddressFormBody
@@ -147,7 +183,8 @@ const AddressModal = ({
           <button
             type="submit"
             form="address-form"
-            className="px-6 py-2.5 cursor-pointer rounded-lg bg-[#141718] font-medium text-white hover:bg-gray-800 transition-colors"
+            disabled={Object.keys(errors).length > 0}
+            className="px-6 py-2.5 cursor-pointer rounded-lg bg-[#141718] font-medium text-white hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {defaultValues?.id ? "Save changes" : "Add Address"}
           </button>
