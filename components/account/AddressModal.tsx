@@ -63,6 +63,8 @@ const AddressModal = ({
   if (!isOpen) return null;
 
   const onSubmit = async (data: FormFields) => {
+    console.log("Form submitted with data:", data);
+
     // Ensure all fields exist before trimming
     const name = (data.name ?? "").trim();
     const phone = (data.phone ?? "").trim();
@@ -72,7 +74,17 @@ const AddressModal = ({
     const zip_code = (data.zip_code ?? "").trim();
     const country = (data.country ?? "").trim();
 
-    await onSave({
+    console.log("Trimmed fields:", {
+      name,
+      phone,
+      street_address,
+      city,
+      state,
+      zip_code,
+      country,
+    });
+
+    const payload = {
       id: defaultValues?.id,
       label: data.label ?? "",
       type: fixedType || data.type || "shipping",
@@ -84,7 +96,11 @@ const AddressModal = ({
       state,
       zip_code,
       country,
-    });
+    };
+
+    console.log("Final payload to send:", payload);
+
+    await onSave(payload);
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {

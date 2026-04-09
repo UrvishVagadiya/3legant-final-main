@@ -125,6 +125,17 @@ const Address = ({ fullName }: AddressProps) => {
 
   const handleSave = async (data: AddressData) => {
     if (user?.id) {
+      console.log("handleSave received data:", data);
+      console.log("Data types:", {
+        name: typeof data.name,
+        phone: typeof data.phone,
+        street_address: typeof data.street_address,
+        city: typeof data.city,
+        state: typeof data.state,
+        zip_code: typeof data.zip_code,
+        country: typeof data.country,
+      });
+
       try {
         await saveAddr({ data, userId: user.id, modalFixedType }).unwrap();
         setModalOpen(false);
