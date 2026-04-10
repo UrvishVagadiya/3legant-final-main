@@ -27,7 +27,9 @@ export function validateCheckoutForm(
     const fieldsToValidate = InfoData.filter((field) => field !== "lastName") as string[];
     fieldsToValidate.push("email");
     if (useDifferentBilling && requireBillingFields) {
-        fieldsToValidate.push(...billingKeys);
+        fieldsToValidate.push(
+            ...billingKeys.filter((field) => field !== "billingLastName"),
+        );
     }
 
     fieldsToValidate.forEach((field) => {

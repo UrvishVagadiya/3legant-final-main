@@ -39,7 +39,7 @@ export default function BillingSection({
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
-              label="FIRST NAME"
+              label="FIRST NAME *"
               name="billingFirstName"
               value={formData.billingFirstName}
               onChange={onChange}
@@ -56,7 +56,7 @@ export default function BillingSection({
             />
           </div>
           <FormField
-            label="PHONE NUMBER"
+            label="PHONE NUMBER *"
             name="billingPhone"
             type="tel"
             value={formData.billingPhone}

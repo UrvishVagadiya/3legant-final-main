@@ -19,7 +19,7 @@ export default function SelectField({
   placeholder,
   className = "",
 }: SelectFieldProps) {
-  const inputClass = `w-full border rounded px-4 py-3 outline-none transition-colors appearance-none ${
+  const inputClass = `w-full border rounded px-4 py-3 outline-none transition-colors appearance-none cursor-pointer ${
     error
       ? "border-red-500 bg-red-50 focus:border-red-600"
       : "border-gray-300 focus:border-black bg-white"
