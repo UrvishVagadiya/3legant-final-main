@@ -5,6 +5,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { createClient } from "../../../utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { typography } from "@/constants/typography";
 
 const supabase = createClient();
@@ -19,6 +20,8 @@ export default function ResetPasswordPage() {
   const [message, setMessage] = useState("");
   const [linkChecked, setLinkChecked] = useState(false);
   const [linkError, setLinkError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     register,
@@ -139,7 +142,7 @@ export default function ResetPasswordPage() {
       >
         <div className="flex flex-col relative group">
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             {...register("password", {
               required: "Password required",
               minLength: {
@@ -150,6 +153,13 @@ export default function ResetPasswordPage() {
             placeholder="New Password"
             className="w-full border-b border-gray-300 py-3 text-sm focus:outline-none focus:border-black bg-transparent"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute cursor-pointer right-0 top-3 text-gray-400 hover:text-black transition-colors"
+          >
+            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+          </button>
           {errors.password && (
             <p className="text-red-500 text-xs pt-2">
               {errors.password.message}
@@ -159,7 +169,7 @@ export default function ResetPasswordPage() {
 
         <div className="flex flex-col relative group">
           <input
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             {...register("confirmPassword", {
               required: "Please confirm your password",
               validate: (val) =>
@@ -168,6 +178,13 @@ export default function ResetPasswordPage() {
             placeholder="Confirm Password"
             className="w-full border-b border-gray-300 py-3 text-sm focus:outline-none focus:border-black bg-transparent"
           />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword((prev) => !prev)}
+            className="absolute cursor-pointer right-0 top-3 text-gray-400 hover:text-black transition-colors"
+          >
+            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+          </button>
           {errors.confirmPassword && (
             <p className="text-red-500 text-xs pt-2">
               {errors.confirmPassword.message}
