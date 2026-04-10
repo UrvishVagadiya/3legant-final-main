@@ -1,10 +1,15 @@
-import Image, { ImageProps } from "next/image"
+import Image, { ImageProps } from "next/image";
 
 type Props = ImageProps & {
-  colorHex?: string | null
-}
+  colorHex?: string | null;
+  tintOpacity?: number;
+};
 
-export default function TintedProductImage({ colorHex, ...imageProps }: Props) {
+export default function TintedProductImage({
+  colorHex,
+  tintOpacity = 0.5,
+  ...imageProps
+}: Props) {
   return (
     <div className="relative w-full h-full">
       <Image {...imageProps} />
@@ -13,12 +18,12 @@ export default function TintedProductImage({ colorHex, ...imageProps }: Props) {
           className="absolute inset-0 pointer-events-none transition-colors duration-300"
           style={{
             backgroundColor: colorHex,
-            opacity: 0.5,
+            opacity: tintOpacity,
             mixBlendMode: "color",
           }}
           aria-hidden="true"
         />
       )}
     </div>
-  )
+  );
 }

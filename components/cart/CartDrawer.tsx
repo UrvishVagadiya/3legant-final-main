@@ -67,6 +67,22 @@ export default function CartDrawer() {
     dispatch(removeFromCart({ id: item.id, color: item.color }));
   };
 
+  const toSoftTint = (hexColor?: string) => {
+    if (!hexColor) return undefined;
+
+    if (/^#[\da-fA-F]{6}$/.test(hexColor)) {
+      // 22% opacity tint to avoid over-darkening product images
+      return `${hexColor}38`;
+    }
+
+    if (/^#[\da-fA-F]{3}$/.test(hexColor)) {
+      const expanded = `#${hexColor[1]}${hexColor[1]}${hexColor[2]}${hexColor[2]}${hexColor[3]}${hexColor[3]}`;
+      return `${expanded}38`;
+    }
+
+    return hexColor;
+  };
+
   return (
     <>
       <div
@@ -99,7 +115,7 @@ export default function CartDrawer() {
                   backgroundColor:
                     item.color?.toLowerCase() !== "white" &&
                     colorMap[item.color as string]
-                      ? colorMap[item.color as string]
+                      ? toSoftTint(colorMap[item.color as string])
                       : undefined,
                 }}
               >

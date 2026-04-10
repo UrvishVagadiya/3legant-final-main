@@ -73,6 +73,21 @@ export default function OrderSummary({
     updateQuantity(item.id, item.color, item.quantity + 1);
   };
 
+  const toSoftTint = (hexColor?: string) => {
+    if (!hexColor) return undefined;
+
+    if (/^#[\da-fA-F]{6}$/.test(hexColor)) {
+      return `${hexColor}38`;
+    }
+
+    if (/^#[\da-fA-F]{3}$/.test(hexColor)) {
+      const expanded = `#${hexColor[1]}${hexColor[1]}${hexColor[2]}${hexColor[2]}${hexColor[3]}${hexColor[3]}`;
+      return `${expanded}38`;
+    }
+
+    return hexColor;
+  };
+
   return (
     <div className="border border-gray-300 rounded-lg p-5 md:p-4 lg:p-6 md:sticky md:top-24">
       <h2 className="text-xl font-semibold mb-6">Order summary</h2>
@@ -85,7 +100,7 @@ export default function OrderSummary({
               style={{
                 backgroundColor:
                   item.color?.toLowerCase() !== "white" && colorMap[item.color]
-                    ? colorMap[item.color]
+                    ? toSoftTint(colorMap[item.color])
                     : undefined,
               }}
             >

@@ -32,7 +32,7 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => {
   return (
     <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center py-6 border-b border-gray-300 gap-4 md:gap-y-0 md:gap-x-0 min-[838px]:gap-x-4 lg:gap-x-0">
       <div className="col-span-6 flex gap-4 w-full">
-        <div className="relative w-20 h-24 md:w-24 md:h-28 bg-[#F3F5F7] rounded flex items-center justify-center shrink-0">
+        <div className="relative w-20 h-24 md:w-24 md:h-28 bg-[#F3F5F7] rounded overflow-hidden flex items-center justify-center shrink-0">
           <TintedProductImage
             src={item.image}
             alt={item.name}
@@ -40,6 +40,7 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => {
             unoptimized
             className="object-contain p-2 transition-all duration-300"
             colorHex={shouldTint ? colorHex : null}
+            tintOpacity={0.22}
           />
         </div>
         <div className="flex flex-col justify-center">
