@@ -17,7 +17,10 @@ import type { Session } from "@supabase/supabase-js";
 function AuthInitializer({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const cartItems = useAppSelector((state) => state.cart.items);
   const hasHydratedCartRef = useRef(false);
+  const initialCartSnapshotRef = useRef<string | null>(null);
+  const hasLocalCartChangedRef = useRef(false);
 
   const { data: remoteCart } = useGetCartItemsQuery(user?.id ?? "", {
     skip: !user?.id,
@@ -28,6 +31,17 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
   const { data: profile } = useGetProfileQuery(undefined, { skip: !user });
 
   useEffect(() => {
+    if (initialCartSnapshotRef.current === null) {
+      initialCartSnapshotRef.current = JSON.stringify(cartItems);
+      return;
+    }
+
+    if (JSON.stringify(cartItems) !== initialCartSnapshotRef.current) {
+      hasLocalCartChangedRef.current = true;
+    }
+  }, [cartItems]);
+
+  useEffect(() => {
     if (profile && profile.role) {
       dispatch(setRole(profile.role));
     }
@@ -36,14 +50,33 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user) {
       hasHydratedCartRef.current = false;
+      initialCartSnapshotRef.current = null;
+      hasLocalCartChangedRef.current = false;
       return;
     }
 
-    if (remoteCart && remoteCart.length > 0 && !hasHydratedCartRef.current) {
-      dispatch(setCartItems(remoteCart));
-      hasHydratedCartRef.current = true;
+    if (!remoteCart || hasHydratedCartRef.current) {
+      return;
     }
-  }, [remoteCart, dispatch, user]);
+
+    // If cart was changed locally before remote response arrived,
+    // keep local state to avoid stale re-insert from server.
+    if (
+      remoteCart.length > 0 &&
+      cartItems.length === 0 &&
+      !hasLocalCartChangedRef.current
+    ) {
+      dispatch(setCartItems(remoteCart));
+    }
+
+    hasHydratedCartRef.current = true;
+  }, [remoteCart, dispatch, user, cartItems.length]);
+
+  useEffect(() => {
+    if (user && !hasHydratedCartRef.current) {
+      initialCartSnapshotRef.current = JSON.stringify(cartItems);
+    }
+  }, [user, cartItems]);
 
   useEffect(() => {
     if (remoteWishlist && remoteWishlist.length > 0) {

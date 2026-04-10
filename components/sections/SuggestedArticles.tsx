@@ -33,7 +33,7 @@ const SuggestedArticles = ({ articles }: { articles: Article[] }) => (
               alt={article.title}
             />
           </div>
-          <h3 className="font-medium text-[15px] md:text-base text-[#141718] mb-1 leading-snug">
+          <h3 className="font-medium text-[15px] md:text-base text-[#141718] mb-1 leading-snug wrap-anywhere">
             {article.title}
           </h3>
           <p className="text-xs md:text-sm text-[#6C7275] font-medium">

@@ -230,7 +230,7 @@ const BlogPost = async ({
           <span className="text-[12px] md:text-[13px] font-semibold uppercase tracking-[0.12em] text-[#6C7275]">
             ARTICLE
           </span>
-          <h1 className="max-w-260 text-[34px] sm:text-[40px] md:text-[46px] lg:text-[56px] xl:text-[64px] leading-[1.08] lg:leading-[1.06] tracking-[-0.03em] font-medium text-[#141718]">
+          <h1 className="max-w-260 text-[34px] sm:text-[40px] md:text-[46px] lg:text-[56px] xl:text-[64px] leading-[1.08] lg:leading-[1.06] tracking-[-0.03em] font-medium text-[#141718] wrap-anywhere">
             {typedBlog.title}
           </h1>
           <div className="flex flex-wrap items-center gap-4 md:gap-5 text-[#6C7275] text-[13px] md:text-[15px] font-medium pt-1">

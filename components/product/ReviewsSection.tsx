@@ -13,7 +13,7 @@ import {
   useDeleteReplyMutation,
 } from "@/store/api/reviewApi";
 import toast from "react-hot-toast";
-import { IoMdStar, IoMdStarOutline } from "react-icons/io";
+import { IoMdStar, IoMdStarHalf, IoMdStarOutline } from "react-icons/io";
 import { X, Edit2, Trash2 } from "lucide-react";
 import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 import { BsReply } from "react-icons/bs";
@@ -48,17 +48,19 @@ export const Stars = ({
 }: {
   count: number;
   size?: string;
-}) => (
-  <div className={`flex text-[#141718] ${size}`}>
-    {[...Array(5)].map((_, i) =>
-      i < Math.round(count) ? (
-        <IoMdStar key={i} />
-      ) : (
-        <IoMdStarOutline key={i} />
-      ),
-    )}
-  </div>
-);
+}) => {
+  const normalizedCount = Math.round((Math.max(0, count) + Number.EPSILON) * 2) / 2;
+
+  return (
+    <div className={`flex text-[#141718] ${size}`}>
+      {[1, 2, 3, 4, 5].map((star) => {
+        if (normalizedCount >= star) return <IoMdStar key={star} />;
+        if (normalizedCount >= star - 0.5) return <IoMdStarHalf key={star} />;
+        return <IoMdStarOutline key={star} />;
+      })}
+    </div>
+  );
+};
 
 export function ReviewForm({
   rating,

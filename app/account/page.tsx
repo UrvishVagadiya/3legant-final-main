@@ -10,6 +10,7 @@ import Address from "../../components/account/Address";
 import OrdersHistory from "../../components/account/OrdersHistory";
 import Wishlist from "../../components/account/Wishlist";
 import AccountSidebar, { Tab } from "../../components/account/AccountSidebar";
+import { useAppSelector, RootState } from "@/store";
 
 type FormData = {
   firstName: string;
@@ -20,8 +21,6 @@ type FormData = {
   newPassword: string;
   repeatNewPassword: string;
 };
-
-import { useAppSelector, RootState } from "@/store";
 
 const AccountContent = () => {
   const { user } = useAppSelector((state: RootState) => state.auth);

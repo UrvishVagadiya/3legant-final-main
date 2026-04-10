@@ -51,6 +51,7 @@ const SortByMenu = ({
 
   const currentLabel =
     options.find((opt) => opt.value === currentSort)?.label || "Default";
+  const visibleOptions = options.filter((opt) => opt.value !== "default");
 
   return (
     <div ref={menuRef} className="relative">
@@ -69,11 +70,15 @@ const SortByMenu = ({
           className={`absolute z-999 ${align === "right" ? "right-0" : "left-0"} top-full mt-2 w-48 bg-white border border-gray-100 shadow-xl rounded-lg overflow-hidden`}
         >
           <div className="flex flex-col py-1 text-sm">
-            {options.map((opt) => (
+            {visibleOptions.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => {
-                  onSort(opt.value);
+                  const nextSort =
+                    currentSort === opt.value && opt.value !== "default"
+                      ? "default"
+                      : opt.value;
+                  onSort(nextSort);
                   setIsOpen(false);
                 }}
                 className={`text-left px-4 py-2 cursor-pointer hover:bg-gray-50 ${

@@ -23,6 +23,7 @@ const options: BlogSortOption[] = ["default", "newest", "oldest", "az", "za"];
 const BlogSortMenu = ({ sortOption, onSort }: BlogSortMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const visibleOptions = options.filter((opt) => opt !== "default");
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -66,11 +67,13 @@ const BlogSortMenu = ({ sortOption, onSort }: BlogSortMenuProps) => {
         ${isOpen ? "opacity-100 visible" : "opacity-0 invisible max-h-0 md:max-h-none"}`}
       >
         <div className="flex flex-col">
-          {options.map((opt, i) => (
+          {visibleOptions.map((opt, i) => (
             <button
               key={opt}
               onClick={() => {
-                onSort(opt);
+                const nextSort: BlogSortOption =
+                  sortOption === opt ? "default" : opt;
+                onSort(nextSort);
                 setIsOpen(false);
               }}
               className={`text-left px-4 py-3 md:py-2 cursor-pointer text-sm hover:bg-gray-50 ${i > 0 ? "border-t border-gray-50 md:border-none" : ""} ${sortOption === opt ? "font-semibold bg-gray-50" : ""}`}

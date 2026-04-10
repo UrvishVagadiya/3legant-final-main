@@ -133,7 +133,7 @@ const Shop = () => {
     let updated: string[];
 
     if (priceLabel === "All Price") {
-      updated = selectedPrices.includes("All Price") ? [] : ["All Price"];
+      updated = ["All Price"];
     } else {
       if (selectedPrices.includes("All Price")) {
         updated = individualPriceLabels.filter((label) => label !== priceLabel);
@@ -150,6 +150,10 @@ const Shop = () => {
       if (allIndividualSelected) {
         updated = ["All Price"];
       }
+
+      if (updated.length === 0) {
+        updated = ["All Price"];
+      }
     }
 
     dispatch(setFilters({ prices: updated }));
@@ -158,7 +162,8 @@ const Shop = () => {
   const toggleDropdown = (name: string) =>
     setOpenDropdown((p) => (p === name ? null : name));
   const handleCategorySelect = (cat: string) => {
-    dispatch(setFilters({ category: cat }));
+    const nextCategory = selectedCategory === cat ? "All Rooms" : cat;
+    dispatch(setFilters({ category: nextCategory }));
     setOpenDropdown(null);
   };
   const handlePriceSelect = (label: string) => {
@@ -166,14 +171,19 @@ const Shop = () => {
     if (label === "All Price") setOpenDropdown(null);
   };
   const handleDesktopPriceSelect = (label: string) => {
-    dispatch(setFilters({ prices: [label] }));
+    const nextPrice = priceDisplay === label ? "All Price" : label;
+    dispatch(setFilters({ prices: [nextPrice] }));
     setOpenDropdown(null);
   };
   const handleMobilePriceSelect = (label: string) => {
-    dispatch(setFilters({ prices: [label] }));
+    const nextPrice = priceDisplay === label ? "All Price" : label;
+    dispatch(setFilters({ prices: [nextPrice] }));
     setOpenDropdown(null);
   };
-  const handleSortChange = (sort: string) => dispatch(setFilters({ sort }));
+  const handleSortChange = (sort: string) => {
+    const nextSort = sortOption === sort ? "default" : sort;
+    dispatch(setFilters({ sort: nextSort }));
+  };
 
   useEffect(() => {
     setPage(1);

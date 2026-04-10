@@ -234,7 +234,7 @@ const Blogs = () => {
                 className={`mt-4 ${isHorizontalGrid ? "md:mt-0 md:flex-1 md:flex md:flex-col md:justify-center" : ""}`}
               >
                 <h3
-                  className={`font-medium text-[#141718] mb-2 leading-relaxed wrap-break-word ${isHorizontalGrid ? "text-lg md:text-xl lg:text-2xl font-semibold" : "text-base md:text-[17px] lg:text-lg"} ${mobileViewGrid === 2 ? "text-sm md:text-base line-clamp-2" : "text-base"} ${isFourColumnGrid ? "md:text-[clamp(0.9rem,1.25vw,1rem)] md:leading-6 md:line-clamp-2" : ""}`}
+                  className={`font-medium text-[#141718] mb-2 leading-relaxed wrap-anywhere ${isHorizontalGrid ? "text-lg md:text-xl lg:text-2xl font-semibold" : "text-base md:text-[17px] lg:text-lg"} ${mobileViewGrid === 2 ? "text-sm md:text-base line-clamp-2" : "text-base"} ${isFourColumnGrid ? "md:text-[clamp(0.9rem,1.25vw,1rem)] md:leading-6 md:line-clamp-2" : ""}`}
                 >
                   {article.title}
                 </h3>
