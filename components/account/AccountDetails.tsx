@@ -57,10 +57,10 @@ const AccountDetails = ({
 
     <div className="mb-6">
       <label className="block text-[12px] font-bold text-[#6C7275] mb-2 uppercase">
-        LAST NAME *
+        LAST NAME
       </label>
       <input
-        {...register("lastName", { required: "Last name is required" })}
+        {...register("lastName")}
         placeholder="Last name"
         className={`w-full border rounded-md px-4 py-3 outline-none transition-colors ${
           errors.lastName

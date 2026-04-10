@@ -1,5 +1,4 @@
 import { Check } from "lucide-react";
-import Link from "next/link";
 
 interface CheckoutStepperProps {
   step: 1 | 2 | 3;
@@ -7,22 +6,27 @@ interface CheckoutStepperProps {
 
 const CheckoutStepper = ({ step }: CheckoutStepperProps) => {
   const steps = [
-    { id: 1, name: "Shopping cart", href: "/cart" },
-    { id: 2, name: "Checkout details", href: "/checkout" },
-    { id: 3, name: "Order complete", href: "/complete" },
+    { id: 1, name: "Shopping cart" },
+    { id: 2, name: "Checkout details" },
+    { id: 3, name: "Order complete" },
   ];
 
+  const visibleSteps = steps.filter(
+    (s) => s.id === step || (step < 3 && s.id === step + 1),
+  );
+  const visibleStepIds = new Set(visibleSteps.map((s) => s.id));
+
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 my-8 w-full max-w-4xl mx-auto px-4">
-      {steps.map((s, index) => {
+    <div className="flex flex-row items-center justify-between gap-1.5 min-[601px]:justify-center min-[601px]:gap-4 sm:justify-center sm:gap-8 my-6 sm:my-8 w-full max-w-4xl mx-auto px-2 sm:px-4">
+      {steps.map((s) => {
         const isCompleted = step > s.id;
         const isActive = step === s.id;
-        const isPending = step < s.id;
+        const isVisibleOnMobile = visibleStepIds.has(s.id);
 
         return (
           <div
             key={s.id}
-            className={`flex items-center gap-3 pb-4 border-b-2 flex-1 sm:flex-none sm:w-62.5 ${
+            className={`${isVisibleOnMobile ? "flex" : "hidden lg:flex"} flex-row items-center text-left ${isActive ? "gap-2" : "gap-0"} sm:gap-3 pb-2 sm:pb-4 border-b-2 min-w-0 sm:flex-1 sm:min-w-45 ${
               isActive
                 ? "border-black text-black"
                 : isCompleted
@@ -31,7 +35,7 @@ const CheckoutStepper = ({ step }: CheckoutStepperProps) => {
             }`}
           >
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-colors ${
                 isActive
                   ? "bg-[#141718] text-white"
                   : isCompleted
@@ -39,11 +43,15 @@ const CheckoutStepper = ({ step }: CheckoutStepperProps) => {
                     : "bg-gray-200 text-gray-500"
               }`}
             >
-              {isCompleted ? <Check className="w-5 h-5" /> : s.id}
+              {isCompleted ? (
+                <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+              ) : (
+                <div className="text-[14px]">{s.id}</div>
+              )}
             </div>
             <span
-              className={`font-semibold ${
-                isActive || isCompleted ? "" : "text-gray-400"
+              className={`font-semibold text-[18px] leading-4 sm:text-base sm:leading-6 whitespace-nowrap ${
+                isActive ? "inline text-black" : "hidden min-[415px]:inline"
               }`}
             >
               {s.name}

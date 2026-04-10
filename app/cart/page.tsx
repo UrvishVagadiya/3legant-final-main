@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { X, Ticket } from "lucide-react";
 import CheckoutStepper from "@/components/sections/CheckoutStepper";
 import CartItem from "@/components/cart/CartItem";
@@ -106,13 +107,15 @@ const Cart = () => {
   return (
     <div className="max-w-300 mx-auto px-4 sm:px-6 md:px-7 lg:px-8 py-8 md:py-10 mb-6 font-inter text-[#141718]">
       <div className="flex flex-col items-center justify-center mb-8">
-        <h1 className={`${typography.h3} mb-4`}>Cart</h1>
+        <h1 className="font-poppins text-[34px] leading-9.5 tracking-[-0.6px] font-medium md:text-[54px] md:leading-14.5 md:tracking-[-1px] mb-4">
+          Cart
+        </h1>
         <CheckoutStepper step={1} />
       </div>
 
       <div className="flex flex-col md:flex-row md:items-start gap-8 md:gap-6 lg:gap-16 w-full">
         <div className="w-full md:w-[58%] lg:w-[65%]">
-          <div className="hidden md:grid grid-cols-12 pb-4 border-b border-gray-300 text-sm font-semibold text-gray-500">
+          <div className="hidden lg:grid grid-cols-12 pb-4 border-b border-gray-300 text-sm font-semibold text-gray-500">
             <div className="col-span-6">Product</div>
             <div className="col-span-2 text-center">Quantity</div>
             <div className="col-span-2 text-center">Price</div>
@@ -129,6 +132,24 @@ const Cart = () => {
           ))}
 
           <div className="mt-8 md:mt-6 lg:mt-8">
+            {items.length === 0 && (
+              <div className="mb-6 rounded-2xl border border-[#E8ECEF] bg-[#FDFDFD] p-5 sm:p-6">
+                <p className="text-[#141718] font-semibold text-base sm:text-lg">
+                  Your cart is empty.
+                </p>
+                <p className="text-sm text-[#6C7275] mt-1 mb-4">
+                  Browse our latest products and add your favorites to get
+                  started.
+                </p>
+                <Link
+                  href="/shop"
+                  className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-[#141718] text-white text-sm font-semibold hover:bg-black transition-colors"
+                >
+                  Go to shop page
+                </Link>
+              </div>
+            )}
+
             <h3 className={`${typography.text18Semibold} mb-2`}>
               Have a coupon?
             </h3>

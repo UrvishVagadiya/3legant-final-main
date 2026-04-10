@@ -30,7 +30,7 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => {
   };
 
   return (
-    <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center py-6 border-b border-gray-300 gap-4 md:gap-0">
+    <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center py-6 border-b border-gray-300 gap-4 md:gap-y-0 md:gap-x-0 min-[838px]:gap-x-4 lg:gap-x-0">
       <div className="col-span-6 flex gap-4 w-full">
         <div className="relative w-20 h-24 md:w-24 md:h-28 bg-[#F3F5F7] rounded flex items-center justify-center shrink-0">
           <TintedProductImage
@@ -55,7 +55,9 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => {
       </div>
 
       <div className="col-span-6 md:col-span-2 flex justify-between md:justify-center items-center w-full md:w-auto">
-        <div className="md:hidden font-semibold">${unitPrice.toFixed(2)}</div>
+        <div className="min-[838px]:hidden font-semibold">
+          ${unitPrice.toFixed(2)}
+        </div>
         <div className="flex items-center border border-gray-400 rounded px-2 py-1 gap-4 w-25 justify-between">
           <button
             type="button"
@@ -77,10 +79,10 @@ const CartItem = ({ item, onRemove, onUpdateQuantity }: CartItemProps) => {
         </div>
       </div>
 
-      <div className="hidden md:block col-span-2 text-center font-medium">
+      <div className="hidden lg:block col-span-2 text-center font-medium">
         ${unitPrice.toFixed(2)}
       </div>
-      <div className="hidden md:block col-span-2 text-right font-semibold">
+      <div className="hidden min-[838px]:block col-span-2 text-right font-semibold">
         ${lineTotal.toFixed(2)}
       </div>
     </div>

@@ -500,7 +500,7 @@ export default function Checkout() {
   return (
     <div className="max-w-300 mx-auto px-4 sm:px-6 md:px-7 lg:px-8 py-8 md:py-10 mb-6 font-inter text-[#141718]">
       <div className="flex flex-col items-center justify-center mb-8">
-        <h1 className={`${typography.h3} mb-4`}>Check Out</h1>
+        <h1 className={`${typography.h4} mb-4`}>Check Out</h1>
         <CheckoutStepper step={2} />
       </div>
       <div className="flex flex-col md:flex-row md:items-start gap-8 md:gap-6 lg:gap-16 w-full">
