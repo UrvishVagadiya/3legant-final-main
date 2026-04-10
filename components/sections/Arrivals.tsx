@@ -9,10 +9,7 @@ import {
   addToWishlist,
   removeFromWishlist,
 } from "@/store/slices/wishlistSlice";
-import {
-  useGetRatingsByProductsQuery,
-  useToggleLikeReviewMutation,
-} from "@/store/api/reviewApi";
+import {useGetRatingsByProductsQuery} from "@/store/api/reviewApi";
 import { useToggleWishlistMutation } from "@/store/api/wishlistApi";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import ArrivalCard from "./ArrivalCard";

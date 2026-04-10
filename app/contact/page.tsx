@@ -127,13 +127,21 @@ const ContactUs = () => {
           <ContactForm />
           <div className="w-full lg:w-1/2 h-87.5 lg:h-auto p-0 lg:p-3 mb-2 lg:mb-0 flex flex-col">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3670.0000000000005!2d72.8310623152608!3d21.170240992318026!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x395e849b0c12345%3A0x123456789abcdef!2sSurat%2C%20Gujarat%2C%20India!5e0!3m2!1sen!2s!4v1690000000000"
+              src="https://www.openstreetmap.org/export/embed.html?bbox=72.8210623152608%2C21.160240992318026%2C72.8410623152608%2C21.180240992318028&layer=mapnik&marker=21.170240992318026%2C72.8310623152608"
               width="100%"
               height="100%"
               allowFullScreen
               loading="lazy"
               className="grow w-full h-full"
             />
+            <a
+              href="https://www.openstreetmap.org/?mlat=21.170240992318026&mlon=72.8310623152608#map=15/21.17024/72.83106"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 text-xs text-[#6C7275] hover:text-[#141718] transition-colors"
+            >
+              Open map in a new tab
+            </a>
           </div>
         </div>
       </div>
@@ -142,7 +150,9 @@ const ContactUs = () => {
           <div className="grid grid-cols-2 lg:grid-cols-4 py-4 gap-4 sm:gap-6 lg:gap-8">
             {cards.map((value, index) => (
               <div key={index} className="w-full p-4 sm:p-6 lg:p-12">
-                <div className="text-3xl sm:text-4xl lg:text-5xl">{value.icon}</div>
+                <div className="text-3xl sm:text-4xl lg:text-5xl">
+                  {value.icon}
+                </div>
                 <p className="font-medium mt-2 sm:mt-4 text-sm sm:text-base lg:text-xl">
                   {value.title}
                 </p>
