@@ -27,7 +27,7 @@ const About = () => {
     },
   ];
   return (
-    <div className="px-3 sm:px-5 md:px-10 lg:px-40 my-7 lg:my-10">
+    <div className="home-container my-7 lg:my-10">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-4">
         {infos.map((value, index) => (
           <div

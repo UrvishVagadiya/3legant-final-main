@@ -158,7 +158,11 @@ export default function ResetPasswordPage() {
             onClick={() => setShowPassword((prev) => !prev)}
             className="absolute cursor-pointer right-0 top-3 text-gray-400 hover:text-black transition-colors"
           >
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            {showPassword ? (
+              <EyeOff className="w-5 h-5" />
+            ) : (
+              <Eye className="w-5 h-5" />
+            )}
           </button>
           {errors.password && (
             <p className="text-red-500 text-xs pt-2">
@@ -183,7 +187,11 @@ export default function ResetPasswordPage() {
             onClick={() => setShowConfirmPassword((prev) => !prev)}
             className="absolute cursor-pointer right-0 top-3 text-gray-400 hover:text-black transition-colors"
           >
-            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            {showConfirmPassword ? (
+              <EyeOff className="w-5 h-5" />
+            ) : (
+              <Eye className="w-5 h-5" />
+            )}
           </button>
           {errors.confirmPassword && (
             <p className="text-red-500 text-xs pt-2">

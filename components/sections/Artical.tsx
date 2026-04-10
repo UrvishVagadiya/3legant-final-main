@@ -36,7 +36,7 @@ const Artical = () => {
   }, []);
 
   return (
-    <div className="px-3 sm:px-5 md:px-10 lg:px-40 my-10 flex flex-col gap-6 w-full">
+    <div className="home-container my-10 flex flex-col gap-6 w-full">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3 mb-4">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-medium">
           Articles

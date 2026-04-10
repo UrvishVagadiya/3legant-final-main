@@ -1,6 +1,6 @@
 const InfoSection = () => {
   return (
-    <div className="px-3 sm:px-5 md:px-8 lg:px-20 xl:px-40 flex flex-col min-[960px]:flex-row min-[960px]:items-center justify-between mt-10 sm:mt-12 md:mt-16 lg:mt-10 gap-5 md:gap-6 lg:gap-10 mb-8 md:mb-14 lg:mb-14">
+    <div className="home-container flex flex-col min-[960px]:flex-row min-[960px]:items-center justify-between mt-10 sm:mt-12 md:mt-16 lg:mt-10 gap-5 md:gap-6 lg:gap-10 mb-8 md:mb-14 lg:mb-14">
       <div className="w-full min-[960px]:flex-1 min-[960px]:min-w-0 max-w-170">
         <h1 className="text-[28px] sm:text-[38px] md:text-[46px] lg:text-[62px] xl:text-[74px] leading-[1.1] sm:leading-[1.08] lg:leading-[1.05] font-medium text-[#141718] tracking-tight wrap-break-words">
           Simply Unique<span className="text-[#6C7275]">/</span>

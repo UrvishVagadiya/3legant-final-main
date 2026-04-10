@@ -39,7 +39,7 @@ const Navbar = () => {
   return (
     <>
       <div className="relative left-1/2 w-screen -translate-x-1/2 border-b text-gray-100 bg-white">
-        <div className="max-w-400 min-[1601px]:max-w-none mx-auto px-4 sm:px-5 md:px-10 lg:px-40 py-4 md:py-5 flex items-center justify-between w-full">
+        <div className="navbar-container py-4 md:py-5 flex items-center justify-between w-full gap-3 lg:gap-4">
           <div className="flex items-center gap-3">
             <Menu
               onClick={() => setIsMobileMenuOpen(true)}
@@ -53,10 +53,10 @@ const Navbar = () => {
               </h3>
             </Link>
           </div>
-          <div className="hidden md:flex items-center gap-6 lg:gap-10 text-sm font-medium text-[#6C7275]">
+          <div className="hidden md:flex items-center whitespace-nowrap gap-4 lg:gap-7 text-sm font-medium text-[#6C7275]">
             <Link
               href={"/"}
-              className={`${
+              className={`whitespace-nowrap ${
                 pathname === "/"
                   ? "text-[#141718] font-bold"
                   : "text-[#6C7275] hover:text-[#141718]"
@@ -66,7 +66,7 @@ const Navbar = () => {
             </Link>
             <Link
               href={"/shop"}
-              className={`${
+              className={`whitespace-nowrap ${
                 pathname.startsWith("/shop")
                   ? "text-[#141718] font-bold"
                   : "text-[#6C7275] hover:text-[#141718]"
@@ -76,7 +76,7 @@ const Navbar = () => {
             </Link>
             <Link
               href={"/blogs"}
-              className={`${
+              className={`whitespace-nowrap ${
                 pathname.startsWith("/blogs")
                   ? "text-[#141718] font-bold"
                   : "text-[#6C7275] hover:text-[#141718]"
@@ -86,7 +86,7 @@ const Navbar = () => {
             </Link>
             <Link
               href={"/contact"}
-              className={`${
+              className={`whitespace-nowrap ${
                 pathname.startsWith("/contact")
                   ? "text-[#141718] font-bold"
                   : "text-[#6C7275] hover:text-[#141718]"
@@ -97,7 +97,7 @@ const Navbar = () => {
             {role === "admin" && (
               <Link
                 href={"/admin"}
-                className={`${
+                className={`whitespace-nowrap ${
                   pathname.startsWith("/admin")
                     ? "text-[#141718] font-bold"
                     : "text-[#6C7275] hover:text-[#141718]"

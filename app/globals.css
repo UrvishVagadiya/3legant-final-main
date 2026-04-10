@@ -85,6 +85,45 @@ body {
   margin-right: 16px;
 }
 
+.home-container {
+  width: min(1210px, calc(100% - 24px));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.navbar-container {
+  width: min(1210px, calc(100% - 24px));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .home-container {
+    width: min(1210px, calc(100% - 40px));
+  }
+
+  .navbar-container {
+    width: min(1210px, calc(100% - 40px));
+  }
+}
+
+@media (min-width: 768px) {
+  .home-container {
+    width: min(1210px, calc(100% - 64px));
+  }
+
+  .navbar-container {
+    width: min(1210px, calc(100% - 64px));
+  }
+}
+
+@media (min-width: 1600px) {
+  .navbar-container {
+    width: calc(100% - 80px);
+    max-width: none;
+  }
+}
+
 @media (min-width: 768px) {
   .container {
     margin-left: 50px;

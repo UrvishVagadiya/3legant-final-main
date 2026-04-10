@@ -4,7 +4,7 @@ import ButtonText from "./ButtonText";
 
 const Cards = () => {
   return (
-    <div className="px-3 sm:px-6 md:px-10 lg:px-20 xl:px-40 mt-6 sm:mt-10">
+    <div className="home-container mt-6 sm:mt-10">
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
         <div className="relative w-full lg:w-1/2 bg-[#F3F5F7] rounded-md overflow-hidden flex min-w-0">
           <div className="absolute top-6 left-6 sm:top-8 sm:left-8 md:top-10 md:left-10 lg:top-12 lg:left-12 z-10 w-3/4">

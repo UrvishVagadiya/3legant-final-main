@@ -19,11 +19,11 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export default function ImageSlider() {
   return (
-    <div className="relative w-full px-3 sm:px-4 md:px-10 lg:px-40">
-      <div className="hidden md:flex custom-prev cursor-pointer w-10 h-10 lg:w-14 lg:h-14 justify-center items-center rounded-full absolute z-10 top-1/2 -translate-y-1/2 bg-white left-8 md:left-14 lg:left-48 shadow-md hover:bg-gray-50 transition-colors duration-300 ease-in-out">
+    <div className="relative home-container w-full">
+      <div className="hidden md:flex custom-prev cursor-pointer w-10 h-10 lg:w-14 lg:h-14 justify-center items-center rounded-full absolute z-10 top-1/2 -translate-y-1/2 bg-white left-4 md:left-6 lg:left-8 shadow-md hover:bg-gray-50 transition-colors duration-300 ease-in-out">
         <ArrowLeft className="text-[#141718]" />
       </div>
-      <div className="hidden md:flex custom-next cursor-pointer w-10 h-10 lg:w-14 lg:h-14 justify-center items-center rounded-full absolute z-10 top-1/2 -translate-y-1/2 bg-white right-8 md:right-14 lg:right-48 shadow-md hover:bg-gray-50 transition-colors duration-300 ease-in-out">
+      <div className="hidden md:flex custom-next cursor-pointer w-10 h-10 lg:w-14 lg:h-14 justify-center items-center rounded-full absolute z-10 top-1/2 -translate-y-1/2 bg-white right-4 md:right-6 lg:right-8 shadow-md hover:bg-gray-50 transition-colors duration-300 ease-in-out">
         <ArrowRight className="text-[#141718]" />
       </div>
 

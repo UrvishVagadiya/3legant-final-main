@@ -150,7 +150,7 @@ const Arrivals = () => {
 
   return (
     <div className="w-full overflow-x-hidden">
-      <div className="px-3 sm:px-5 md:px-10 lg:px-40 pt-5 md:pt-14">
+      <div className="home-container pt-5 md:pt-14">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-0">
           <h1 className="text-[28px] sm:text-4xl lg:text-5xl font-medium leading-[1.08] sm:leading-[1.1] wrap-break-word">
             New <br className="block sm:hidden" /> Arrivals
@@ -162,7 +162,7 @@ const Arrivals = () => {
       </div>
 
       {isLoading ? (
-        <div className="pl-3 sm:pl-5 md:pl-10 lg:pl-40 mt-6 md:mt-10 flex gap-4 md:gap-6 overflow-x-hidden">
+        <div className="home-container mt-6 md:mt-10 flex gap-4 md:gap-6 overflow-x-hidden">
           {[...Array(4)].map((_, i) => (
             <div
               key={i}
@@ -175,7 +175,7 @@ const Arrivals = () => {
           ))}
         </div>
       ) : (
-        <div className="pl-3 sm:pl-5 md:pl-10 lg:pl-40 mt-6 md:mt-10 overflow-x-hidden">
+        <div className="home-container mt-6 md:mt-10 overflow-x-hidden">
           <div
             ref={scrollRef}
             className={`flex gap-4 md:gap-6 pb-2 ${hasHorizontalOverflow ? "overflow-x-auto" : "overflow-x-hidden"}`}
@@ -195,7 +195,7 @@ const Arrivals = () => {
         </div>
       )}
 
-      <div className="md:hidden px-3 sm:px-5 mt-6 pb-8">
+      <div className="home-container md:hidden mt-6 pb-8">
         <ButtonText text="More Products" linkTo="shop" />
       </div>
     </div>

@@ -55,10 +55,8 @@ const AccountContent = () => {
 
   useEffect(() => {
     if (user) {
-      const name =
-        user.user_metadata?.name || user.user_metadata?.full_name || "";
-      const userDisplayName =
-        user.user_metadata?.displayName || user.user_metadata?.username || "";
+      const name =user.user_metadata?.name || user.user_metadata?.full_name || "";
+      const userDisplayName =user.user_metadata?.displayName || user.user_metadata?.username || "";
       setFullName(name);
       setDisplayName(userDisplayName);
       setAvatarUrl(user.user_metadata?.avatar_url || null);
