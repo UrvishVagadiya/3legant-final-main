@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
           </div>
           <button
             onClick={() => setSent(false)}
-            className="text-sm text-gray-500 hover:text-black transition-colors underline"
+            className="text-sm cursor-pointer text-gray-500 hover:text-black transition-colors underline"
           >
             Didn&apos;t receive the email? Try again
           </button>
