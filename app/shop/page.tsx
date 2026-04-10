@@ -65,6 +65,7 @@ const Shop = () => {
       page,
       pageSize: PAGE_SIZE,
       category: selectedCategory,
+      hasPriceSelection: selectedPrices.length > 0,
       sort: sortOption as
         | "default"
         | "az"
@@ -73,7 +74,13 @@ const Shop = () => {
         | "price-high-low",
       priceFilters: activePriceFilters,
     }),
-    [page, selectedCategory, sortOption, activePriceFilters],
+    [
+      page,
+      selectedCategory,
+      selectedPrices.length,
+      sortOption,
+      activePriceFilters,
+    ],
   );
 
   const {
@@ -175,6 +182,12 @@ const Shop = () => {
   }, [selectedCategory, selectedPrices, sortOption]);
 
   useEffect(() => {
+    if (selectedPrices.length === 0) {
+      setTotalCount(0);
+      setShopProducts([]);
+      return;
+    }
+
     if (!shopResponse) {
       return;
     }
@@ -193,7 +206,7 @@ const Shop = () => {
 
       return [...prev, ...incoming];
     });
-  }, [shopResponse, page]);
+  }, [shopResponse, page, selectedPrices.length]);
 
   const displayedProducts = shopProducts;
 
