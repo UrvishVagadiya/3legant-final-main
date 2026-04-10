@@ -2,6 +2,7 @@ import { apiService } from '../apiService';
 import { createClient } from '@/utils/supabase/client';
 import { Product } from '../slices/productSlice';
 import { isProductNew } from '@/utils/isProductNew';
+import { getEffectiveCartPrice } from '@/utils/getEffectiveCartPrice';
 
 type ShopSortOption =
   | 'default'
@@ -33,6 +34,11 @@ const normalizeProduct = (product: Product): Product => ({
   ...product,
   isNew: isProductNew(product.created_at || product.createdAt),
 });
+
+const toComparableTitle = (product: Product): string => {
+  const rawTitle = product.title || product.name || '';
+  return String(rawTitle).toLowerCase();
+};
 
 export const productApi = apiService.injectEndpoints({
   overrideExisting: true,
@@ -70,39 +76,61 @@ export const productApi = apiService.injectEndpoints({
           query = query.contains('category', [category]);
         }
 
-        if (priceFilters.length > 0) {
-          const priceClauses = priceFilters.map((range) => {
-            if (range.max === null) {
-              return `price.gte.${range.min}`;
-            }
-            return `and(price.gte.${range.min},price.lte.${range.max})`;
-          });
+        query = query.order('created_at', { ascending: false });
 
-          query = query.or(priceClauses.join(','));
-        }
-
-        if (sort === 'az') {
-          query = query.order('title', { ascending: true });
-        } else if (sort === 'za') {
-          query = query.order('title', { ascending: false });
-        } else if (sort === 'price-low-high') {
-          query = query.order('price', { ascending: true });
-        } else if (sort === 'price-high-low') {
-          query = query.order('price', { ascending: false });
-        } else {
-          query = query.order('created_at', { ascending: false });
-        }
-
-        const { data, error, count } = await query.range(from, to);
+        const { data, error } = await query;
 
         if (error) return { error };
 
+        const normalizedProducts: Product[] = (data || []).map((product: Product) =>
+          normalizeProduct(product),
+        );
+
+        const filteredByPrice =
+          priceFilters.length === 0
+            ? normalizedProducts
+            : normalizedProducts.filter((product: Product) => {
+              const effectivePrice = getEffectiveCartPrice(product);
+
+              return priceFilters.some((range) => {
+                if (range.max === null) {
+                  return effectivePrice >= range.min;
+                }
+
+                return (
+                  effectivePrice >= range.min && effectivePrice <= range.max
+                );
+              });
+            });
+
+        const sortedProducts = [...filteredByPrice].sort((a, b) => {
+          if (sort === 'az') {
+            return toComparableTitle(a).localeCompare(toComparableTitle(b));
+          }
+
+          if (sort === 'za') {
+            return toComparableTitle(b).localeCompare(toComparableTitle(a));
+          }
+
+          if (sort === 'price-low-high') {
+            return getEffectiveCartPrice(a) - getEffectiveCartPrice(b);
+          }
+
+          if (sort === 'price-high-low') {
+            return getEffectiveCartPrice(b) - getEffectiveCartPrice(a);
+          }
+
+          const aCreatedAt = new Date(a.created_at || a.createdAt || 0).getTime();
+          const bCreatedAt = new Date(b.created_at || b.createdAt || 0).getTime();
+          return bCreatedAt - aCreatedAt;
+        });
+
+        const paginatedProducts = sortedProducts.slice(from, to + 1);
+
         return {
           data: {
-            products: (data || []).map((product: Product) =>
-              normalizeProduct(product),
-            ),
-            total: count || 0,
+            products: paginatedProducts,
+            total: sortedProducts.length,
           },
         };
       },
