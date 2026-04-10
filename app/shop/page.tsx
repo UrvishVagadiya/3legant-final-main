@@ -133,7 +133,7 @@ const Shop = () => {
     let updated: string[];
 
     if (priceLabel === "All Price") {
-      updated = ["All Price"];
+      updated = selectedPrices.includes("All Price") ? [] : ["All Price"];
     } else {
       if (selectedPrices.includes("All Price")) {
         updated = individualPriceLabels.filter((label) => label !== priceLabel);
@@ -148,10 +148,6 @@ const Shop = () => {
       );
 
       if (allIndividualSelected) {
-        updated = ["All Price"];
-      }
-
-      if (updated.length === 0) {
         updated = ["All Price"];
       }
     }
@@ -234,7 +230,7 @@ const Shop = () => {
   }));
   const priceDisplay = selectedPrices.includes("All Price")
     ? "All Price"
-    : selectedPrices[0];
+    : selectedPrices[0] || "Price";
   const desktopPriceItems = priceRanges.map((r) => ({
     label: r.label,
     active: priceDisplay === r.label,
