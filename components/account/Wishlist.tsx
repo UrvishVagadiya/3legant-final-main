@@ -1,11 +1,12 @@
 "use client";
-import Image from "next/image";
 import { X } from "lucide-react";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import { removeFromWishlist } from "@/store/slices/wishlistSlice";
 import { addToCart } from "@/store/slices/cartSlice";
 import { useToggleWishlistMutation } from "@/store/api/wishlistApi";
 import type { WishlistItem } from "@/store/slices/wishlistSlice";
+import TintedProductImage from "../product/TintedProductImage";
+import { colorMap } from "../product/ColorSelector";
 
 const Wishlist = () => {
   const dispatch = useAppDispatch();
@@ -21,6 +22,19 @@ const Wishlist = () => {
         ? parseFloat(price.replace(/[^0-9.]/g, ""))
         : price;
     return isNaN(numPrice) ? "0.00" : numPrice.toFixed(2);
+  };
+
+  const getColorHex = (color?: string) => {
+    if (!color) return null;
+    const normalized = color.trim();
+    if (!normalized) return null;
+
+    const direct = colorMap[normalized];
+    if (direct) return direct;
+
+    const titleCase =
+      normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+    return colorMap[titleCase] || null;
   };
 
   const handleRemoveFromWishlist = (id: string | number) => {
@@ -91,12 +105,18 @@ const Wishlist = () => {
                     <X size={20} />
                   </button>
                   <div className="relative w-16 h-16 bg-gray-100 shrink-0">
-                    <Image
+                    <TintedProductImage
                       src={item.image}
                       alt={item.name}
                       fill
                       unoptimized
                       className="object-cover"
+                      colorHex={
+                        item.color?.toLowerCase() !== "white"
+                          ? getColorHex(item.color)
+                          : null
+                      }
+                      tintOpacity={0.22}
                     />
                   </div>
                   <div className="flex flex-col">
@@ -142,12 +162,18 @@ const Wishlist = () => {
                 <X size={20} />
               </button>
               <div className="relative w-20 h-20 bg-gray-100 shrink-0">
-                <Image
+                <TintedProductImage
                   src={item.image}
                   alt={item.name}
                   fill
                   unoptimized
                   className="object-cover"
+                  colorHex={
+                    item.color?.toLowerCase() !== "white"
+                      ? getColorHex(item.color)
+                      : null
+                  }
+                  tintOpacity={0.22}
                 />
               </div>
               <div className="flex flex-col gap-1 w-full relative">

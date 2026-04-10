@@ -1,8 +1,9 @@
 "use client";
 import React, { useState } from "react";
-import Image from "next/image";
 import { RefreshCcw } from "lucide-react";
 import RefundRequestModal from "./RefundRequestModal";
+import TintedProductImage from "../product/TintedProductImage";
+import { colorMap } from "../product/ColorSelector";
 
 interface OrderItem {
   id: string;
@@ -47,6 +48,19 @@ const OrderExpandedDetails = ({
   onStatusUpdate,
 }: OrderExpandedDetailsProps) => {
   const [showRefundModal, setShowRefundModal] = useState(false);
+
+  const getColorHex = (color?: string | null) => {
+    if (!color) return null;
+    const normalized = color.trim();
+    if (!normalized) return null;
+
+    const direct = colorMap[normalized];
+    if (direct) return direct;
+
+    const titleCase =
+      normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+    return colorMap[titleCase] || null;
+  };
 
   const isInstantCancelEligible =
     order.refund_status === "none" &&
@@ -98,12 +112,18 @@ const OrderExpandedDetails = ({
             >
               <div className="relative w-14 h-14 bg-[#F3F5F7] rounded shrink-0 flex items-center justify-center">
                 {item.product_image ? (
-                  <Image
+                  <TintedProductImage
                     src={item.product_image}
                     alt={item.product_name}
                     fill
                     unoptimized
                     className="object-cover rounded p-1"
+                    colorHex={
+                      item.color?.toLowerCase() !== "white"
+                        ? getColorHex(item.color)
+                        : null
+                    }
+                    tintOpacity={0.22}
                   />
                 ) : (
                   <div className="text-xs text-gray-400">No img</div>

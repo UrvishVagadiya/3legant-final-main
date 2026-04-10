@@ -105,7 +105,7 @@ const Cart = () => {
   };
 
   return (
-    <div className="max-w-300 mx-auto px-4 sm:px-6 md:px-7 lg:px-8 py-8 md:py-10 mb-6 font-inter text-[#141718]">
+    <div className="navbar-container py-8 md:py-10 mb-6 font-inter text-[#141718]">
       <div className="flex flex-col items-center justify-center mb-8">
         <h1 className="font-poppins text-[34px] leading-9.5 tracking-[-0.6px] font-medium md:text-[54px] md:leading-14.5 md:tracking-[-1px] mb-4">
           Cart

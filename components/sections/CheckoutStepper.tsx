@@ -17,7 +17,7 @@ const CheckoutStepper = ({ step }: CheckoutStepperProps) => {
   const visibleStepIds = new Set(visibleSteps.map((s) => s.id));
 
   return (
-    <div className="flex flex-row items-center justify-between gap-1.5 min-[601px]:justify-center min-[601px]:gap-4 sm:justify-center sm:gap-8 my-6 sm:my-8 w-full max-w-4xl mx-auto px-2 sm:px-4">
+    <div className="flex flex-row items-center justify-center gap-2 sm:gap-8 my-6 sm:my-8 w-full max-w-4xl mx-auto px-2 sm:px-4">
       {steps.map((s) => {
         const isCompleted = step > s.id;
         const isActive = step === s.id;

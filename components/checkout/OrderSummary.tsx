@@ -201,7 +201,7 @@ export default function OrderSummary({
                 value={opt.value}
                 checked={shippingMethod === opt.value}
                 onChange={() => setShippingMethod(opt.value)}
-                className="w-4 h-4 text-black focus:ring-black border-gray-300 accent-black"
+                className="w-4 h-4 cursor-pointer text-black focus:ring-black border-gray-300 accent-black"
               />
               <span className="text-sm font-medium">{opt.label}</span>
             </div>

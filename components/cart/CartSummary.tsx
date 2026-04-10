@@ -29,7 +29,11 @@ const CartSummary = ({
         {shippingOptions.map((opt) => (
           <label
             key={opt.value}
-            className="flex items-center justify-between border border-gray-300 rounded p-3 cursor-pointer hover:border-black transition-colors"
+            className={`flex items-center justify-between border border-gray-300 rounded p-3 cursor-pointer hover:border-black transition-colors  ${
+              shippingMethod === opt.value
+                ? "border-black bg-gray-50"
+                : "border-gray-200 hover:border-gray-400"
+            }`} 
           >
             <div className="flex items-center gap-3">
               <input
@@ -38,7 +42,7 @@ const CartSummary = ({
                 value={opt.value}
                 checked={shippingMethod === opt.value}
                 onChange={() => setShippingMethod(opt.value)}
-                className="w-4 h-4 text-black focus:ring-black border-gray-300"
+                className="w-4 h-4 cursor-pointer text-black focus:ring-black border-gray-300 accent-black"
               />
               <span className="text-sm font-medium">{opt.label}</span>
             </div>

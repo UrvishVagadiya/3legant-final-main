@@ -489,7 +489,7 @@ export default function Checkout() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="max-w-300 mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-20 font-inter text-[#141718]">
+      <div className="navbar-container py-8 mb-20 font-inter text-[#141718]">
         <div className="flex min-h-[40vh] items-center justify-center text-sm text-[#6C7275]">
           Redirecting to cart...
         </div>
@@ -498,7 +498,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="max-w-300 mx-auto px-4 sm:px-6 md:px-7 lg:px-8 py-8 md:py-10 mb-6 font-inter text-[#141718]">
+    <div className="navbar-container py-8 md:py-10 mb-6 font-inter text-[#141718]">
       <div className="flex flex-col items-center justify-center mb-8">
         <h1 className={`${typography.h4} mb-4`}>Check Out</h1>
         <CheckoutStepper step={2} />

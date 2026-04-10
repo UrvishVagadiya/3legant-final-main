@@ -198,14 +198,14 @@ const OrdersHistory = () => {
           orders.map((order) => (
             <div
               key={order.id}
-              className="border border-gray-200 rounded-xl overflow-hidden transition-all hover:border-gray-300 bg-white"
+              className="border border-gray-200 rounded-xl overflow-hidden transition-all hover:border-gray-300 hover:shadow-sm bg-white"
             >
               <button
                 onClick={() => toggleOrderDetails(order.id)}
                 className="w-full p-4 cursor-pointer md:p-6 hover:bg-gray-50/50 transition-colors text-left"
               >
                 <div className="flex flex-col gap-4">
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-10">
+                  <div className="flex flex-col xl:flex-row xl:items-center gap-4 xl:gap-8">
                     <div className="flex flex-col gap-1 min-w-0">
                       <span className="text-[10px] text-[#6C7275] uppercase font-bold tracking-widest leading-none opacity-60">
                         Order ID
@@ -224,32 +224,45 @@ const OrdersHistory = () => {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 xl:ml-2">
                       <StatusBadge type="order" status={order.status} />
                       <StatusBadge
                         type="payment"
                         status={order.payment_status}
                       />
                     </div>
+
+                    <div className="flex items-center justify-between gap-3 xl:ml-auto">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-[#6C7275] uppercase font-bold tracking-widest leading-none opacity-60">
+                          Total
+                        </span>
+                        <span className="font-semibold text-[#141718] text-sm sm:text-base whitespace-nowrap">
+                          $
+                          {(
+                            Number(order.total) ||
+                            Number(order.subtotal) +
+                              Number(order.shipping_cost) -
+                              Number(order.discount)
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+
+                      <span className="shrink-0 self-end xl:self-center">
+                        {expandedOrder === order.id ? (
+                          <ChevronUp size={18} className="text-[#6C7275]" />
+                        ) : (
+                          <ChevronDown size={18} className="text-[#6C7275]" />
+                        )}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 pt-1">
-                    <span className="font-semibold text-[#141718] text-sm sm:text-base">
-                      $
-                      {(
-                        Number(order.total) ||
-                        Number(order.subtotal) +
-                          Number(order.shipping_cost) -
-                          Number(order.discount)
-                      ).toFixed(2)}
-                    </span>
-                    <span className="shrink-0">
-                      {expandedOrder === order.id ? (
-                        <ChevronUp size={18} className="text-[#6C7275]" />
-                      ) : (
-                        <ChevronDown size={18} className="text-[#6C7275]" />
-                      )}
-                    </span>
+                  <div className="h-px bg-gray-100" />
+
+                  <div className="text-xs text-[#6C7275]">
+                    Tap to {expandedOrder === order.id ? "hide" : "view"} order
+                    details
                   </div>
                 </div>
               </button>
