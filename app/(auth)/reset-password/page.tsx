@@ -178,7 +178,7 @@ export default function ResetPasswordPage() {
         <button
           type="submit"
           disabled={isSubmitting || !linkChecked || !!linkError}
-          className={`w-full bg-black text-white rounded-lg py-3 ${typography.buttonSmall} hover:bg-gray-800 transition-colors`}
+          className={`w-full cursor-pointer bg-black text-white rounded-lg py-3 ${typography.buttonSmall} hover:bg-gray-800 transition-colors`}
         >
           {isSubmitting
             ? "Updating..."
