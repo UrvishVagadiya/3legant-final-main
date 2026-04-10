@@ -19,7 +19,6 @@ type GetShopProductsArgs = {
   page: number;
   pageSize: number;
   category?: string;
-  hasPriceSelection?: boolean;
   sort?: ShopSortOption;
   priceFilters?: PriceFilter[];
 };
@@ -42,19 +41,9 @@ export const productApi = apiService.injectEndpoints({
         page,
         pageSize,
         category,
-        hasPriceSelection = true,
         sort = 'default',
         priceFilters = [],
       }) => {
-        if (!hasPriceSelection) {
-          return {
-            data: {
-              products: [],
-              total: 0,
-            },
-          };
-        }
-
         const supabase = createClient();
         const safePage = Math.max(1, page);
         const safePageSize = Math.max(1, pageSize);

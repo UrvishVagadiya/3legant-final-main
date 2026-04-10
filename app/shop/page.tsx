@@ -29,65 +29,6 @@ const mobileIcons = [
   { icon: <PiRowsFill />, grid: 1 },
 ];
 
-const sortProductsByOption = (products: Product[], sort: string) => {
-  if (sort === "price-low-high") {
-    return [...products].sort((a, b) => Number(a.price) - Number(b.price));
-  }
-
-  if (sort === "price-high-low") {
-    return [...products].sort((a, b) => Number(b.price) - Number(a.price));
-  }
-
-  return products;
-};
-
-const doesProductMatchCategory = (product: Product, category: string) => {
-  if (category === "All Rooms") {
-    return true;
-  }
-
-  const categories = Array.isArray(product.category)
-    ? product.category
-    : [product.category];
-
-  return categories.some(
-    (item) => String(item || "").toLowerCase() === category.toLowerCase(),
-  );
-};
-
-const doesProductMatchPrices = (product: Product, selectedPrices: string[]) => {
-  if (selectedPrices.includes("All Price")) {
-    return true;
-  }
-
-  if (selectedPrices.length === 0) {
-    return false;
-  }
-
-  const productPrice = Number(product.price);
-
-  if (!Number.isFinite(productPrice)) {
-    return false;
-  }
-
-  const selectedRanges = priceRanges.filter(
-    (range) =>
-      range.label !== "All Price" && selectedPrices.includes(range.label),
-  );
-
-  if (selectedRanges.length === 0) {
-    return false;
-  }
-
-  return selectedRanges.some((range) => {
-    if (Number.isFinite(range.max)) {
-      return productPrice >= range.min && productPrice <= range.max;
-    }
-
-    return productPrice >= range.min;
-  });
-};
-
 const Shop = () => {
   const PAGE_SIZE = 9;
   const searchParams = useSearchParams();
@@ -124,7 +65,6 @@ const Shop = () => {
       page,
       pageSize: PAGE_SIZE,
       category: selectedCategory,
-      hasPriceSelection: selectedPrices.length > 0,
       sort: sortOption as
         | "default"
         | "az"
@@ -133,13 +73,7 @@ const Shop = () => {
         | "price-high-low",
       priceFilters: activePriceFilters,
     }),
-    [
-      page,
-      selectedCategory,
-      selectedPrices.length,
-      sortOption,
-      activePriceFilters,
-    ],
+    [page, selectedCategory, sortOption, activePriceFilters],
   );
 
   const {
@@ -241,12 +175,6 @@ const Shop = () => {
   }, [selectedCategory, selectedPrices, sortOption]);
 
   useEffect(() => {
-    if (selectedPrices.length === 0) {
-      setTotalCount(0);
-      setShopProducts([]);
-      return;
-    }
-
     if (!shopResponse) {
       return;
     }
@@ -267,20 +195,7 @@ const Shop = () => {
     });
   }, [shopResponse, page]);
 
-  const filteredProducts = useMemo(
-    () =>
-      shopProducts.filter(
-        (product) =>
-          doesProductMatchCategory(product, selectedCategory) &&
-          doesProductMatchPrices(product, selectedPrices),
-      ),
-    [shopProducts, selectedCategory, selectedPrices],
-  );
-
-  const displayedProducts = useMemo(
-    () => sortProductsByOption(filteredProducts, sortOption),
-    [filteredProducts, sortOption],
-  );
+  const displayedProducts = shopProducts;
 
   const hasMore = shopProducts.length < totalCount;
 

@@ -145,7 +145,8 @@ const Blogs = () => {
       ? "grid-cols-1"
       : "grid-cols-1 min-[400px]:grid-cols-2";
 
-  const isHorizontalGrid = viewGrid <= 2;
+  const isHorizontalGrid = viewGrid === 1;
+  const isFourColumnGrid = viewGrid === 4;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 space-y-8 md:space-y-12">
@@ -170,10 +171,10 @@ const Blogs = () => {
               Blog
             </Link>
           </div>
-          <h1 className="font-poppins text-[32px] leading-9.5 tracking-[-0.4px] sm:text-[42px] sm:leading-12 md:text-[54px] md:leading-14.5 md:tracking-[-1px] font-medium my-3 sm:my-4 md:my-5">
+          <h1 className="font-poppins text-[32px] leading-9.5 tracking-[-0.4px] sm:text-[42px] sm:leading-12 md:text-[46px] md:leading-13 md:tracking-[-0.8px] lg:text-[54px] lg:leading-14.5 lg:tracking-[-1px] font-medium my-3 sm:my-4 md:my-5">
             Our Blog
           </h1>
-          <p className="font-inter text-[14px] leading-5.5 sm:text-[16px] sm:leading-6.5 md:text-[20px] md:leading-8 text-[#121212] max-w-[320px] sm:max-w-105 md:max-w-none">
+          <p className="font-inter text-[14px] leading-5.5 sm:text-[16px] sm:leading-6.5 md:text-[18px] md:leading-7 lg:text-[20px] lg:leading-8 text-[#121212] max-w-[320px] sm:max-w-105 md:max-w-none">
             Home ideas and design inspiration
           </p>
         </div>
@@ -233,7 +234,7 @@ const Blogs = () => {
                 className={`mt-4 ${isHorizontalGrid ? "md:mt-0 md:flex-1 md:flex md:flex-col md:justify-center" : ""}`}
               >
                 <h3
-                  className={`font-medium text-[#141718] mb-2 leading-relaxed ${isHorizontalGrid ? "text-xl md:text-2xl font-semibold" : "text-base md:text-lg"} ${mobileViewGrid === 2 ? "text-sm md:text-base line-clamp-2" : "text-base"}`}
+                  className={`font-medium text-[#141718] mb-2 leading-relaxed wrap-break-word ${isHorizontalGrid ? "text-lg md:text-xl lg:text-2xl font-semibold" : "text-base md:text-[17px] lg:text-lg"} ${mobileViewGrid === 2 ? "text-sm md:text-base line-clamp-2" : "text-base"} ${isFourColumnGrid ? "md:text-[clamp(0.9rem,1.25vw,1rem)] md:leading-6 md:line-clamp-2" : ""}`}
                 >
                   {article.title}
                 </h3>
