@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import AddressModal from "./AddressModal";
 import AddressCard from "./AddressCard";
@@ -205,7 +205,6 @@ const Address = ({ fullName }: AddressProps) => {
         }
 
         toast.error(message);
-        // Don't re-throw - let user fix and try again
       }
     }
   };

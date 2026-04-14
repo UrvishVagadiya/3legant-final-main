@@ -76,61 +76,58 @@ export const productApi = apiService.injectEndpoints({
           query = query.contains('category', [category]);
         }
 
+        // Apply price filter in the query if possible
+        if (priceFilters.length === 1) {
+          const range = priceFilters[0];
+          if (range.max === null || !Number.isFinite(range.max)) {
+            query = query.gte('price', range.min);
+          } else {
+            query = query.gte('price', range.min).lte('price', range.max);
+          }
+        }
+
+        // Apply ordering before range
         query = query.order('created_at', { ascending: false });
 
-        const { data, error } = await query;
+        // Apply range for pagination
+        query = query.range(from, to);
+
+        const { data, error, count } = await query;
 
         if (error) return { error };
 
-        const normalizedProducts: Product[] = (data || []).map((product: Product) =>
+        let normalizedProducts: Product[] = (data || []).map((product: Product) =>
           normalizeProduct(product),
         );
 
-        const filteredByPrice =
-          priceFilters.length === 0
-            ? normalizedProducts
-            : normalizedProducts.filter((product: Product) => {
-              const effectivePrice = getEffectiveCartPrice(product);
-
-              return priceFilters.some((range) => {
-                if (range.max === null) {
-                  return effectivePrice >= range.min;
-                }
-
-                return (
-                  effectivePrice >= range.min && effectivePrice <= range.max
-                );
-              });
+        // If multiple price filters (shouldn't happen in your UI), fallback to JS filtering
+        if (priceFilters.length > 1) {
+          normalizedProducts = normalizedProducts.filter((product: Product) => {
+            const effectivePrice = getEffectiveCartPrice(product);
+            return priceFilters.some((range) => {
+              if (range.max === null || !Number.isFinite(range.max)) {
+                return effectivePrice >= range.min;
+              }
+              return effectivePrice >= range.min && effectivePrice <= range.max;
             });
+          });
+        }
 
-        const sortedProducts = [...filteredByPrice].sort((a, b) => {
-          if (sort === 'az') {
-            return toComparableTitle(a).localeCompare(toComparableTitle(b));
-          }
-
-          if (sort === 'za') {
-            return toComparableTitle(b).localeCompare(toComparableTitle(a));
-          }
-
-          if (sort === 'price-low-high') {
-            return getEffectiveCartPrice(a) - getEffectiveCartPrice(b);
-          }
-
-          if (sort === 'price-high-low') {
-            return getEffectiveCartPrice(b) - getEffectiveCartPrice(a);
-          }
-
-          const aCreatedAt = new Date(a.created_at || a.createdAt || 0).getTime();
-          const bCreatedAt = new Date(b.created_at || b.createdAt || 0).getTime();
-          return bCreatedAt - aCreatedAt;
-        });
-
-        const paginatedProducts = sortedProducts.slice(from, to + 1);
+        // Sort after filtering (if needed)
+        if (sort === 'az') {
+          normalizedProducts.sort((a, b) => toComparableTitle(a).localeCompare(toComparableTitle(b)));
+        } else if (sort === 'za') {
+          normalizedProducts.sort((a, b) => toComparableTitle(b).localeCompare(toComparableTitle(a)));
+        } else if (sort === 'price-low-high') {
+          normalizedProducts.sort((a, b) => getEffectiveCartPrice(a) - getEffectiveCartPrice(b));
+        } else if (sort === 'price-high-low') {
+          normalizedProducts.sort((a, b) => getEffectiveCartPrice(b) - getEffectiveCartPrice(a));
+        }
 
         return {
           data: {
-            products: paginatedProducts,
-            total: sortedProducts.length,
+            products: normalizedProducts,
+            total: count ?? normalizedProducts.length,
           },
         };
       },

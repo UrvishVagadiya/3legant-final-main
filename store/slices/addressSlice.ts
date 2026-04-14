@@ -1,6 +1,4 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { createClient } from '@/utils/supabase/client';
-import toast from 'react-hot-toast';
 
 export interface DbAddress {
   id: string;

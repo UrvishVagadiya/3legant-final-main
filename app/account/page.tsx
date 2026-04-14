@@ -81,7 +81,6 @@ const AccountContent = () => {
     }
   }, [user, setValue]);
 
-  // Only enable Save if a profile field value is different from original
   const firstNameValue = watch("firstName");
   const lastNameValue = watch("lastName");
   const emailValue = watch("email");

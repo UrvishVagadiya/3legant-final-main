@@ -3,7 +3,6 @@ import React from "react";
 import { GoHeart, GoHeartFill } from "react-icons/go";
 import { IoMdStar, IoMdStarHalf, IoMdStarOutline } from "react-icons/io";
 import Link from "next/link";
-import Image from "next/image";
 import { isOfferExpired } from "@/utils/isOfferExpired";
 import { isProductNew } from "@/utils/isProductNew";
 import { colorMap } from "../product/ColorSelector";

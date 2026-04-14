@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import toast from 'react-hot-toast';
-import { createClient } from '@/utils/supabase/client';
 import { Coupon } from '@/utils/coupon';
 
 export interface CartItem {

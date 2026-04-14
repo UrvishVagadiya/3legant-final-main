@@ -1,5 +1,3 @@
-import Image from "next/image";
-import React from "react";
 import ButtonText from "../ui/ButtonText";
 
 const Ads = () => {

@@ -1,10 +1,9 @@
 "use client";
 
-import { CircleUserRound, Handbag, Menu, Search, LogOut } from "lucide-react";
+import { CircleUserRound, Handbag, Menu, Search } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import { toggleCart } from "@/store/slices/cartSlice";
 
@@ -18,8 +17,6 @@ const Navbar = () => {
   const dispatch = useAppDispatch();
   const { user, role } = useAppSelector((state: RootState) => state.auth);
   const { items } = useAppSelector((state: RootState) => state.cart);
-  const supabase = createClient();
-  const router = useRouter();
   const pathname = usePathname();
 
   const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAppDispatch, useAppSelector, RootState } from "@/store";
 import { setFilters } from "@/store/slices/productSlice";

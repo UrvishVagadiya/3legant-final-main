@@ -119,10 +119,6 @@ export const addressApi = apiService.injectEndpoints({
       queryFn: async ({ data, userId, modalFixedType }) => {
         const supabase = createClient();
 
-        console.log("API received raw data:", data);
-        console.log("API received data keys:", Object.keys(data));
-        console.log("modalFixedType:", modalFixedType);
-
         // Ensure all fields exist and trim them
         const trimmedName = (data.name ?? "").toString().trim();
         const trimmedPhone = (data.phone ?? "").toString().trim();
@@ -170,8 +166,6 @@ export const addressApi = apiService.injectEndpoints({
         };
 
         const tryWithLabel = data.label ? { ...baseRow, label: data.label } : baseRow;
-
-        console.log("Database row to insert:", baseRow);
 
         try {
           if (data.id) {
