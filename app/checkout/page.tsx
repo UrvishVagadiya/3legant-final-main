@@ -139,7 +139,6 @@ export default function Checkout() {
     }
   }, [cartItems.length, isMounted, router]);
 
-  // ── Load user data & saved addresses ────────────────────────────────────
   useEffect(() => {
     const cancelled = searchParams.get("cancelled");
     if (cancelled) {
@@ -223,7 +222,6 @@ export default function Checkout() {
     })();
   }, [user, searchParams]);
 
-  // ── Address selector ─────────────────────────────────────────────────────
   const handleSelect = (id: string, type: "shipping" | "billing") => {
     const b = type === "billing";
     (b ? setSelBillingId : setSelShippingId)(id);
@@ -252,7 +250,6 @@ export default function Checkout() {
       });
   };
 
-  // ── Save address helper ──────────────────────────────────────────────────
   const saveCheckoutAddress = async (type: "shipping" | "billing") => {
     if (!user?.id) return;
     const selectedId = type === "shipping" ? selShippingId : selBillingId;
@@ -372,7 +369,6 @@ export default function Checkout() {
     };
   };
 
-  // ── Place order → calls Supabase edge function directly ─────────────────
   const handlePlaceOrder = async () => {
     if (cartItems.length === 0) {
       toast.error("Your cart is empty");

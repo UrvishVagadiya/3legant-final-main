@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import Link from "next/link";
 
 interface CheckoutStepperProps {
   step: 1 | 2 | 3;
@@ -16,17 +17,23 @@ const CheckoutStepper = ({ step }: CheckoutStepperProps) => {
   );
   const visibleStepIds = new Set(visibleSteps.map((s) => s.id));
 
+  const stepRoutes: Record<number, string> = {
+    1: "/cart",
+    2: "/checkout",
+    3: "/complete",
+  };
+
   return (
-    <div className="flex flex-row items-center justify-center gap-2 sm:gap-8 my-6 sm:my-8 w-full max-w-4xl mx-auto px-2 sm:px-4">
+    <div className="flex flex-row items-center justify-center gap-8 sm:gap-24 my-6 sm:my-8 w-full max-w-4xl mx-auto  px-2 sm:px-4">
       {steps.map((s) => {
         const isCompleted = step > s.id;
         const isActive = step === s.id;
         const isVisibleOnMobile = visibleStepIds.has(s.id);
-
-        return (
+        // Only allow navigation to cart/checkout if not on complete page
+        const isLink = (s.id === 1 || s.id === 2) && step !== 3;
+        const content = (
           <div
-            key={s.id}
-            className={`${isVisibleOnMobile ? "flex" : "hidden lg:flex"} flex-row items-center text-left ${isActive ? "gap-2" : "gap-0"} sm:gap-3 pb-2 sm:pb-4 border-b-2 min-w-0 sm:flex-1 sm:min-w-45 ${
+            className={`${isVisibleOnMobile ? "flex" : "hidden lg:flex"} flex-row items-center text-left ${isActive ? "gap-2" : "gap-2"} sm:gap-3 pb-2 sm:pb-4 border-b-2 min-w-0 sm:flex-1 sm:min-w-45 ${
               isActive
                 ? "border-black text-black"
                 : isCompleted
@@ -57,6 +64,13 @@ const CheckoutStepper = ({ step }: CheckoutStepperProps) => {
               {s.name}
             </span>
           </div>
+        );
+        return isLink ? (
+          <Link href={stepRoutes[s.id]} key={s.id} prefetch={false}>
+            {content}
+          </Link>
+        ) : (
+          <div key={s.id}>{content}</div>
         );
       })}
     </div>

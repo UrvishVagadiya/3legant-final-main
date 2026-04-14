@@ -5,7 +5,7 @@ import { FaPencil } from "react-icons/fa6";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
-import { useAppDispatch, useAppSelector, RootState } from "@/store";
+import { useAppSelector, RootState } from "@/store";
 import { useUpdateProfileMutation } from "@/store/api/authApi";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
@@ -36,7 +36,6 @@ const AccountSidebar = ({
   onTabChange,
   onAvatarChange,
 }: AccountSidebarProps) => {
-  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
   const [isUploading, setIsUploading] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);

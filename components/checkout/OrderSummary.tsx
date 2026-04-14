@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { Ticket } from "lucide-react";
 import CouponSuggestions from "@/components/cart/CouponSuggestions";
+import { useAppDispatch } from "@/store";
+import { setAppliedCoupon } from "@/store/slices/cartSlice";
 import { colorMap } from "../product/ColorSelector";
 import { getEffectiveCartLineTotal } from "@/utils/getEffectiveCartPrice";
 
@@ -62,6 +64,7 @@ export default function OrderSummary({
   placing,
   onPlaceOrder,
 }: OrderSummaryProps) {
+  const dispatch = useAppDispatch();
   const handleDecrease = (item: CartItem) => {
     if (item.quantity <= 0) return;
     updateQuantity(item.id, item.color, item.quantity - 1);
@@ -173,16 +176,44 @@ export default function OrderSummary({
         </button>
       </div>
 
-      <div className="mb-6">
-        <CouponSuggestions
-          onSelect={(code: string) => {
-            setCouponCode(code);
-            // Use a short timeout to ensure state is updated before applying
-            setTimeout(() => onApplyCoupon(), 0);
-          }}
-          subtotal={subtotal}
-        />
-      </div>
+      {!appliedCoupon && (
+        <div className="mb-6">
+          <CouponSuggestions
+            onSelect={async (code: string) => {
+              if (!code) return;
+              setCouponCode("");
+              if (typeof window !== "undefined") {
+                const toast = (await import("react-hot-toast")).default;
+                toast("Validating coupon: " + code);
+              }
+              if (typeof window !== "undefined") {
+                const { validateCoupon } = await import("@/utils/coupon");
+                const result = await validateCoupon(code.trim(), subtotal);
+                if (result.valid && result.coupon) {
+                  dispatch(
+                    setAppliedCoupon({
+                      coupon: result.coupon,
+                      discount: result.discount,
+                    }),
+                  );
+                  if (typeof window !== "undefined") {
+                    const toast = (await import("react-hot-toast")).default;
+                    toast.success(
+                      `Coupon applied! -$${result.discount.toFixed(2)}`,
+                    );
+                  }
+                } else {
+                  if (typeof window !== "undefined") {
+                    const toast = (await import("react-hot-toast")).default;
+                    toast.error(result.error || "Invalid coupon");
+                  }
+                }
+              }
+            }}
+            subtotal={subtotal}
+          />
+        </div>
+      )}
 
       <div className="space-y-3 mb-6">
         {shippingOptions.map((opt) => (

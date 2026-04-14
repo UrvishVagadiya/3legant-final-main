@@ -36,7 +36,13 @@ export default function CouponSuggestions({
   if (loading) return null;
   if (coupons.length === 0) return null;
 
-  const shouldScroll = coupons.length > 1;
+  const eligibleCoupons = coupons.filter((c) => subtotal >= c.min_order_amount);
+  const ineligibleCoupons = coupons.filter(
+    (c) => subtotal < c.min_order_amount,
+  );
+  const sortedCoupons = [...eligibleCoupons, ...ineligibleCoupons];
+
+  const shouldScroll = sortedCoupons.length > 1;
 
   return (
     <div className="mt-4 p-4 bg-[#F3F5F7] rounded-xl border border-[#E8ECEF] animate-in fade-in slide-in-from-top-2 duration-300">
@@ -50,7 +56,7 @@ export default function CouponSuggestions({
       <div
         className={`flex flex-col gap-2 ${shouldScroll ? "max-h-27 overflow-y-auto pr-1 scrollbar-subtle" : ""}`}
       >
-        {coupons.map((coupon) => {
+        {sortedCoupons.map((coupon) => {
           const isEligible = subtotal >= coupon.min_order_amount;
 
           return (

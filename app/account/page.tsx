@@ -30,6 +30,12 @@ const AccountContent = () => {
   const [activeTab, setActiveTab] = useState<Tab>("account");
   const [isProfileSaving, setIsProfileSaving] = useState(false);
   const [isPasswordSaving, setIsPasswordSaving] = useState(false);
+  const [originalProfile, setOriginalProfile] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    displayName: "",
+  });
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
@@ -44,7 +50,7 @@ const AccountContent = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors},
     watch,
     getValues,
     setValue,
@@ -54,20 +60,40 @@ const AccountContent = () => {
 
   useEffect(() => {
     if (user) {
-      const name =user.user_metadata?.name || user.user_metadata?.full_name || "";
-      const userDisplayName =user.user_metadata?.displayName || user.user_metadata?.username || "";
+      const name =
+        user.user_metadata?.name || user.user_metadata?.full_name || "";
+      const userDisplayName =
+        user.user_metadata?.displayName || user.user_metadata?.username || "";
       setFullName(name);
       setDisplayName(userDisplayName);
       setAvatarUrl(user.user_metadata?.avatar_url || null);
-      setValue("email", user.email || "");
-      setValue("displayName", userDisplayName);
       const [firstName, lastName] = name.split(" ");
       setValue("firstName", firstName || "");
       setValue("lastName", lastName || "");
+      setValue("email", user.email || "");
+      setValue("displayName", userDisplayName);
+      setOriginalProfile({
+        firstName: firstName || "",
+        lastName: lastName || "",
+        email: user.email || "",
+        displayName: userDisplayName,
+      });
     }
   }, [user, setValue]);
 
+  // Only enable Save if a profile field value is different from original
+  const firstNameValue = watch("firstName");
+  const lastNameValue = watch("lastName");
+  const emailValue = watch("email");
+  const displayNameValue = watch("displayName");
+  const isProfileDirty =
+    firstNameValue !== originalProfile.firstName ||
+    lastNameValue !== originalProfile.lastName ||
+    emailValue !== originalProfile.email ||
+    displayNameValue !== originalProfile.displayName;
+
   const onProfileSubmit = async (data: FormData) => {
+    if (!isProfileDirty) return;
     clearErrors("root");
     setIsProfileSaving(true);
 
@@ -286,6 +312,7 @@ const AccountContent = () => {
               watch={watch}
               isProfileSaving={isProfileSaving}
               isPasswordSaving={isPasswordSaving}
+              isProfileDirty={isProfileDirty}
               onProfileSubmit={handleSubmit(onProfileSubmit)}
               onPasswordSubmit={(e) => {
                 e.preventDefault();

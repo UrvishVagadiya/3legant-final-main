@@ -17,6 +17,7 @@ interface AccountDetailsProps {
   watch: UseFormWatch<FormData>;
   isProfileSaving: boolean;
   isPasswordSaving: boolean;
+  isProfileDirty: boolean;
   onProfileSubmit: React.FormEventHandler<HTMLFormElement>;
   onPasswordSubmit: React.FormEventHandler<HTMLFormElement>;
 }
@@ -27,6 +28,7 @@ const AccountDetails = ({
   watch,
   isProfileSaving,
   isPasswordSaving,
+  isProfileDirty,
   onProfileSubmit,
   onPasswordSubmit,
 }: AccountDetailsProps) => (
@@ -136,8 +138,8 @@ const AccountDetails = ({
 
       <button
         type="submit"
-        disabled={isProfileSaving}
-        className="w-fit px-10 py-3 rounded-lg bg-[#141718] flex items-center justify-center cursor-pointer shadow-sm hover:bg-gray-800 transition-colors"
+        disabled={isProfileSaving || !isProfileDirty}
+        className="w-fit px-10 py-3 rounded-lg bg-[#141718] flex items-center justify-center cursor-pointer shadow-sm hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         <span className="text-white font-medium text-sm md:text-base">
           {isProfileSaving ? "Saving..." : "Save changes"}

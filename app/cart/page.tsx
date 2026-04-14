@@ -107,9 +107,7 @@ const Cart = () => {
   return (
     <div className="navbar-container py-8 md:py-10 mb-6 font-inter text-[#141718]">
       <div className="flex flex-col items-center justify-center mb-8">
-        <h1 className="font-poppins text-[34px] leading-9.5 tracking-[-0.6px] font-medium md:text-[54px] md:leading-14.5 md:tracking-[-1px] mb-4">
-          Cart
-        </h1>
+        <h1 className={`${typography.h4} mb-4`}>Cart</h1>
         <CheckoutStepper step={1} />
       </div>
 
@@ -191,15 +189,37 @@ const Cart = () => {
                 {couponLoading ? "..." : "Apply"}
               </button>
             </div>
-            <div className="max-w-sm md:max-w-full lg:max-w-sm">
-              <CouponSuggestions
-                onSelect={(code: string) => {
-                  setCouponCode(code);
-                  setTimeout(() => handleApplyCoupon(), 0);
-                }}
-                subtotal={subtotal}
-              />
-            </div>
+            {!appliedCoupon && (
+              <div className="max-w-sm md:max-w-full lg:max-w-sm">
+                <CouponSuggestions
+                  onSelect={async (code: string) => {
+                    setCouponLoading(true);
+                    toast("Validating coupon: " + code);
+                    const result = await validateCoupon(
+                      code.trim(),
+                      subtotal,
+                      user?.id,
+                    );
+                    if (result.valid && result.coupon) {
+                      dispatch(
+                        setAppliedCoupon({
+                          coupon: result.coupon,
+                          discount: result.discount,
+                        }),
+                      );
+                      setCouponCode("");
+                      toast.success(
+                        `Coupon applied! -$${result.discount.toFixed(2)}`,
+                      );
+                    } else {
+                      toast.error(result.error || "Invalid coupon");
+                    }
+                    setCouponLoading(false);
+                  }}
+                  subtotal={subtotal}
+                />
+              </div>
+            )}
           </div>
         </div>
 
